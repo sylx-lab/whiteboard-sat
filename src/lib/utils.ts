@@ -1,0 +1,71 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { Domain, Subject, Difficulty } from "../types";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatDomainName(domain: Domain): string {
+  const domainMap: Record<Domain, string> = {
+    algebra: 'Algebra',
+    advanced_math: 'Advanced Math',
+    problem_solving_data_analysis: 'Problem-Solving & Data Analysis',
+    geometry_trigonometry: 'Geometry & Trigonometry',
+    information_ideas: 'Information & Ideas',
+    craft_structure: 'Craft & Structure',
+    expression_ideas: 'Expression of Ideas',
+    standard_english_conventions: 'Standard English Conventions',
+  };
+  return domainMap[domain] || domain;
+}
+
+export function getDomainSubject(domain: Domain): Subject {
+  const mathDomains: Domain[] = [
+    'algebra',
+    'advanced_math',
+    'problem_solving_data_analysis',
+    'geometry_trigonometry',
+  ];
+  return mathDomains.includes(domain) ? 'math' : 'reading_writing';
+}
+
+export function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+export function getDifficultyColor(difficulty: Difficulty): { bg: string; text: string; border: string } {
+  switch (difficulty) {
+    case 'easy':
+      return { bg: 'bg-emerald-50 text-emerald-700', text: 'text-emerald-700', border: 'border-emerald-200' };
+    case 'medium':
+      return { bg: 'bg-amber-50 text-amber-700', text: 'text-amber-700', border: 'border-amber-200' };
+    case 'hard':
+      return { bg: 'bg-rose-50 text-rose-700', text: 'text-rose-700', border: 'border-rose-200' };
+  }
+}
+
+export function estimateSATScore(mathCorrect: number, mathTotal: number, rwCorrect: number, rwTotal: number): {
+  mathScore: number;
+  rwScore: number;
+  totalScore: number;
+} {
+  // Approximate standard SAT scale (200-800 per section)
+  const mathRatio = mathTotal > 0 ? mathCorrect / mathTotal : 0;
+  const rwRatio = rwTotal > 0 ? rwCorrect / rwTotal : 0;
+
+  // Non-linear scaled score simulation reflecting standard SAT raw-to-scaled curves
+  const mathScaled = Math.round(200 + (600 * Math.pow(mathRatio, 0.95)) / 10) * 10;
+  const rwScaled = Math.round(200 + (600 * Math.pow(rwRatio, 0.95)) / 10) * 10;
+
+  const boundedMath = Math.max(200, Math.min(800, mathScaled));
+  const boundedRw = Math.max(200, Math.min(800, rwScaled));
+
+  return {
+    mathScore: boundedMath,
+    rwScore: boundedRw,
+    totalScore: boundedMath + boundedRw,
+  };
+}

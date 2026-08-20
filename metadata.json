@@ -1,0 +1,7 @@
+{
+  "name": "White Board SAT",
+  "description": "Premium Digital SAT Preparation Operating System featuring Math & Reading practice engine, full mock tests, structured courses, analytics dashboard, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
