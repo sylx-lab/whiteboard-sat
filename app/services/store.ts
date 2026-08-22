@@ -3,6 +3,7 @@ import {
   UserProfile,
   Question,
   Course,
+  Lesson,
   ResourceItem,
   ProductPlan,
   MockTest,
@@ -750,6 +751,155 @@ export function useAppStore() {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
+  // --- COURSE MANAGEMENT CRUD ---
+  const addCourse = (newC: Partial<Course> & { title: string }) => {
+    const fullCourse: Course = {
+      id: newC.id || `c-${Date.now()}`,
+      slug: newC.slug || newC.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      title: newC.title,
+      subtitle: newC.subtitle || '',
+      description: newC.description || '',
+      subject: newC.subject || 'math',
+      difficulty: newC.difficulty || 'All Levels',
+      instructorName: newC.instructorName || 'Whiteboard SAT Expert',
+      instructorTitle: newC.instructorTitle || 'SAT Master Coach',
+      price: newC.price ?? 2900,
+      originalPrice: newC.originalPrice ?? 4500,
+      is_published: newC.is_published ?? true,
+      features: newC.features || ['Full Video Lessons', 'Practice Quizzes'],
+      lessonsCount: newC.lessons ? newC.lessons.length : 0,
+      totalHours: newC.totalHours ?? 10,
+      lessons: newC.lessons || [],
+      level: newC.level || 'All Levels',
+      badge: newC.badge || 'New Course',
+    };
+    setCourses((prev) => [fullCourse, ...prev]);
+    return fullCourse;
+  };
+
+  const updateCourse = (id: string, updates: Partial<Course>) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const updatedLessons = updates.lessons || c.lessons;
+        return {
+          ...c,
+          ...updates,
+          lessons: updatedLessons,
+          lessonsCount: updatedLessons.length,
+        };
+      })
+    );
+  };
+
+  const deleteCourse = (id: string) => {
+    setCourses((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const addLessonToCourse = (courseId: string, lesson: Omit<Lesson, 'id' | 'courseId'>) => {
+    const newLesson: Lesson = {
+      ...lesson,
+      id: `les-${Date.now()}`,
+      courseId,
+    };
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id !== courseId) return c;
+        const lessons = [...c.lessons, newLesson];
+        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
+        return {
+          ...c,
+          lessons,
+          lessonsCount: lessons.length,
+          totalHours: Math.round((totalMins / 60) * 10) / 10,
+        };
+      })
+    );
+    return newLesson;
+  };
+
+  const updateLessonInCourse = (courseId: string, lessonId: string, updates: Partial<Lesson>) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id !== courseId) return c;
+        const lessons = c.lessons.map((l) => (l.id === lessonId ? { ...l, ...updates } : l));
+        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
+        return {
+          ...c,
+          lessons,
+          lessonsCount: lessons.length,
+          totalHours: Math.round((totalMins / 60) * 10) / 10,
+        };
+      })
+    );
+  };
+
+  const deleteLessonFromCourse = (courseId: string, lessonId: string) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id !== courseId) return c;
+        const lessons = c.lessons.filter((l) => l.id !== lessonId);
+        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
+        return {
+          ...c,
+          lessons,
+          lessonsCount: lessons.length,
+          totalHours: Math.round((totalMins / 60) * 10) / 10,
+        };
+      })
+    );
+  };
+
+  // --- RESOURCE MANAGEMENT CRUD ---
+  const addResource = (newR: Partial<ResourceItem> & { title: string }) => {
+    const fullResource: ResourceItem = {
+      id: newR.id || `res-${Date.now()}`,
+      title: newR.title,
+      description: newR.description || '',
+      category: newR.category || 'formula_sheet',
+      subject: newR.subject || 'general',
+      is_free: newR.is_free ?? true,
+      downloadUrl: newR.downloadUrl || '#',
+      externalUrl: newR.externalUrl || '#',
+      readTime: newR.readTime || '10 min read',
+      dateAdded: newR.dateAdded || new Date().toISOString().split('T')[0],
+    };
+    setResources((prev) => [fullResource, ...prev]);
+    return fullResource;
+  };
+
+  const updateResource = (id: string, updates: Partial<ResourceItem>) => {
+    setResources((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  };
+
+  const deleteResource = (id: string) => {
+    setResources((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  // --- MOCK TEST MANAGEMENT CRUD ---
+  const addMockTest = (newT: Partial<MockTest> & { title: string }) => {
+    const fullTest: MockTest = {
+      id: newT.id || `mock-${Date.now()}`,
+      title: newT.title,
+      description: newT.description || '',
+      is_free: newT.is_free ?? false,
+      difficulty: newT.difficulty || 'medium',
+      totalQuestions: newT.totalQuestions || 98,
+      totalTimeMinutes: newT.totalTimeMinutes || 134,
+      modules: newT.modules || [],
+    };
+    setMockTests((prev) => [fullTest, ...prev]);
+    return fullTest;
+  };
+
+  const updateMockTest = (id: string, updates: Partial<MockTest>) => {
+    setMockTests((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+  };
+
+  const deleteMockTest = (id: string) => {
+    setMockTests((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // --- STATS COMPUTATION FOR STUDENT DASHBOARD ---
   const userAttempts = practiceAttempts.filter((a) => a.userId === currentUser?.id);
   const totalQuestionsAttempted = userAttempts.length;
@@ -813,6 +963,21 @@ export function useAppStore() {
     addQuestion,
     updateQuestion,
     deleteQuestion,
+    // Course & Lesson CRUD
+    addCourse,
+    updateCourse,
+    deleteCourse,
+    addLessonToCourse,
+    updateLessonInCourse,
+    deleteLessonFromCourse,
+    // Resource CRUD
+    addResource,
+    updateResource,
+    deleteResource,
+    // Mock Test CRUD
+    addMockTest,
+    updateMockTest,
+    deleteMockTest,
     // Computed analytics
     totalQuestionsAttempted,
     totalCorrect,
