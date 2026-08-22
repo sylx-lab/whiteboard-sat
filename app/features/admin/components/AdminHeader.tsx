@@ -1,5 +1,6 @@
 import React from 'react';
-import { Shield, ChevronRight, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Shield, ChevronRight, Plus, ExternalLink } from 'lucide-react';
 import { AdminSubPage } from './AdminSidebar';
 
 interface AdminHeaderProps {
@@ -57,8 +58,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <h2 className="text-2xl font-extrabold tracking-tight text-white">{info.title}</h2>
         </div>
 
-        {/* Right Metric Ticker & Action Button */}
-        <div className="flex items-center gap-4">
+        {/* Right Metric Ticker & Action Buttons */}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="px-3.5 py-2 bg-teal-800/60 hover:bg-teal-800 border border-teal-200/30 text-white font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="Switch to Student Portal"
+          >
+            <span>Student App</span>
+            <ExternalLink className="w-3.5 h-3.5 text-teal-200" />
+          </Link>
+
           <div className="px-4 py-2 bg-[#087C76] rounded-2xl border border-[rgba(255,255,255,0.2)] text-right">
             <div className="text-[10px] text-teal-100 font-bold uppercase tracking-wider">Verified Revenue</div>
             <div className="text-lg font-black text-white font-mono">৳{totalRevenue.toLocaleString()}</div>
