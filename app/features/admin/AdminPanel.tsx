@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PaymentSubmission,
@@ -77,6 +77,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteMockTest,
 }) => {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Page Navigation State
   const [activeSubPage, setActiveSubPage] = useState<AdminSubPage>('overview');
@@ -89,6 +94,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Mock Test Modal
   const [isMockModalOpen, setIsMockModalOpen] = useState(false);
   const [editingMockTest, setEditingMockTest] = useState<MockTest | null>(null);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="text-xs font-mono font-bold text-slate-400 animate-pulse">Loading Admin Console...</div>
+      </div>
+    );
+  }
 
   // Security Gate
   if (currentUser?.role !== 'admin') {

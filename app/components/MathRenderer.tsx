@@ -13,11 +13,19 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ content, text, class
   const renderedContent = useMemo(() => {
     if (!rawText) return '';
 
-    // Replace display math $$...$$ first
-    let processed = rawText.replace(/\$\$([\s\S]*?)\$\$/g, (_, math) => {
+    // 1. Convert inline double-dollar math embedded inside sentences into single inline math if surrounded by prose
+    let textToProcess = rawText;
+
+    // Replace display math $$...$$
+    let processed = textToProcess.replace(/\$\$([\s\S]*?)\$\$/g, (match, math, offset, fullString) => {
+      // Check if surrounded by text on the same line (not standalone block)
+      const lineBefore = fullString.substring(0, offset).split('\n').pop() || '';
+      const lineAfter = fullString.substring(offset + match.length).split('\n')[0] || '';
+      const isEmbeddedInText = lineBefore.trim().length > 0 || lineAfter.trim().length > 0;
+
       try {
         return katex.renderToString(math.trim(), {
-          displayMode: true,
+          displayMode: !isEmbeddedInText, // Use inline mode if surrounded by text!
           throwOnError: false,
         });
       } catch (err) {
@@ -26,7 +34,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ content, text, class
       }
     });
 
-    // Replace inline math $...$
+    // 2. Replace single-dollar inline math $...$
     processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, math) => {
       try {
         return katex.renderToString(math.trim(), {
@@ -39,7 +47,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ content, text, class
       }
     });
 
-    // Convert newlines to breaks for regular paragraphs if no HTML wrapper
+    // 3. Convert newlines to breaks cleanly
     processed = processed.replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
 
     return processed;
