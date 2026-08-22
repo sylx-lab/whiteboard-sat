@@ -15,7 +15,6 @@ import { AdminSidebar, AdminSubPage } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { PaymentReceiptModal } from './components/PaymentReceiptModal';
-import { QuestionEditorModal } from './components/QuestionEditorModal';
 import { MockTestEditorModal } from './components/MockTestEditorModal';
 
 import { OverviewView } from './views/OverviewView';
@@ -70,7 +69,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateUserAccess,
   onToggleUserStatus,
   onAddQuestion,
-  onUpdateQuestion,
   onDeleteQuestion,
   onDeleteCourse,
   onDeleteResource,
@@ -88,10 +86,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
   const [inspectingPayment, setInspectingPayment] = useState<PaymentSubmission | null>(null);
 
-  // Question & Mock Modals
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-
+  // Mock Test Modal
   const [isMockModalOpen, setIsMockModalOpen] = useState(false);
   const [editingMockTest, setEditingMockTest] = useState<MockTest | null>(null);
 
@@ -120,10 +115,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     switch (activeSubPage) {
       case 'questions':
         return {
-          label: 'Add Question',
+          label: 'Add Question Page',
           handler: () => {
-            setEditingQuestion(null);
-            setIsQuestionModalOpen(true);
+            router.push('/admin/questions/new');
           },
         };
       case 'courses':
@@ -244,14 +238,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             {activeSubPage === 'questions' && (
               <QuestionBankView
                 questions={questions}
-                onOpenAddQuestion={() => {
-                  setEditingQuestion(null);
-                  setIsQuestionModalOpen(true);
-                }}
-                onOpenEditQuestion={(q) => {
-                  setEditingQuestion(q);
-                  setIsQuestionModalOpen(true);
-                }}
                 onDeleteQuestion={onDeleteQuestion}
                 onAddQuestion={onAddQuestion}
               />
@@ -273,20 +259,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         onClose={() => setInspectingPayment(null)}
         onVerify={onVerifyPayment}
         onReject={onRejectPayment}
-      />
-
-      <QuestionEditorModal
-        question={editingQuestion}
-        isOpen={isQuestionModalOpen}
-        onClose={() => setIsQuestionModalOpen(false)}
-        onSave={(data) => {
-          if (editingQuestion) {
-            onUpdateQuestion(editingQuestion.id, data);
-          } else {
-            onAddQuestion(data);
-          }
-          setIsQuestionModalOpen(false);
-        }}
       />
 
       <MockTestEditorModal

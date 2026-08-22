@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Question, Subject } from '../../../types';
 import { formatDomainName } from '../../../lib/utils';
 import { MathRenderer } from '../../../components/MathRenderer';
@@ -6,19 +7,18 @@ import { Search, Plus, Edit3, Trash2, Download, Upload, FileCode } from 'lucide-
 
 interface QuestionBankViewProps {
   questions: Question[];
-  onOpenAddQuestion: () => void;
-  onOpenEditQuestion: (q: Question) => void;
+  onOpenAddQuestion?: () => void;
+  onOpenEditQuestion?: (q: Question) => void;
   onDeleteQuestion: (qId: string) => void;
   onAddQuestion: (q: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
 }
 
 export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
   questions,
-  onOpenAddQuestion,
-  onOpenEditQuestion,
   onDeleteQuestion,
   onAddQuestion,
 }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [subjectFilter, setSubjectFilter] = useState<'all' | Subject>('all');
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
@@ -122,11 +122,11 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
           </button>
 
           <button
-            onClick={onOpenAddQuestion}
+            onClick={() => router.push('/admin/questions/new')}
             className="px-4 py-2 bg-[#0D918A] hover:bg-[#087C76] text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Question</span>
+            <span>Add Question (Visual Page)</span>
           </button>
         </div>
       </div>
@@ -158,9 +158,9 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
 
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => onOpenEditQuestion(q)}
+                  onClick={() => router.push(`/admin/questions/${q.id}`)}
                   className="p-1.5 text-slate-500 hover:text-[#0D918A] rounded-lg hover:bg-slate-100 cursor-pointer"
-                  title="Edit question in split-pane preview editor"
+                  title="Edit question in Visual Rich Math Editor"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
