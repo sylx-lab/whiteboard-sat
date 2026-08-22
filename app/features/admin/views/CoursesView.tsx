@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Course } from '../../../types';
 import { Search, Plus, Edit3, Trash2, Video } from 'lucide-react';
 
 interface CoursesViewProps {
   courses: Course[];
-  onOpenAddCourse: () => void;
-  onOpenEditCourse: (course: Course) => void;
+  onOpenAddCourse?: () => void;
+  onOpenEditCourse?: (course: Course) => void;
   onDeleteCourse: (courseId: string) => void;
 }
 
 export const CoursesView: React.FC<CoursesViewProps> = ({
   courses,
-  onOpenAddCourse,
-  onOpenEditCourse,
   onDeleteCourse,
 }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
 
   const filtered = courses.filter(
@@ -46,11 +46,11 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
           </div>
 
           <button
-            onClick={onOpenAddCourse}
+            onClick={() => router.push('/admin/courses/new')}
             className="px-4 py-2 bg-[#0D918A] hover:bg-[#087C76] text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Course</span>
+            <span>Add Course (Visual Page)</span>
           </button>
         </div>
       </div>
@@ -68,9 +68,9 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                 </span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => onOpenEditCourse(course)}
+                    onClick={() => router.push(`/admin/courses/${course.id}`)}
                     className="p-1.5 text-slate-500 hover:text-[#0D918A] rounded-lg hover:bg-white cursor-pointer"
-                    title="Edit course details & lessons"
+                    title="Edit course in Visual Editor page"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
@@ -109,11 +109,11 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
 
             <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
               <button
-                onClick={() => onOpenEditCourse(course)}
+                onClick={() => router.push(`/admin/courses/${course.id}`)}
                 className="px-3.5 py-2 bg-[#0D918A] text-white font-bold text-xs rounded-xl shadow-xs hover:bg-[#087C76] transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>Manage Lessons ({course.lessons.length})</span>
+                <span>Visual Editor ({course.lessons.length} Lessons)</span>
               </button>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${course.is_published ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
                 {course.is_published ? 'Published' : 'Draft'}

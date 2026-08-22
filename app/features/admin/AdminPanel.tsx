@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PaymentSubmission,
   UserProfile,
@@ -15,8 +16,6 @@ import { AdminHeader } from './components/AdminHeader';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { PaymentReceiptModal } from './components/PaymentReceiptModal';
 import { QuestionEditorModal } from './components/QuestionEditorModal';
-import { CourseEditorModal } from './components/CourseEditorModal';
-import { ResourceEditorModal } from './components/ResourceEditorModal';
 import { MockTestEditorModal } from './components/MockTestEditorModal';
 
 import { OverviewView } from './views/OverviewView';
@@ -73,19 +72,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onAddQuestion,
   onUpdateQuestion,
   onDeleteQuestion,
-  onAddCourse,
-  onUpdateCourse,
   onDeleteCourse,
-  onAddLessonToCourse,
-  onUpdateLessonInCourse,
-  onDeleteLessonFromCourse,
-  onAddResource,
-  onUpdateResource,
   onDeleteResource,
   onAddMockTest,
   onUpdateMockTest,
   onDeleteMockTest,
 }) => {
+  const router = useRouter();
+
   // Page Navigation State
   const [activeSubPage, setActiveSubPage] = useState<AdminSubPage>('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -94,15 +88,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
   const [inspectingPayment, setInspectingPayment] = useState<PaymentSubmission | null>(null);
 
-  // Editor Modals
+  // Question & Mock Modals
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-
-  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-
-  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
-  const [editingResource, setEditingResource] = useState<ResourceItem | null>(null);
 
   const [isMockModalOpen, setIsMockModalOpen] = useState(false);
   const [editingMockTest, setEditingMockTest] = useState<MockTest | null>(null);
@@ -140,18 +128,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         };
       case 'courses':
         return {
-          label: 'Add Course',
+          label: 'Add Course Page',
           handler: () => {
-            setEditingCourse(null);
-            setIsCourseModalOpen(true);
+            router.push('/admin/courses/new');
           },
         };
       case 'resources':
         return {
-          label: 'Add Resource',
+          label: 'Add Resource Page',
           handler: () => {
-            setEditingResource(null);
-            setIsResourceModalOpen(true);
+            router.push('/admin/resources/new');
           },
         };
       case 'mock-tests':
@@ -229,14 +215,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             {activeSubPage === 'courses' && (
               <CoursesView
                 courses={courses}
-                onOpenAddCourse={() => {
-                  setEditingCourse(null);
-                  setIsCourseModalOpen(true);
-                }}
-                onOpenEditCourse={(c) => {
-                  setEditingCourse(c);
-                  setIsCourseModalOpen(true);
-                }}
                 onDeleteCourse={onDeleteCourse}
               />
             )}
@@ -244,14 +222,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             {activeSubPage === 'resources' && (
               <ResourcesView
                 resources={resources}
-                onOpenAddResource={() => {
-                  setEditingResource(null);
-                  setIsResourceModalOpen(true);
-                }}
-                onOpenEditResource={(r) => {
-                  setEditingResource(r);
-                  setIsResourceModalOpen(true);
-                }}
                 onDeleteResource={onDeleteResource}
               />
             )}
@@ -316,35 +286,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             onAddQuestion(data);
           }
           setIsQuestionModalOpen(false);
-        }}
-      />
-
-      <CourseEditorModal
-        course={editingCourse}
-        isOpen={isCourseModalOpen}
-        onClose={() => setIsCourseModalOpen(false)}
-        onSaveCourse={(data) => {
-          if (editingCourse) {
-            onUpdateCourse(editingCourse.id, data);
-          } else {
-            onAddCourse(data);
-          }
-        }}
-        onAddLesson={onAddLessonToCourse}
-        onUpdateLesson={onUpdateLessonInCourse}
-        onDeleteLesson={onDeleteLessonFromCourse}
-      />
-
-      <ResourceEditorModal
-        resource={editingResource}
-        isOpen={isResourceModalOpen}
-        onClose={() => setIsResourceModalOpen(false)}
-        onSave={(data) => {
-          if (editingResource) {
-            onUpdateResource(editingResource.id, data);
-          } else {
-            onAddResource(data);
-          }
         }}
       />
 

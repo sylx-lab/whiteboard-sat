@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ResourceItem } from '../../../types';
 import { Search, Plus, Edit3, Trash2, Download } from 'lucide-react';
 
 interface ResourcesViewProps {
   resources: ResourceItem[];
-  onOpenAddResource: () => void;
-  onOpenEditResource: (resource: ResourceItem) => void;
+  onOpenAddResource?: () => void;
+  onOpenEditResource?: (resource: ResourceItem) => void;
   onDeleteResource: (resourceId: string) => void;
 }
 
 export const ResourcesView: React.FC<ResourcesViewProps> = ({
   resources,
-  onOpenAddResource,
-  onOpenEditResource,
   onDeleteResource,
 }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
 
   const filtered = resources.filter(
@@ -46,11 +46,11 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
           </div>
 
           <button
-            onClick={onOpenAddResource}
+            onClick={() => router.push('/admin/resources/new')}
             className="px-4 py-2 bg-[#0D918A] hover:bg-[#087C76] text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Resource</span>
+            <span>Add Resource (Visual Page)</span>
           </button>
         </div>
       </div>
@@ -68,9 +68,9 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                 </span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => onOpenEditResource(res)}
+                    onClick={() => router.push(`/admin/resources/${res.id}`)}
                     className="p-1.5 text-slate-500 hover:text-[#0D918A] rounded-lg hover:bg-white cursor-pointer"
-                    title="Edit resource"
+                    title="Edit resource in Visual Editor page"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
