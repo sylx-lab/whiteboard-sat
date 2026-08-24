@@ -30,7 +30,10 @@ Most of the UI has no tests; verify UI changes with `npm run build` and by exerc
 
 ## Architecture
 
-Next.js 16 App Router, React 19, TypeScript, Tailwind v4. **Entirely client-side**: no API routes, no server actions, no database. All state lives in `localStorage`.
+Next.js 16 App Router, React 19, TypeScript, Tailwind v4. The **UI is still entirely
+client-side** — every component reads `localStorage` through `useAppStore` — but there is now a
+full JSON API and a MongoDB layer behind it (see *The API* below). Nothing but `/api/auth` is
+wired into the store yet, so the two halves currently hold separate copies of the same data.
 
 ### The store is a hook, not a context — this is the main gotcha
 
@@ -45,6 +48,46 @@ Consequence — the mandatory pattern:
 Adding new global state means adding it to `store.ts` and threading it through props, not calling `useAppStore()` deeper in the tree.
 
 The store's return object contains **intentional aliases** for the same function (`loginUser`/`loginWithPhoneOrEmail`, `switchUser`/`switchDemoRole`, `logoutUser`/`logout`, `finalizeMockTest`/`finalizeMockTestAttempt`, `toggleLessonComplete`/`toggleLessonCompleted`, `grantStudentAccess`/`updateUserAccess`, `toggleStudentSuspension`/`toggleUserStatus`, `mockAttempts`/`mockTestAttempts`) — leftovers from renames. Reuse an existing name; don't add a third.
+
+### The API
+
+`app/api/**/route.ts` — one catch-all route file per collection, all of them thin:
+
+| Route | Methods |
+| --- | --- |
+| `/api/auth/[...action]` | register, login, logout, me, forgot/reset password, verify + resend email, Google OAuth |
+| `/api/questions/[[...id]]` | GET (`?domain,?topic,?status,?q`…), POST (object **or array** = import), PATCH `/<id>`, PATCH (bulk `[{id,topic}]`), DELETE `/<id>` |
+| `/api/courses/[[...id]]` | GET, POST, PATCH `/<id>`, DELETE `/<id>` — lessons are embedded, so editing one is a PATCH of the course |
+| `/api/resources/[[...id]]`, `/api/mock-tests/[[...id]]` | same four |
+| `/api/attempts/[[...kind]]` | GET (history), POST `/practice`, PUT `/mock/<id>`, PUT `/session/<id>` |
+| `/api/payments/[[...id]]` | POST (submit), GET (own, or the queue), PATCH `/<id>` `{status}` |
+| `/api/users/[[...id]]` | GET, POST (staff), PATCH `/<id>` (role, permissions, access, suspension) |
+| `/api/me` | PATCH — own profile, lesson progress, bookmarks. Never role or access |
+
+Three files hold everything they share; a new endpoint should reach for these rather than
+re-implement them:
+
+- **`lib/api.ts`** — `crud()` builds the four content routes from a `normalize()` (defaults and
+  derived fields, run on create *and* update) plus an optional `visibleTo()` and `query()`.
+  `requireUser`/`requirePermission` return the 401/403 `Response` itself, so callers write
+  `if (denied(user)) return user;`.
+- **`lib/access.ts`** — the entitlement engine, pure and shared with the store. `canSee*` decides,
+  `redact*` strips a locked record down to what renders the padlock. The store's
+  `hasAccessTo*` are one-line wrappers over the same functions, because a client-side check is a
+  lock on a door with no wall.
+- **`lib/db.ts`** — `hydrate.*` / `dehydrate.*` convert doc ↔ app type. The alias and derived
+  fields (`answer_choices`, `totalQuestions`, `createdAt`, `timestamp`, `status`) are **not
+  stored**; they are put back on read. Anything that writes a document goes through `dehydrate`,
+  including `dbSeed.ts`.
+
+Two rules the routes exist to enforce, both of which a client cannot be trusted with:
+
+- **The server grades.** `POST /api/attempts/practice` takes a `selectedAnswer` and looks the
+  correct one up itself; finalizing a mock runs `scoreAttempt` server-side and ignores any
+  `scoreSummary` in the body. A submitted attempt is final (409 on resubmit).
+- **The server prices.** A payment's amount comes from the plan or course being bought, and the
+  payer from the session — never from the request body. Verifying expands the plan through
+  `applyPlanGrants`, once, on the transition.
 
 ### Hydration
 

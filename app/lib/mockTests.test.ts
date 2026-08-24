@@ -162,4 +162,9 @@ test('scoreAttempt counts only real matches, and unanswered questions are wrong'
   assert.deepEqual(summary.domainBreakdown.algebra, { correct: 1, total: 2 });
   assert.deepEqual(summary.domainBreakdown.craft_structure, { correct: 0, total: 1 });
   assert.equal(summary.accuracyPercent, 33);
+  // 1/2 math and 0/1 reading — a section score has to land inside 200-800 and
+  // move with the ratio, not pin to the cap.
+  assert.ok(summary.mathScoreEstimated > 500 && summary.mathScoreEstimated < 600);
+  assert.equal(summary.rwScoreEstimated, 200);
+  assert.equal(summary.totalScoreEstimated, summary.mathScoreEstimated + 200);
 });

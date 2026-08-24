@@ -80,8 +80,11 @@ export function estimateSATScore(mathCorrect: number, mathTotal: number, rwCorre
   const rwRatio = rwTotal > 0 ? rwCorrect / rwTotal : 0;
 
   // Non-linear scaled score simulation reflecting standard SAT raw-to-scaled curves
-  const mathScaled = Math.round(200 + (600 * Math.pow(mathRatio, 0.95)) / 10) * 10;
-  const rwScaled = Math.round(200 + (600 * Math.pow(rwRatio, 0.95)) / 10) * 10;
+  // Rounded to the nearest 10, as the real scale is. The /10 and *10 belong
+  // around the whole score: inside, every ratio rounded up to the 800 cap and
+  // every attempt scored 1600.
+  const mathScaled = Math.round((200 + 600 * Math.pow(mathRatio, 0.95)) / 10) * 10;
+  const rwScaled = Math.round((200 + 600 * Math.pow(rwRatio, 0.95)) / 10) * 10;
 
   const boundedMath = Math.max(200, Math.min(800, mathScaled));
   const boundedRw = Math.max(200, Math.min(800, rwScaled));
