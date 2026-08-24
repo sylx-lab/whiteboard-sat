@@ -14,7 +14,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ content, text, class
     if (!rawText) return '';
 
     // 1. Convert inline double-dollar math embedded inside sentences into single inline math if surrounded by prose
-    let textToProcess = rawText;
+    const textToProcess = rawText;
 
     // Replace display math $$...$$
     let processed = textToProcess.replace(/\$\$([\s\S]*?)\$\$/g, (match, math, offset, fullString) => {

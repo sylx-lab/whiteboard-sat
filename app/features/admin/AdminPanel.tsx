@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+'use client';
+
+import React, { useState, useSyncExternalStore } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   PaymentSubmission,
   UserProfile,
@@ -11,7 +13,7 @@ import {
   ProductPlan,
 } from '../../types';
 import { Shield } from 'lucide-react';
-import { AdminSidebar, AdminSubPage } from './components/AdminSidebar';
+import { AdminSidebar, AdminSubPage, ADMIN_SUB_PAGES } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { PaymentReceiptModal } from './components/PaymentReceiptModal';
@@ -55,6 +57,13 @@ export interface AdminPanelProps {
   onDeleteMockTest: (id: string) => void;
 }
 
+/** Primary "create" action per page — kept next to the page title in the header. */
+const QUICK_ACTIONS: Partial<Record<AdminSubPage, { label: string; href: string }>> = {
+  questions: { label: 'New question', href: '/admin/questions/new' },
+  courses: { label: 'New course', href: '/admin/courses/new' },
+  resources: { label: 'New resource', href: '/admin/resources/new' },
+};
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   currentUser,
   payments,
@@ -63,7 +72,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   courses,
   resources,
   mockTests,
-  plans: _plans,
   onVerifyPayment,
   onRejectPayment,
   onUpdateUserAccess,
@@ -77,189 +85,158 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteMockTest,
 }) => {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  // The store hydrates from localStorage, so the first client render must wait
+  // for hydration to avoid a server/client mismatch.
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // The active page lives in the URL so browser back/forward and deep links work,
+  // and so the visual editors can return the author to the list they came from.
+  const tabParam = searchParams.get('tab');
+  const activeSubPage: AdminSubPage = ADMIN_SUB_PAGES.includes(tabParam as AdminSubPage)
+    ? (tabParam as AdminSubPage)
+    : 'overview';
 
-  // Page Navigation State
-  const [activeSubPage, setActiveSubPage] = useState<AdminSubPage>('overview');
+  const goToSubPage = (page: AdminSubPage) => {
+    router.push(page === 'overview' ? '/admin' : `/admin?tab=${page}`, { scroll: false });
+  };
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Inspector & Modal States
+  // Inspector & modal state
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
   const [inspectingPayment, setInspectingPayment] = useState<PaymentSubmission | null>(null);
-
-  // Mock Test Modal
   const [isMockModalOpen, setIsMockModalOpen] = useState(false);
   const [editingMockTest, setEditingMockTest] = useState<MockTest | null>(null);
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
-        <div className="text-xs font-mono font-bold text-slate-400 animate-pulse">Loading Admin Console...</div>
-      </div>
-    );
-  }
-
-  // Security Gate
-  if (currentUser?.role !== 'admin') {
-    return (
-      <div className="max-w-md mx-auto my-20 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-xl">
-        <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-          <Shield className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-slate-900">Admin Supervisor Access Only</h2>
-        <p className="text-xs text-slate-500">
-          You are signed in as a student profile. Switch to the Demo Admin account in the top-right menu to access the CMS Console.
-        </p>
-      </div>
-    );
-  }
-
-  // Summary Computations
-  const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
-  const verifiedPayments = payments.filter((p) => p.status === 'verified');
-  const totalVerifiedRevenue = verifiedPayments.reduce((sum, p) => sum + p.amount, 0);
-
-  // Quick Action Button Handler based on active subpage
-  const getQuickActionProps = () => {
-    switch (activeSubPage) {
-      case 'questions':
-        return {
-          label: 'Add Question Page',
-          handler: () => {
-            router.push('/admin/questions/new');
-          },
-        };
-      case 'courses':
-        return {
-          label: 'Add Course Page',
-          handler: () => {
-            router.push('/admin/courses/new');
-          },
-        };
-      case 'resources':
-        return {
-          label: 'Add Resource Page',
-          handler: () => {
-            router.push('/admin/resources/new');
-          },
-        };
-      case 'mock-tests':
-        return {
-          label: 'Add Mock Test',
-          handler: () => {
-            setEditingMockTest(null);
-            setIsMockModalOpen(true);
-          },
-        };
-      default:
-        return { label: undefined, handler: undefined };
-    }
+  const openNewMockTest = () => {
+    setEditingMockTest(null);
+    setIsMockModalOpen(true);
   };
 
-  const quickProps = getQuickActionProps();
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="text-[13px] text-[#58708A] animate-pulse">Loading admin console…</div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <div className="flex-1 flex overflow-hidden">
-        {/* Modular Sidebar */}
-        <AdminSidebar
-          activeSubPage={activeSubPage}
-          onSelectSubPage={(page) => setActiveSubPage(page)}
-          pendingPaymentsCount={pendingPaymentsCount}
-          totalUsersCount={users.length}
-          totalQuestionsCount={questions.length}
-          totalCoursesCount={courses.length}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        />
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50">
-          {/* Header */}
-          <AdminHeader
-            activeSubPage={activeSubPage}
-            totalRevenue={totalVerifiedRevenue}
-            quickActionLabel={quickProps.label}
-            onQuickAction={quickProps.handler}
-          />
-
-          {/* Dynamic Page Views */}
-          <main className="p-4 sm:p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto">
-            {activeSubPage === 'overview' && (
-              <OverviewView
-                payments={payments}
-                users={users}
-                courses={courses}
-                resources={resources}
-                mockTests={mockTests}
-                questions={questions}
-                onNavigateSubPage={(page) => setActiveSubPage(page)}
-              />
-            )}
-
-            {activeSubPage === 'payments' && (
-              <PaymentsView
-                payments={payments}
-                onVerifyPayment={onVerifyPayment}
-                onRejectPayment={onRejectPayment}
-                onInspectPayment={(p) => setInspectingPayment(p)}
-              />
-            )}
-
-            {activeSubPage === 'candidates' && (
-              <CandidatesView
-                users={users}
-                onInspectUser={(u) => setInspectingUser(u)}
-                onUpdateUserAccess={onUpdateUserAccess}
-                onToggleUserStatus={onToggleUserStatus}
-              />
-            )}
-
-            {activeSubPage === 'courses' && (
-              <CoursesView
-                courses={courses}
-                onDeleteCourse={onDeleteCourse}
-              />
-            )}
-
-            {activeSubPage === 'resources' && (
-              <ResourcesView
-                resources={resources}
-                onDeleteResource={onDeleteResource}
-              />
-            )}
-
-            {activeSubPage === 'mock-tests' && (
-              <MockTestsView
-                mockTests={mockTests}
-                onOpenAddMock={() => {
-                  setEditingMockTest(null);
-                  setIsMockModalOpen(true);
-                }}
-                onOpenEditMock={(m) => {
-                  setEditingMockTest(m);
-                  setIsMockModalOpen(true);
-                }}
-                onDeleteMock={onDeleteMockTest}
-              />
-            )}
-
-            {activeSubPage === 'questions' && (
-              <QuestionBankView
-                questions={questions}
-                onDeleteQuestion={onDeleteQuestion}
-                onAddQuestion={onAddQuestion}
-              />
-            )}
-          </main>
+  if (currentUser?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full p-8 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-base font-bold text-[#071126]">Admin access only</h1>
+            <p className="text-[13px] text-[#58708A] leading-relaxed">
+              You are signed in as a student. Switch to the admin account from the account menu in the
+              student app to open the console.
+            </p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* --- MODAL INSPECTORS & EDITORS --- */}
+  const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
+  const quickAction = QUICK_ACTIONS[activeSubPage];
+  const mockQuickAction = activeSubPage === 'mock-tests' ? { label: 'New mock test' } : undefined;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-[#071126] flex">
+      <AdminSidebar
+        activeSubPage={activeSubPage}
+        onSelectSubPage={goToSubPage}
+        currentUser={currentUser}
+        pendingPaymentsCount={pendingPaymentsCount}
+        totalUsersCount={users.length}
+        totalQuestionsCount={questions.length}
+        totalCoursesCount={courses.length}
+        totalResourcesCount={resources.length}
+        totalMockTestsCount={mockTests.length}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobileOpen={isMobileNavOpen}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
+      />
+
+      <div className="flex-1 min-w-0 flex flex-col">
+        <AdminHeader
+          activeSubPage={activeSubPage}
+          quickActionLabel={quickAction?.label ?? mockQuickAction?.label}
+          onQuickAction={
+            quickAction ? () => router.push(quickAction.href) : mockQuickAction ? openNewMockTest : undefined
+          }
+          onOpenMobileNav={() => setIsMobileNavOpen(true)}
+        />
+
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+          {activeSubPage === 'overview' && (
+            <OverviewView
+              payments={payments}
+              users={users}
+              courses={courses}
+              resources={resources}
+              mockTests={mockTests}
+              questions={questions}
+              onNavigateSubPage={goToSubPage}
+            />
+          )}
+
+          {activeSubPage === 'payments' && (
+            <PaymentsView
+              payments={payments}
+              onVerifyPayment={onVerifyPayment}
+              onRejectPayment={onRejectPayment}
+              onInspectPayment={setInspectingPayment}
+            />
+          )}
+
+          {activeSubPage === 'candidates' && (
+            <CandidatesView
+              users={users}
+              onInspectUser={setInspectingUser}
+              onUpdateUserAccess={onUpdateUserAccess}
+              onToggleUserStatus={onToggleUserStatus}
+            />
+          )}
+
+          {activeSubPage === 'courses' && <CoursesView courses={courses} onDeleteCourse={onDeleteCourse} />}
+
+          {activeSubPage === 'resources' && (
+            <ResourcesView resources={resources} onDeleteResource={onDeleteResource} />
+          )}
+
+          {activeSubPage === 'mock-tests' && (
+            <MockTestsView
+              mockTests={mockTests}
+              onOpenAddMock={openNewMockTest}
+              onOpenEditMock={(m) => {
+                setEditingMockTest(m);
+                setIsMockModalOpen(true);
+              }}
+              onDeleteMock={onDeleteMockTest}
+            />
+          )}
+
+          {activeSubPage === 'questions' && (
+            <QuestionBankView
+              questions={questions}
+              onDeleteQuestion={onDeleteQuestion}
+              onAddQuestion={onAddQuestion}
+            />
+          )}
+        </main>
+      </div>
+
       <StudentDetailModal
         user={inspectingUser}
         onClose={() => setInspectingUser(null)}
@@ -274,18 +251,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         onReject={onRejectPayment}
       />
 
+      {isMockModalOpen && (
       <MockTestEditorModal
+        key={editingMockTest?.id ?? 'new'}
         mockTest={editingMockTest}
-        isOpen={isMockModalOpen}
         onClose={() => setIsMockModalOpen(false)}
         onSave={(data) => {
           if (editingMockTest) {
-            onUpdateMockTest(editingMockTest.id, data);
+            onUpdateMockTest(editingMockTest.id, data as unknown as Partial<MockTest>);
           } else {
-            onAddMockTest(data);
+            onAddMockTest(data as unknown as Partial<MockTest> & { title: string });
           }
         }}
       />
+      )}
     </div>
   );
 };

@@ -2,25 +2,28 @@
 
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { ResourceItem } from '../../../types';
 import { useAppStore } from '../../../services/store';
 import { ResourceVisualEditor } from '../../../features/admin/components/ResourceVisualEditor';
+import { EditorNotFound } from '../../../features/admin/components/EditorShell';
 
 export default function EditResourcePage() {
   const store = useAppStore();
   const router = useRouter();
   const params = useParams();
-  const resId = params?.id as string;
+  const resourceId = params?.id as string;
 
-  const existingResource = store.resources.find((r) => r.id === resId) || null;
+  const resource = store.resources.find((r) => r.id === resourceId);
 
-  const handleSave = (resourceData: any) => {
-    if (existingResource) {
-      store.updateResource(existingResource.id, resourceData);
-    } else {
-      store.addResource(resourceData);
-    }
-    router.push('/admin');
-  };
+  if (!resource) return <EditorNotFound label="Resource" backTab="resources" />;
 
-  return <ResourceVisualEditor initialResource={existingResource} onSave={handleSave} />;
+  return (
+    <ResourceVisualEditor
+      initialResource={resource}
+      onSave={(data) => {
+        store.updateResource(resource.id, data as unknown as Partial<ResourceItem>);
+        router.push('/admin?tab=resources');
+      }}
+    />
+  );
 }

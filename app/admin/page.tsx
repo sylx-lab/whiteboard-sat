@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useAppStore } from '../services/store';
 import { AdminPanel } from '../features/admin/AdminPanel';
 
@@ -8,6 +8,7 @@ export default function AdminPage() {
   const store = useAppStore();
 
   return (
+    <Suspense fallback={null}>
     <AdminPanel
       currentUser={store.currentUser}
       payments={store.payments}
@@ -37,5 +38,6 @@ export default function AdminPage() {
       onUpdateMockTest={store.updateMockTest}
       onDeleteMockTest={store.deleteMockTest}
     />
+    </Suspense>
   );
 }

@@ -1,9 +1,38 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Domain, Subject, Difficulty } from "../types";
+import type { Domain, Subject, Difficulty } from "../types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/**
+ * The SAT domains in the order the College Board lists them. Category ordering in
+ * the admin bank, the editor's dropdowns, and the dashboard's domain stats all read
+ * from here, so they cannot drift apart.
+ */
+export const MATH_DOMAINS: Domain[] = [
+  'algebra',
+  'advanced_math',
+  'problem_solving_data_analysis',
+  'geometry_trigonometry',
+];
+
+export const READING_WRITING_DOMAINS: Domain[] = [
+  'information_ideas',
+  'craft_structure',
+  'expression_ideas',
+  'standard_english_conventions',
+];
+
+export const ALL_DOMAINS: Domain[] = [...MATH_DOMAINS, ...READING_WRITING_DOMAINS];
+
+export function domainsForSubject(subject: Subject): Domain[] {
+  return subject === 'math' ? MATH_DOMAINS : READING_WRITING_DOMAINS;
+}
+
+export function formatSubjectName(subject: Subject): string {
+  return subject === 'math' ? 'Math' : 'Reading & Writing';
 }
 
 export function formatDomainName(domain: Domain): string {
@@ -21,13 +50,7 @@ export function formatDomainName(domain: Domain): string {
 }
 
 export function getDomainSubject(domain: Domain): Subject {
-  const mathDomains: Domain[] = [
-    'algebra',
-    'advanced_math',
-    'problem_solving_data_analysis',
-    'geometry_trigonometry',
-  ];
-  return mathDomains.includes(domain) ? 'math' : 'reading_writing';
+  return MATH_DOMAINS.includes(domain) ? 'math' : 'reading_writing';
 }
 
 export function formatTime(seconds: number): string {

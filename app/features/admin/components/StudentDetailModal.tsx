@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import { UserProfile } from '../../../types';
-import { User, Phone, Award } from 'lucide-react';
+import { User } from 'lucide-react';
+import { Modal, Button, Pill } from './ui';
 
 interface StudentDetailModalProps {
   user: UserProfile | null;
@@ -8,6 +11,38 @@ interface StudentDetailModalProps {
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
 }
+
+const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-3 text-[13px]">
+    <span className="text-[#58708A]">{label}</span>
+    <span className="text-[#071126] font-medium text-right">{children}</span>
+  </div>
+);
+
+/** One grantable pass. Revoking asks for confirmation; granting does not. */
+const AccessToggle: React.FC<{
+  title: string;
+  description: string;
+  granted: boolean;
+  onToggle: () => void;
+  userName: string;
+}> = ({ title, description, granted, onToggle, userName }) => (
+  <div className="p-3.5 rounded-xl bg-[#F8FBFB] border border-[#E2E8F0] flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <div className="text-[13px] font-semibold text-[#071126]">{title}</div>
+      <div className="text-[12px] text-[#58708A] leading-relaxed">{description}</div>
+    </div>
+    <Button
+      variant={granted ? 'danger' : 'primary'}
+      onClick={() => {
+        if (!granted || confirm(`Revoke ${userName}'s ${title.toLowerCase()}?`)) onToggle();
+      }}
+      className="shrink-0"
+    >
+      {granted ? 'Revoke' : 'Grant'}
+    </Button>
+  </div>
+);
 
 export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   user,
@@ -17,153 +52,85 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 }) => {
   if (!user) return null;
 
+  const isActive = user.status !== 'suspended' && !user.isSuspended;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 bg-[#0D918A] text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center font-bold text-base">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-white">{user.name}</h3>
-              <p className="text-[11px] text-teal-100 font-mono">ID: {user.id}</p>
-            </div>
-          </div>
-
-          <button onClick={onClose} className="text-teal-100 hover:text-white cursor-pointer font-bold">
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-6 text-xs overflow-y-auto">
-          {/* Roster Information Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                <Phone className="w-3 h-3 text-[#0D918A]" />
-                <span>Contact Phone</span>
-              </div>
-              <div className="font-mono font-bold text-slate-900 text-sm">{user.phone}</div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                <Award className="w-3 h-3 text-teal-600" />
-                <span>SAT Target Score</span>
-              </div>
-              <div className="font-mono font-black text-[#0D918A] text-sm">
-                {user.targetScore} / 1600
-              </div>
-            </div>
-          </div>
-
-          {/* Account Details */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="font-semibold">Email:</span>
-              <span className="font-mono font-medium">{user.email || 'None registered'}</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="font-semibold">Account Role:</span>
-              <span className="font-bold uppercase text-[#0D918A]">{user.role}</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="font-semibold">Registered On:</span>
-              <span className="font-mono">{user.createdAt}</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="font-semibold">Account Status:</span>
-              <span className={`font-extrabold uppercase px-2 py-0.5 rounded text-[10px] ${user.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                {user.status || 'active'}
-              </span>
-            </div>
-          </div>
-
-          {/* Access Controls */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-              Access Privileges & Pass Grants
-            </h4>
-
-            <div className="space-y-2">
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900">Full Master Pass (All Access)</div>
-                  <div className="text-[10px] text-slate-500">Unlocks all courses, mock tests, and questions</div>
-                </div>
-                <button
-                  onClick={() => onUpdateUserAccess(user.id, { fullPremium: !user.access.fullPremium })}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
-                    user.access.fullPremium
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                      : 'bg-[#0D918A] text-white hover:bg-[#087C76]'
-                  }`}
-                >
-                  {user.access.fullPremium ? 'Revoke Pass' : 'Grant Pass'}
-                </button>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900">Premium Math Pass</div>
-                  <div className="text-[10px] text-slate-500">Unlocks all Math bank questions and courses</div>
-                </div>
-                <button
-                  onClick={() => onUpdateUserAccess(user.id, { premiumMath: !user.access.premiumMath })}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
-                    user.access.premiumMath
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                  }`}
-                >
-                  {user.access.premiumMath ? 'Revoke' : 'Grant'}
-                </button>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900">Premium Reading & Writing Pass</div>
-                  <div className="text-[10px] text-slate-500">Unlocks all Verbal questions and courses</div>
-                </div>
-                <button
-                  onClick={() => onUpdateUserAccess(user.id, { premiumReadingWriting: !user.access.premiumReadingWriting })}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
-                    user.access.premiumReadingWriting
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                      : 'bg-teal-600 text-white hover:bg-teal-700'
-                  }`}
-                >
-                  {user.access.premiumReadingWriting ? 'Revoke' : 'Grant'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-          <button
-            onClick={() => onToggleUserStatus(user.id)}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs cursor-pointer ${
-              user.status === 'active'
-                ? 'bg-rose-100 text-rose-800 hover:bg-rose-200'
-                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-            }`}
+    <Modal
+      title={user.name}
+      subtitle={user.email || user.phone}
+      icon={User}
+      onClose={onClose}
+      footer={
+        <>
+          <Button
+            variant={isActive ? 'danger' : 'primary'}
+            onClick={() => {
+              if (
+                !isActive ||
+                confirm(`Suspend ${user.name}? They will not be able to sign in until reactivated.`)
+              ) {
+                onToggleUserStatus(user.id);
+              }
+            }}
+            className="mr-auto"
           >
-            {user.status === 'active' ? 'Suspend Account' : 'Reactivate Account'}
-          </button>
-
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 cursor-pointer"
-          >
-            Close
-          </button>
+            {isActive ? 'Suspend account' : 'Reactivate account'}
+          </Button>
+          <Button onClick={onClose}>Close</Button>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        <div className="p-4 rounded-xl bg-[#F8FBFB] border border-[#E2E8F0] space-y-2.5">
+          <DetailRow label="Phone">
+            <span className="font-mono">{user.phone}</span>
+          </DetailRow>
+          <DetailRow label="Email">{user.email || 'None on file'}</DetailRow>
+          <DetailRow label="Target score">
+            <span className="font-mono text-[#087C76] font-semibold tabular-nums">
+              {user.targetScore} / 1600
+            </span>
+          </DetailRow>
+          {user.examDate && <DetailRow label="Exam date">{user.examDate}</DetailRow>}
+          <DetailRow label="Registered">{user.createdAt}</DetailRow>
+          <DetailRow label="Role">
+            <span className="capitalize">{user.role}</span>
+          </DetailRow>
+          <DetailRow label="Status">
+            <Pill tone={isActive ? 'success' : 'danger'}>{isActive ? 'active' : 'suspended'}</Pill>
+          </DetailRow>
         </div>
+
+        <section className="space-y-2">
+          <h3 className="text-[13px] font-bold text-[#071126]">Access passes</h3>
+
+          <AccessToggle
+            title="Full master pass"
+            description="All courses, mock tests, and questions."
+            granted={user.access.fullPremium}
+            userName={user.name}
+            onToggle={() => onUpdateUserAccess(user.id, { fullPremium: !user.access.fullPremium })}
+          />
+          <AccessToggle
+            title="Math pass"
+            description="Every Math question and the Math courses."
+            granted={user.access.premiumMath}
+            userName={user.name}
+            onToggle={() => onUpdateUserAccess(user.id, { premiumMath: !user.access.premiumMath })}
+          />
+          <AccessToggle
+            title="Reading & Writing pass"
+            description="Every verbal question and the verbal courses."
+            granted={user.access.premiumReadingWriting}
+            userName={user.name}
+            onToggle={() =>
+              onUpdateUserAccess(user.id, {
+                premiumReadingWriting: !user.access.premiumReadingWriting,
+              })
+            }
+          />
+        </section>
       </div>
-    </div>
+    </Modal>
   );
 };

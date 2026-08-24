@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import { PaymentSubmission } from '../../../types';
 import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
+import { Modal, Button, Pill } from './ui';
 
 interface PaymentReceiptModalProps {
   payment: PaymentSubmission | null;
@@ -8,6 +11,13 @@ interface PaymentReceiptModalProps {
   onVerify: (paymentId: string) => void;
   onReject: (paymentId: string) => void;
 }
+
+const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-3 text-[13px]">
+    <span className="text-[#58708A]">{label}</span>
+    <span className="text-[#071126] font-medium text-right">{children}</span>
+  </div>
+);
 
 export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   payment,
@@ -17,114 +27,92 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
 }) => {
   if (!payment) return null;
 
+  const submittedAt = payment.submittedAt || payment.createdAt;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 bg-[#0D918A] text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center font-bold">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-white">Payment Receipt Inspection</h3>
-              <p className="text-[11px] font-mono text-teal-100">{payment.id}</p>
-            </div>
-          </div>
-
-          <button onClick={onClose} className="text-teal-100 hover:text-white cursor-pointer font-bold">
-            ✕
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-4 text-xs">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-semibold">Candidate Name:</span>
-              <span className="font-bold text-slate-900 text-sm">{payment.userName}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-semibold">Sender Phone:</span>
-              <span className="font-mono font-bold text-slate-800">{payment.senderPhoneNumber}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-semibold">Product Title:</span>
-              <span className="font-bold text-[#0D918A]">{payment.productTitle}</span>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-slate-200 pt-2">
-              <span className="text-slate-500 font-semibold">Amount Received:</span>
-              <span className="font-mono text-lg font-black text-emerald-600">
-                ৳{payment.amount.toLocaleString()} BDT
-              </span>
-            </div>
-          </div>
-
-          {/* Reference & Channel Card */}
-          <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-teal-900 font-bold uppercase text-[11px]">
-                Payment Channel: {payment.paymentMethod}
-              </span>
-            </div>
-            <div className="font-mono font-black text-[#0D918A] text-base">
-              Ref TRX ID: {payment.referenceNumber}
-            </div>
-            {payment.notes && (
-              <div className="text-[11px] text-teal-800 italic">
-                "{payment.notes}"
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-slate-500 text-[11px] font-mono">
-            <span>Submitted: {new Date(payment.submittedAt || payment.createdAt || '').toLocaleString()}</span>
-            <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
-              payment.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-            }`}>
-              {payment.status}
-            </span>
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
-          {payment.status === 'pending' ? (
-            <>
-              <button
-                onClick={() => {
+    <Modal
+      title="Payment receipt"
+      subtitle={payment.id}
+      icon={CreditCard}
+      onClose={onClose}
+      maxWidth="max-w-md"
+      footer={
+        payment.status === 'pending' ? (
+          <>
+            <Button
+              variant="danger"
+              icon={XCircle}
+              onClick={() => {
+                if (confirm(`Reject ${payment.userName}'s payment of ৳${payment.amount.toLocaleString()}?`)) {
                   onReject(payment.id);
                   onClose();
-                }}
-                className="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1"
-              >
-                <XCircle className="w-4 h-4" />
-                <span>Reject</span>
-              </button>
-              <button
-                onClick={() => {
-                  onVerify(payment.id);
-                  onClose();
-                }}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Verify & Activate Pass</span>
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 text-xs cursor-pointer"
+                }
+              }}
             >
-              Close
-            </button>
+              Reject
+            </Button>
+            <Button
+              variant="primary"
+              icon={CheckCircle2}
+              onClick={() => {
+                onVerify(payment.id);
+                onClose();
+              }}
+            >
+              Verify &amp; grant access
+            </Button>
+          </>
+        ) : (
+          <Button onClick={onClose}>Close</Button>
+        )
+      }
+    >
+      <div className="space-y-4">
+        <div className="p-4 rounded-xl bg-[#F8FBFB] border border-[#E2E8F0] space-y-2.5">
+          <DetailRow label="Student">{payment.userName}</DetailRow>
+          <DetailRow label="Sender phone">
+            <span className="font-mono">{payment.senderPhoneNumber}</span>
+          </DetailRow>
+          <DetailRow label="Plan">{payment.productTitle}</DetailRow>
+          <div className="pt-2.5 border-t border-[#E2E8F0]">
+            <DetailRow label="Amount">
+              <span className="font-mono text-base font-bold text-[#071126] tabular-nums">
+                ৳{payment.amount.toLocaleString()}
+              </span>
+            </DetailRow>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-[#F1F8F7] border border-[#E2E8F0] space-y-2">
+          <div className="text-[12px] font-semibold text-[#58708A]">
+            {payment.paymentMethod} reference
+          </div>
+          <div className="font-mono text-[15px] font-bold text-[#087C76] break-all">
+            {payment.referenceNumber}
+          </div>
+          {payment.notes && (
+            <p className="text-[12px] text-[#58708A] leading-relaxed pt-1">“{payment.notes}”</p>
           )}
         </div>
+
+        <div className="flex items-center justify-between gap-2 text-[12px] text-[#58708A]">
+          <span>{submittedAt ? new Date(submittedAt).toLocaleString() : 'No timestamp'}</span>
+          <Pill
+            tone={
+              payment.status === 'verified' ? 'success' : payment.status === 'pending' ? 'warning' : 'danger'
+            }
+          >
+            {payment.status || 'pending'}
+          </Pill>
+        </div>
+
+        {payment.reviewedBy && (
+          <p className="text-[12px] text-[#58708A]">
+            Reviewed by {payment.reviewedBy}
+            {payment.reviewedAt ? ` on ${new Date(payment.reviewedAt).toLocaleDateString()}` : ''}.
+          </p>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };

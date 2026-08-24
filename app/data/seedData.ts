@@ -1,4 +1,4 @@
-import { Question, Course, ResourceItem, ProductPlan, MockTest, UserProfile } from '../types';
+import type { Question, Course, ResourceItem, ProductPlan, MockTest, UserProfile } from '../types';
 
 export const INITIAL_QUESTIONS: Question[] = [
   // --- MATH: ALGEBRA ---

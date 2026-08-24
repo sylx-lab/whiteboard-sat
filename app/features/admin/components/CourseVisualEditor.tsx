@@ -1,565 +1,553 @@
+'use client';
+
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Course, Subject, Lesson } from '../../../types';
 import {
-  ArrowLeft,
   BookOpen,
   Video,
   Plus,
   Trash2,
-  Edit3,
   CheckCircle2,
   Eye,
-  Sparkles,
   Play,
   Layers,
-  Save,
+  ChevronUp,
+  ChevronDown,
+  Pencil,
+  Check,
 } from 'lucide-react';
+import {
+  EditorShell,
+  EditorPanes,
+  EditorSection,
+  Field,
+  inputClass,
+  textareaClass,
+} from './EditorShell';
+import { Pill, IconAction, Button } from './ui';
 
 interface CourseVisualEditorProps {
   initialCourse?: Course | null;
-  onSave: (courseData: any) => void;
-  onAddLesson?: (courseId: string, lessonData: any) => void;
-  onUpdateLesson?: (courseId: string, lessonId: string, lessonData: any) => void;
-  onDeleteLesson?: (courseId: string, lessonId: string) => void;
+  onSave: (courseData: Record<string, unknown>) => void;
 }
 
-export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({
-  initialCourse,
-  onSave,
-}) => {
-  // Metadata Form State
-  const [title, setTitle] = useState(initialCourse?.title || 'SAT Math 800: Masterclass');
-  const [subtitle, setSubtitle] = useState(initialCourse?.subtitle || 'Complete Digital SAT Math Strategy & System');
-  const [description, setDescription] = useState(
-    initialCourse?.description ||
-      'Comprehensive preparation for Digital SAT Math covering Algebra, Advanced Math, Problem-Solving, and Geometry with Desmos graphing calculator hacks.'
+interface FormState {
+  title: string;
+  subtitle: string;
+  description: string;
+  subject: Subject | 'both';
+  level: Course['level'];
+  price: number;
+  originalPrice: number;
+  badge: string;
+  features: string;
+  isPublished: boolean;
+}
+
+/** New courses start empty, with no placeholder lessons to clean up. */
+const blankForm = (): FormState => ({
+  title: '',
+  subtitle: '',
+  description: '',
+  subject: 'math',
+  level: 'All Levels',
+  price: 0,
+  originalPrice: 0,
+  badge: '',
+  features: '',
+  isPublished: false,
+});
+
+export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialCourse, onSave }) => {
+  const [form, setForm] = useState<FormState>(() =>
+    initialCourse
+      ? {
+          title: initialCourse.title,
+          subtitle: initialCourse.subtitle,
+          description: initialCourse.description,
+          subject: initialCourse.subject,
+          level: initialCourse.level,
+          price: initialCourse.price,
+          originalPrice: initialCourse.originalPrice,
+          badge: initialCourse.badge || '',
+          features: initialCourse.features.join('\n'),
+          isPublished: initialCourse.is_published,
+        }
+      : blankForm()
   );
-  const [subject, setSubject] = useState<Subject | 'both'>(initialCourse?.subject || 'math');
-  const [level, setLevel] = useState<'All Levels' | 'Intermediate' | 'Advanced 1500+'>(
-    initialCourse?.level || 'All Levels'
-  );
-  const [price, setPrice] = useState(initialCourse?.price || 3500);
-  const [originalPrice, setOriginalPrice] = useState(initialCourse?.originalPrice || 5000);
-  const [badge, setBadge] = useState(initialCourse?.badge || 'Best Seller');
-  const [features, setFeatures] = useState(
-    initialCourse?.features.join('\n') ||
-      'Full HD Video Breakdowns\nTargeted Diagnostic Quizzes\nFormula Cheat Sheets\nDesmos Hacks'
-  );
-  const [isPublished, setIsPublished] = useState(initialCourse?.is_published ?? true);
-
-  // Lessons Hierarchy State
-  const [lessons, setLessons] = useState<Lesson[]>(
-    initialCourse?.lessons || [
-      {
-        id: 'les-1',
-        courseId: initialCourse?.id || 'new',
-        title: 'Lesson 1: Digital SAT Math Blueprint & Timing Protocol',
-        description: 'Module structure breakdown, pacing rules, and high-yield topic distribution.',
-        durationMinutes: 18,
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        isFreePreview: true,
-        order: 1,
-      },
-      {
-        id: 'les-2',
-        courseId: initialCourse?.id || 'new',
-        title: 'Lesson 2: Desmos Speed Graphing & System Hacks',
-        description: 'How to solve 40% of SAT Math questions directly inside Desmos without pencil algebra.',
-        durationMinutes: 24,
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        isFreePreview: false,
-        order: 2,
-      },
-    ]
+  const [lessons, setLessons] = useState<Lesson[]>(initialCourse?.lessons || []);
+  const [isDirty, setIsDirty] = useState(false);
+  // Lessons are edited in place, so there is no mirror state to fall out of sync.
+  const [openLessonId, setOpenLessonId] = useState<string | null>(null);
+  const [previewLessonId, setPreviewLessonId] = useState<string | null>(
+    initialCourse?.lessons?.[0]?.id ?? null
   );
 
-  // Lesson Edit Sub-State
-  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
-  const [lesTitle, setLesTitle] = useState('');
-  const [lesDesc, setLesDesc] = useState('');
-  const [lesDuration, setLesDuration] = useState(15);
-  const [lesVideoUrl, setLesVideoUrl] = useState('https://www.youtube.com/embed/dQw4w9WgXcQ');
-  const [lesFreePreview, setLesFreePreview] = useState(false);
-  const [activePreviewLessonId, setActivePreviewLessonId] = useState<string | null>('les-1');
-
-  const handleSaveAll = (e: React.FormEvent) => {
-    e.preventDefault();
-    const featList = features.split('\n').map((f) => f.trim()).filter(Boolean);
-
-    const payload = {
-      id: initialCourse?.id,
-      title: title.trim(),
-      slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      subtitle: subtitle.trim(),
-      description: description.trim(),
-      subject,
-      level,
-      price: Number(price),
-      originalPrice: Number(originalPrice),
-      badge: badge.trim(),
-      features: featList,
-      is_published: isPublished,
-      lessonsCount: lessons.length,
-      totalHours: Math.round((lessons.reduce((sum, l) => sum + l.durationMinutes, 0) / 60) * 10) / 10,
-      lessons,
-    };
-
-    onSave(payload);
+  const update = (patch: Partial<FormState>) => {
+    setForm((prev) => ({ ...prev, ...patch }));
+    setIsDirty(true);
   };
 
-  const handleAddLessonBlock = () => {
-    const newLes: Lesson = {
+  const updateLesson = (id: string, patch: Partial<Lesson>) => {
+    setLessons((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setIsDirty(true);
+  };
+
+  const addLesson = () => {
+    const newLesson: Lesson = {
       id: `les-${Date.now()}`,
       courseId: initialCourse?.id || 'new',
-      title: `Lesson ${lessons.length + 1}: Core Strategy Module`,
-      description: 'Step-by-step diagnostic breakdown and formula applications.',
+      title: '',
+      description: '',
       durationMinutes: 15,
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      isFreePreview: false,
+      videoUrl: '',
+      isFreePreview: lessons.length === 0, // first lesson defaults to a free preview
       order: lessons.length + 1,
     };
-    setLessons([...lessons, newLes]);
-    setEditingLessonId(newLes.id);
-    setLesTitle(newLes.title);
-    setLesDesc(newLes.description);
-    setLesDuration(newLes.durationMinutes);
-    setLesVideoUrl(newLes.videoUrl || '');
-    setLesFreePreview(newLes.isFreePreview);
+    setLessons((prev) => [...prev, newLesson]);
+    setOpenLessonId(newLesson.id);
+    setPreviewLessonId(newLesson.id);
+    setIsDirty(true);
   };
 
-  const handleSaveLessonBlock = () => {
-    if (!editingLessonId) return;
-    setLessons(
-      lessons.map((l) =>
-        l.id === editingLessonId
-          ? {
-              ...l,
-              title: lesTitle.trim(),
-              description: lesDesc.trim(),
-              durationMinutes: Number(lesDuration),
-              videoUrl: lesVideoUrl.trim(),
-              isFreePreview: lesFreePreview,
-            }
-          : l
-      )
-    );
-    setEditingLessonId(null);
+  const deleteLesson = (id: string) => {
+    const lesson = lessons.find((l) => l.id === id);
+    if (!confirm(`Remove lesson “${lesson?.title || 'Untitled'}” from this course?`)) return;
+    setLessons((prev) => prev.filter((l) => l.id !== id).map((l, i) => ({ ...l, order: i + 1 })));
+    if (previewLessonId === id) setPreviewLessonId(null);
+    setIsDirty(true);
   };
 
-  const handleDeleteLessonBlock = (id: string) => {
-    setLessons(lessons.filter((l) => l.id !== id));
+  /** Move a lesson one slot up or down and renumber, so curriculum order is editable. */
+  const moveLesson = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= lessons.length) return;
+    const next = [...lessons];
+    [next[index], next[target]] = [next[target], next[index]];
+    setLessons(next.map((l, i) => ({ ...l, order: i + 1 })));
+    setIsDirty(true);
   };
 
-  const previewLesson = lessons.find((l) => l.id === activePreviewLessonId) || lessons[0];
+  const totalMinutes = lessons.reduce((sum, l) => sum + (Number(l.durationMinutes) || 0), 0);
+  const featureList = form.features
+    .split('\n')
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsDirty(false);
+    onSave({
+      id: initialCourse?.id,
+      title: form.title.trim(),
+      slug: form.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      subtitle: form.subtitle.trim(),
+      description: form.description.trim(),
+      subject: form.subject,
+      level: form.level,
+      difficulty: form.level,
+      price: Number(form.price),
+      originalPrice: Number(form.originalPrice),
+      badge: form.badge.trim(),
+      features: featureList,
+      is_published: form.isPublished,
+      lessonsCount: lessons.length,
+      totalHours: Math.round((totalMinutes / 60) * 10) / 10,
+      lessons: lessons.map((l, i) => ({ ...l, order: i + 1 })),
+    });
+  };
+
+  const previewLesson = lessons.find((l) => l.id === previewLessonId) || lessons[0];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Top Visual Editor Bar */}
-      <div className="bg-[#0D918A] text-white px-6 py-4 border-b border-teal-800 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <div className="text-[10px] text-teal-100 font-bold uppercase tracking-wider">
-              Visual Course & Curriculum Editor
-            </div>
-            <h1 className="text-lg font-extrabold tracking-tight text-white">
-              {initialCourse ? `Editing: ${title}` : 'Create New Master Course'}
-            </h1>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs font-bold bg-teal-800/60 px-3 py-1.5 rounded-xl border border-teal-200/30 text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPublished}
-              onChange={(e) => setIsPublished(e.target.checked)}
-              className="w-4 h-4 rounded text-[#0D918A]"
-            />
-            <span>Published Status</span>
-          </label>
-
-          <button
-            onClick={handleSaveAll}
-            className="px-5 py-2.5 bg-white text-[#0D918A] hover:bg-teal-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Course & Curriculum</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Split-Pane Workspace */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* LEFT PANE: Metadata & Visual Curriculum Blocks */}
-        <div className="w-full lg:w-1/2 p-6 overflow-y-auto space-y-6 border-r border-slate-200">
-          {/* Metadata Section Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4 shadow-xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0D918A] uppercase tracking-wider">
-              <BookOpen className="w-4 h-4" />
-              <span>1. Course Metadata & Pricing</span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Course Title</label>
+    <EditorShell
+      eyebrow="Courses"
+      title={initialCourse ? `Edit ${initialCourse.title}` : 'New course'}
+      backTab="courses"
+      formId="course-form"
+      saveLabel={initialCourse ? 'Save changes' : 'Save course'}
+      isDirty={isDirty}
+    >
+      <EditorPanes
+        form={
+          <form id="course-form" onSubmit={handleSubmit} className="space-y-4">
+            <EditorSection icon={BookOpen} title="Course details">
+              <Field label="Title">
                 <input
                   type="text"
                   required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D918A]"
+                  value={form.title}
+                  onChange={(e) => update({ title: e.target.value })}
+                  placeholder="SAT Math 800 Masterclass"
+                  className={inputClass}
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Subtitle</label>
+              <Field label="Subtitle">
                 <input
                   type="text"
                   required
-                  value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-xl text-xs"
+                  value={form.subtitle}
+                  onChange={(e) => update({ subtitle: e.target.value })}
+                  placeholder="Complete Digital SAT Math strategy"
+                  className={inputClass}
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Description</label>
+              <Field label="Description">
                 <textarea
                   rows={3}
                   required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-xl text-xs"
+                  value={form.description}
+                  onChange={(e) => update({ description: e.target.value })}
+                  placeholder="What the course covers and who it is for."
+                  className={textareaClass}
                 />
-              </div>
+              </Field>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Subject</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Subject">
                   <select
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-medium"
+                    value={form.subject}
+                    onChange={(e) => update({ subject: e.target.value as Subject | 'both' })}
+                    className={inputClass}
                   >
                     <option value="math">Math</option>
-                    <option value="reading_writing">Reading & Writing</option>
-                    <option value="both">Both Subjects</option>
+                    <option value="reading_writing">Reading &amp; Writing</option>
+                    <option value="both">Both subjects</option>
                   </select>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Level</label>
+                <Field label="Level">
                   <select
-                    value={level}
-                    onChange={(e) => setLevel(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-medium"
+                    value={form.level}
+                    onChange={(e) => update({ level: e.target.value as Course['level'] })}
+                    className={inputClass}
                   >
-                    <option value="All Levels">All Levels</option>
+                    <option value="All Levels">All levels</option>
                     <option value="Intermediate">Intermediate</option>
                     <option value="Advanced 1500+">Advanced 1500+</option>
                   </select>
-                </div>
+                </Field>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Price (৳ BDT)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Field label="Price (৳)">
                   <input
                     type="number"
                     required
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-mono"
+                    min={0}
+                    value={form.price}
+                    onChange={(e) => update({ price: Number(e.target.value) })}
+                    className={`${inputClass} font-mono`}
                   />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Original Price</label>
+                </Field>
+                <Field label="Original price (৳)">
                   <input
                     type="number"
                     required
-                    value={originalPrice}
-                    onChange={(e) => setOriginalPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-mono"
+                    min={0}
+                    value={form.originalPrice}
+                    onChange={(e) => update({ originalPrice: Number(e.target.value) })}
+                    className={`${inputClass} font-mono`}
                   />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Badge</label>
+                </Field>
+                <Field label="Badge" hint="Optional">
                   <input
                     type="text"
-                    value={badge}
-                    onChange={(e) => setBadge(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl"
+                    value={form.badge}
+                    onChange={(e) => update({ badge: e.target.value })}
+                    placeholder="Best seller"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Key Features (One per line)</label>
+              <Field label="What's included" hint="One item per line">
                 <textarea
-                  rows={3}
-                  value={features}
-                  onChange={(e) => setFeatures(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-mono text-xs"
+                  rows={4}
+                  value={form.features}
+                  onChange={(e) => update({ features: e.target.value })}
+                  placeholder={'Full HD video breakdowns\nDiagnostic quizzes\nFormula cheat sheets'}
+                  className={`${textareaClass} font-mono`}
                 />
-              </div>
-            </div>
-          </div>
+              </Field>
 
-          {/* Curriculum Lesson Blocks Section Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#0D918A] uppercase tracking-wider">
-                <Layers className="w-4 h-4" />
-                <span>2. Curriculum Video Lesson Blocks ({lessons.length})</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleAddLessonBlock}
-                className="px-3.5 py-1.5 bg-[#0D918A] hover:bg-[#087C76] text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Lesson Block</span>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {lessons.map((les, index) => (
-                <div
-                  key={les.id}
-                  className={`p-4 rounded-2xl border transition-all ${
-                    les.id === activePreviewLessonId
-                      ? 'bg-teal-50/60 border-[#0D918A]'
-                      : 'bg-slate-50 border-slate-200'
-                  }`}
+              <Field label="Visibility">
+                <select
+                  value={form.isPublished ? 'published' : 'draft'}
+                  onChange={(e) => update({ isPublished: e.target.value === 'published' })}
+                  className={inputClass}
                 >
-                  {editingLessonId === les.id ? (
-                    /* Inline Lesson Editor */
-                    <div className="space-y-3 text-xs bg-white p-4 rounded-xl border border-teal-200">
-                      <div className="font-bold text-slate-900">Editing Lesson #{index + 1}</div>
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">Lesson Title</label>
-                        <input
-                          type="text"
-                          value={lesTitle}
-                          onChange={(e) => setLesTitle(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">Description</label>
-                        <textarea
-                          rows={2}
-                          value={lesDesc}
-                          onChange={(e) => setLesDesc(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Duration (Mins)</label>
-                          <input
-                            type="number"
-                            value={lesDuration}
-                            onChange={(e) => setLesDuration(Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Stream URL / Embed</label>
-                          <input
-                            type="text"
-                            value={lesVideoUrl}
-                            onChange={(e) => setLesVideoUrl(e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-[11px]"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`freePrev-${les.id}`}
-                          checked={lesFreePreview}
-                          onChange={(e) => setLesFreePreview(e.target.checked)}
-                          className="w-4 h-4 text-[#0D918A]"
-                        />
-                        <label htmlFor={`freePrev-${les.id}`} className="font-bold text-slate-700">
-                          Free Preview Lesson
-                        </label>
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setEditingLessonId(null)}
-                          className="px-3 py-1.5 border border-slate-300 rounded-xl font-bold text-slate-700"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSaveLessonBlock}
-                          className="px-4 py-1.5 bg-[#0D918A] text-white font-bold rounded-xl"
-                        >
-                          Update Block
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Lesson Summary Card */
-                    <div className="flex items-center justify-between gap-4">
-                      <div
-                        className="space-y-1 cursor-pointer flex-1"
-                        onClick={() => setActivePreviewLessonId(les.id)}
-                      >
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <span className="w-5 h-5 rounded-full bg-teal-100 text-[#0D918A] flex items-center justify-center text-[10px] font-mono">
-                            {index + 1}
-                          </span>
-                          <span>{les.title}</span>
-                          {les.isFreePreview && (
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] rounded font-bold">
-                              Free Preview
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-500 line-clamp-1">{les.description}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{les.durationMinutes} mins • {les.videoUrl}</div>
-                      </div>
+                  <option value="draft">Draft — hidden from students</option>
+                  <option value="published">Published — visible in the catalog</option>
+                </select>
+              </Field>
+            </EditorSection>
 
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setActivePreviewLessonId(les.id)}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                            les.id === activePreviewLessonId ? 'text-[#0D918A] bg-white shadow-xs' : 'text-slate-400 hover:text-slate-600'
+            <EditorSection
+              icon={Layers}
+              title={`Curriculum (${lessons.length})`}
+              hint={totalMinutes > 0 ? `${Math.round((totalMinutes / 60) * 10) / 10} hrs total` : undefined}
+            >
+              {lessons.length === 0 ? (
+                <div className="py-8 text-center space-y-3">
+                  <p className="text-[13px] text-[#58708A]">
+                    No lessons yet. A course needs at least one lesson before students can start it.
+                  </p>
+                  <Button type="button" variant="primary" icon={Plus} onClick={addLesson}>
+                    Add first lesson
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <ol className="space-y-2">
+                    {lessons.map((les, index) => {
+                      const isOpen = openLessonId === les.id;
+                      const isPreviewing = previewLessonId === les.id;
+
+                      return (
+                        <li
+                          key={les.id}
+                          className={`rounded-xl border transition-colors ${
+                            isPreviewing ? 'bg-[#F1F8F7] border-[#0D918A]' : 'bg-[#F8FBFB] border-[#E2E8F0]'
                           }`}
-                          title="Preview in Visual Player"
                         >
-                          <Play className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingLessonId(les.id);
-                            setLesTitle(les.title);
-                            setLesDesc(les.description);
-                            setLesDuration(les.durationMinutes);
-                            setLesVideoUrl(les.videoUrl || '');
-                            setLesFreePreview(les.isFreePreview);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-[#0D918A] rounded-lg cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteLessonBlock(les.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                          <div className="p-3 flex items-start gap-2">
+                            <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] text-[#58708A] grid place-items-center text-[11px] font-mono font-bold shrink-0 mt-0.5">
+                              {index + 1}
+                            </span>
 
-        {/* RIGHT PANE: Real-Time Interactive Visual Canvas & Player */}
-        <div className="w-full lg:w-1/2 p-6 bg-slate-100 overflow-y-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0D918A] uppercase tracking-wider">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewLessonId(les.id)}
+                              className="flex-1 min-w-0 text-left cursor-pointer"
+                            >
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[13px] font-semibold text-[#071126]">
+                                  {les.title || <span className="text-[#58708A]">Untitled lesson</span>}
+                                </span>
+                                {les.isFreePreview && <Pill tone="success">Free preview</Pill>}
+                              </div>
+                              <div className="text-[11px] text-[#58708A] mt-0.5">
+                                {les.durationMinutes} min
+                                {les.videoUrl ? '' : ' • no video URL'}
+                              </div>
+                            </button>
+
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => moveLesson(index, -1)}
+                                disabled={index === 0}
+                                aria-label={`Move lesson ${index + 1} up`}
+                                title="Move up"
+                                className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveLesson(index, 1)}
+                                disabled={index === lessons.length - 1}
+                                aria-label={`Move lesson ${index + 1} down`}
+                                title="Move down"
+                                className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                              <IconAction
+                                icon={isOpen ? Check : Pencil}
+                                label={isOpen ? `Done editing lesson ${index + 1}` : `Edit lesson ${index + 1}`}
+                                onClick={() => setOpenLessonId(isOpen ? null : les.id)}
+                              />
+                              <IconAction
+                                icon={Trash2}
+                                tone="danger"
+                                label={`Remove lesson ${index + 1}`}
+                                onClick={() => deleteLesson(les.id)}
+                              />
+                            </div>
+                          </div>
+
+                          {isOpen && (
+                            <div className="px-3 pb-3 pl-11 space-y-3 animate-in fade-in duration-150">
+                              <Field label="Lesson title">
+                                <input
+                                  type="text"
+                                  required
+                                  value={les.title}
+                                  onChange={(e) => updateLesson(les.id, { title: e.target.value })}
+                                  placeholder="Digital SAT Math blueprint & timing"
+                                  className={inputClass}
+                                />
+                              </Field>
+
+                              <Field label="Description">
+                                <textarea
+                                  rows={2}
+                                  value={les.description}
+                                  onChange={(e) => updateLesson(les.id, { description: e.target.value })}
+                                  placeholder="What this lesson covers."
+                                  className={textareaClass}
+                                />
+                              </Field>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Field label="Duration (minutes)">
+                                  <input
+                                    type="number"
+                                    required
+                                    min={1}
+                                    value={les.durationMinutes}
+                                    onChange={(e) =>
+                                      updateLesson(les.id, { durationMinutes: Number(e.target.value) })
+                                    }
+                                    className={`${inputClass} font-mono`}
+                                  />
+                                </Field>
+
+                                <Field label="Access">
+                                  <select
+                                    value={les.isFreePreview ? 'preview' : 'enrolled'}
+                                    onChange={(e) =>
+                                      updateLesson(les.id, { isFreePreview: e.target.value === 'preview' })
+                                    }
+                                    className={inputClass}
+                                  >
+                                    <option value="enrolled">Enrolled students only</option>
+                                    <option value="preview">Free preview</option>
+                                  </select>
+                                </Field>
+                              </div>
+
+                              <Field label="Video embed URL" hint="Must start with http:// or https://">
+                                <input
+                                  type="url"
+                                  value={les.videoUrl || ''}
+                                  onChange={(e) => updateLesson(les.id, { videoUrl: e.target.value })}
+                                  placeholder="https://www.youtube.com/embed/…"
+                                  className={`${inputClass} font-mono`}
+                                />
+                              </Field>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+
+                  <Button type="button" icon={Plus} onClick={addLesson} className="w-full">
+                    Add lesson
+                  </Button>
+                </>
+              )}
+            </EditorSection>
+          </form>
+        }
+        preview={
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-[12px] font-semibold text-[#58708A]">
               <Eye className="w-4 h-4" />
-              <span>Real-Time Visual Canvas Preview</span>
-            </div>
-            <span className="text-[11px] font-mono text-slate-500">Live Student View</span>
-          </div>
-
-          {/* Student Catalog Card Visual Render */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="px-3 py-1 bg-teal-100 text-[#0D918A] font-extrabold text-[11px] rounded-full uppercase">
-                {badge || 'Master Pass'}
-              </span>
-              <span className="text-xs font-bold text-slate-500">{level}</span>
+              <span>Student preview</span>
             </div>
 
-            <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-slate-900">{title || 'Course Title'}</h3>
-              <p className="text-xs text-slate-500">{subtitle}</p>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
-
-            <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-              <div className="font-bold text-slate-900">What's included:</div>
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                {features.split('\n').map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-slate-700">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>{f}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase font-bold">Enrollment Fee</div>
-                <div className="flex items-baseline gap-2 font-mono">
-                  <span className="text-2xl font-black text-slate-900">৳{price}</span>
-                  <span className="text-xs text-slate-400 line-through">৳{originalPrice}</span>
+            <div className="p-5 rounded-2xl bg-white border border-[#E2E8F0] space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {form.badge && <Pill tone="brand">{form.badge}</Pill>}
+                  <Pill tone={form.isPublished ? 'success' : 'warning'}>
+                    {form.isPublished ? 'Published' : 'Draft'}
+                  </Pill>
                 </div>
-              </div>
-              <button type="button" className="px-5 py-2.5 bg-[#0D918A] text-white font-extrabold text-xs rounded-xl shadow-xs">
-                Enroll Now
-              </button>
-            </div>
-          </div>
-
-          {/* Video Lesson Player Visual Preview */}
-          {previewLesson && (
-            <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-teal-400 uppercase">
-                  <Video className="w-4 h-4" />
-                  <span>Video Lesson Stream Preview (#{previewLesson.order})</span>
-                </div>
-                <span className="font-mono text-xs text-slate-400">{previewLesson.durationMinutes} mins</span>
-              </div>
-
-              <div className="aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center relative">
-                {previewLesson.videoUrl ? (
-                  <iframe
-                    src={previewLesson.videoUrl}
-                    title={previewLesson.title}
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
-                ) : (
-                  <div className="text-center space-y-2">
-                    <Play className="w-10 h-10 text-teal-400 mx-auto opacity-80" />
-                    <div className="text-xs text-slate-400 font-mono">No video stream URL provided</div>
-                  </div>
-                )}
+                <span className="text-[12px] text-[#58708A]">{form.level}</span>
               </div>
 
               <div className="space-y-1">
-                <h4 className="font-extrabold text-base text-white">{previewLesson.title}</h4>
-                <p className="text-xs text-slate-400">{previewLesson.description}</p>
+                <h2 className="text-xl font-bold text-[#071126] leading-snug">
+                  {form.title || <span className="text-[#58708A]">Course title</span>}
+                </h2>
+                <p className="text-[13px] text-[#58708A]">{form.subtitle}</p>
+              </div>
+
+              <p className="text-[13px] text-[#071126] leading-relaxed">
+                {form.description || (
+                  <span className="text-[#58708A]">The description will appear here.</span>
+                )}
+              </p>
+
+              <div className="flex items-center gap-3 text-[12px] text-[#58708A] pt-1">
+                <span>{lessons.length} lessons</span>
+                <span aria-hidden="true">•</span>
+                <span>{Math.round((totalMinutes / 60) * 10) / 10} hrs</span>
+              </div>
+
+              {featureList.length > 0 && (
+                <div className="pt-3 border-t border-[#E2E8F0] space-y-2">
+                  <div className="text-[12px] font-semibold text-[#071126]">What&apos;s included</div>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[12px]">
+                    {featureList.map((f, i) => (
+                      <li key={i} className="flex items-center gap-1.5 text-[#071126]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-3">
+                <div className="flex items-baseline gap-2 font-mono">
+                  <span className="text-xl font-bold text-[#071126] tabular-nums">৳{form.price}</span>
+                  {form.originalPrice > form.price && (
+                    <span className="text-[12px] text-[#58708A] line-through tabular-nums">
+                      ৳{form.originalPrice}
+                    </span>
+                  )}
+                </div>
+                <span className="h-10 px-4 bg-[#0D918A] text-white text-[12px] font-semibold rounded-[10px] grid place-items-center">
+                  Enroll now
+                </span>
               </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+
+            {previewLesson && (
+              <div className="p-5 rounded-2xl bg-[#080D21] text-white space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-[12px] font-semibold text-teal-300">
+                    <Video className="w-4 h-4" />
+                    <span>Lesson {previewLesson.order} player</span>
+                  </div>
+                  <span className="font-mono text-[12px] text-slate-400">
+                    {previewLesson.durationMinutes} min
+                  </span>
+                </div>
+
+                <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 grid place-items-center">
+                  {previewLesson.videoUrl ? (
+                    <iframe
+                      src={previewLesson.videoUrl}
+                      title={previewLesson.title || 'Lesson video'}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="text-center space-y-2 p-6">
+                      <Play className="w-8 h-8 text-teal-400 mx-auto opacity-70" />
+                      <div className="text-[12px] text-slate-400">No video URL for this lesson yet</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-[14px] font-bold">{previewLesson.title || 'Untitled lesson'}</h3>
+                  <p className="text-[12px] text-slate-400">{previewLesson.description}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        }
+      />
+    </EditorShell>
   );
 };

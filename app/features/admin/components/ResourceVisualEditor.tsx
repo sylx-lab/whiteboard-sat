@@ -1,219 +1,216 @@
+'use client';
+
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { ResourceItem } from '../../../types';
-import {
-  ArrowLeft,
-  FileText,
-  Save,
-  Download,
-  Eye,
-  CheckCircle2,
-} from 'lucide-react';
+import { FileText, Download, Eye } from 'lucide-react';
+import { EditorShell, EditorPanes, EditorSection, Field, inputClass, textareaClass } from './EditorShell';
+import { Pill } from './ui';
 
 interface ResourceVisualEditorProps {
   initialResource?: ResourceItem | null;
-  onSave: (resourceData: any) => void;
+  onSave: (resourceData: Record<string, unknown>) => void;
 }
+
+interface FormState {
+  title: string;
+  description: string;
+  category: ResourceItem['category'];
+  subject: ResourceItem['subject'];
+  isFree: boolean;
+  downloadUrl: string;
+  readTime: string;
+}
+
+/** New resources start empty — placeholders carry the guidance. */
+const blankForm = (): FormState => ({
+  title: '',
+  description: '',
+  category: 'formula_sheet',
+  subject: 'math',
+  isFree: true,
+  downloadUrl: '',
+  readTime: '',
+});
 
 export const ResourceVisualEditor: React.FC<ResourceVisualEditorProps> = ({
   initialResource,
   onSave,
 }) => {
-  const [title, setTitle] = useState(initialResource?.title || 'Digital SAT Math Formula & Reference Guide');
-  const [description, setDescription] = useState(
-    initialResource?.description ||
-      'Complete high-yield formula cheat sheet covering Quadratic Equations, Circle Theorems, Trigonometry, and Desmos calculator shortcuts.'
+  const [form, setForm] = useState<FormState>(() =>
+    initialResource
+      ? {
+          title: initialResource.title,
+          description: initialResource.description,
+          category: initialResource.category,
+          subject: initialResource.subject,
+          isFree: initialResource.is_free,
+          downloadUrl: initialResource.downloadUrl || '',
+          readTime: initialResource.readTime || '',
+        }
+      : blankForm()
   );
-  const [category, setCategory] = useState<ResourceItem['category']>(
-    initialResource?.category || 'formula_sheet'
-  );
-  const [subject, setSubject] = useState<ResourceItem['subject']>(
-    initialResource?.subject || 'math'
-  );
-  const [isFree, setIsFree] = useState(initialResource?.is_free ?? true);
-  const [downloadUrl, setDownloadUrl] = useState(
-    initialResource?.downloadUrl || 'https://example.com/sat-math-formula-sheet.pdf'
-  );
-  const [readTime, setReadTime] = useState(initialResource?.readTime || '8 min read');
+  const [isDirty, setIsDirty] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const update = (patch: Partial<FormState>) => {
+    setForm((prev) => ({ ...prev, ...patch }));
+    setIsDirty(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsDirty(false);
     onSave({
       id: initialResource?.id,
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      subject,
-      is_free: isFree,
-      downloadUrl: downloadUrl.trim() || undefined,
-      readTime: readTime.trim(),
+      title: form.title.trim(),
+      description: form.description.trim(),
+      category: form.category,
+      subject: form.subject,
+      is_free: form.isFree,
+      downloadUrl: form.downloadUrl.trim() || undefined,
+      readTime: form.readTime.trim() || '5 min read',
     });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Header Bar */}
-      <div className="bg-[#0D918A] text-white px-6 py-4 border-b border-teal-800 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <div className="text-[10px] text-teal-100 font-bold uppercase tracking-wider">
-              Visual Resource Editor
-            </div>
-            <h1 className="text-lg font-extrabold tracking-tight text-white">
-              {initialResource ? `Editing Resource: ${title}` : 'Create New Study Resource'}
-            </h1>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="px-5 py-2.5 bg-white text-[#0D918A] hover:bg-teal-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-        >
-          <Save className="w-4 h-4" />
-          <span>Save Resource</span>
-        </button>
-      </div>
-
-      {/* Split-Pane Workspace */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* LEFT PANE: Form Control */}
-        <form onSubmit={handleSave} className="w-full lg:w-1/2 p-6 overflow-y-auto space-y-4 border-r border-slate-200 text-xs">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4 shadow-xs">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Title</label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-xl font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Description</label>
-              <textarea
-                rows={3}
-                required
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-xl"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-medium"
-                >
-                  <option value="formula_sheet">Formula Sheet</option>
-                  <option value="grammar_guide">Grammar Guide</option>
-                  <option value="strategy_pdf">Strategy PDF</option>
-                  <option value="desmos_tutorial">Desmos Tutorial</option>
-                  <option value="video_breakdown">Video Breakdown</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Subject</label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-medium"
-                >
-                  <option value="math">Math</option>
-                  <option value="reading_writing">Reading & Writing</option>
-                  <option value="general">General SAT</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Download / External PDF URL</label>
+    <EditorShell
+      eyebrow="Resources"
+      title={initialResource ? `Edit ${initialResource.title}` : 'New resource'}
+      backTab="resources"
+      formId="resource-form"
+      saveLabel={initialResource ? 'Save changes' : 'Save resource'}
+      isDirty={isDirty}
+    >
+      <EditorPanes
+        form={
+          <form id="resource-form" onSubmit={handleSubmit} className="space-y-4">
+            <EditorSection icon={FileText} title="Resource details">
+              <Field label="Title">
                 <input
                   type="text"
-                  value={downloadUrl}
-                  onChange={(e) => setDownloadUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl font-mono"
+                  required
+                  value={form.title}
+                  onChange={(e) => update({ title: e.target.value })}
+                  placeholder="Digital SAT Math Formula Reference"
+                  className={inputClass}
                 />
+              </Field>
+
+              <Field label="Description">
+                <textarea
+                  rows={3}
+                  required
+                  value={form.description}
+                  onChange={(e) => update({ description: e.target.value })}
+                  placeholder="What this resource covers and who it is for."
+                  className={textareaClass}
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Category">
+                  <select
+                    value={form.category}
+                    onChange={(e) => update({ category: e.target.value as ResourceItem['category'] })}
+                    className={inputClass}
+                  >
+                    <option value="formula_sheet">Formula sheet</option>
+                    <option value="grammar_guide">Grammar guide</option>
+                    <option value="strategy_pdf">Strategy PDF</option>
+                    <option value="desmos_tutorial">Desmos tutorial</option>
+                    <option value="video_breakdown">Video breakdown</option>
+                  </select>
+                </Field>
+
+                <Field label="Subject">
+                  <select
+                    value={form.subject}
+                    onChange={(e) => update({ subject: e.target.value as ResourceItem['subject'] })}
+                    className={inputClass}
+                  >
+                    <option value="math">Math</option>
+                    <option value="reading_writing">Reading &amp; Writing</option>
+                    <option value="general">General</option>
+                  </select>
+                </Field>
+
+                <Field label="Read time" hint="Defaults to 5 min read">
+                  <input
+                    type="text"
+                    value={form.readTime}
+                    onChange={(e) => update({ readTime: e.target.value })}
+                    placeholder="8 min read"
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field label="Access tier">
+                  <select
+                    value={form.isFree ? 'free' : 'premium'}
+                    onChange={(e) => update({ isFree: e.target.value === 'free' })}
+                    className={inputClass}
+                  >
+                    <option value="free">Free — any student</option>
+                    <option value="premium">Premium — paid pass only</option>
+                  </select>
+                </Field>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Read Time Indicator</label>
+              <Field label="Download URL" hint="Optional. Must start with http:// or https://">
                 <input
-                  type="text"
-                  value={readTime}
-                  onChange={(e) => setReadTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 rounded-xl"
+                  type="url"
+                  value={form.downloadUrl}
+                  onChange={(e) => update({ downloadUrl: e.target.value })}
+                  placeholder="https://…/formula-sheet.pdf"
+                  className={`${inputClass} font-mono`}
                 />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="resFree"
-                checked={isFree}
-                onChange={(e) => setIsFree(e.target.checked)}
-                className="w-4 h-4 text-[#0D918A]"
-              />
-              <label htmlFor="resFree" className="font-bold text-slate-700">
-                Free Resource (Available to all candidates)
-              </label>
-            </div>
-          </div>
-        </form>
-
-        {/* RIGHT PANE: Real-time Visual Card Render */}
-        <div className="w-full lg:w-1/2 p-6 bg-slate-100 overflow-y-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0D918A] uppercase tracking-wider">
+              </Field>
+            </EditorSection>
+          </form>
+        }
+        preview={
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-[12px] font-semibold text-[#58708A]">
               <Eye className="w-4 h-4" />
-              <span>Real-Time Resource Card Render</span>
+              <span>Student preview</span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#E2E8F0] space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Pill tone="success">{form.category.replace(/_/g, ' ')}</Pill>
+                  <Pill tone={form.isFree ? 'neutral' : 'brand'}>{form.isFree ? 'Free' : 'Premium'}</Pill>
+                </div>
+                <span className="text-[12px] text-[#58708A]">{form.readTime || '5 min read'}</span>
+              </div>
+
+              <h2 className="text-base font-bold text-[#071126] leading-snug">
+                {form.title || <span className="text-[#58708A]">Resource title</span>}
+              </h2>
+              <p className="text-[13px] text-[#58708A] leading-relaxed">
+                {form.description || 'The description will appear here.'}
+              </p>
+
+              <div className="pt-3 border-t border-[#E2E8F0]">
+                {form.downloadUrl ? (
+                  <a
+                    href={form.downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-10 px-4 bg-[#0D918A] hover:bg-[#087C76] text-white text-[12px] font-semibold rounded-[10px] transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                ) : (
+                  <span className="text-[12px] text-[#58708A]">
+                    No download link — students will only see the description.
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full uppercase">
-                {category.replace('_', ' ')}
-              </span>
-              <span className="text-xs text-slate-500 font-medium">{readTime}</span>
-            </div>
-
-            <h3 className="text-lg font-extrabold text-slate-900">{title}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${isFree ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'}`}>
-                {isFree ? 'Free Access' : 'Premium Pass'}
-              </span>
-
-              {downloadUrl && (
-                <a
-                  href={downloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-[#0D918A] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        }
+      />
+    </EditorShell>
   );
 };

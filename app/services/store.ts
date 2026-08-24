@@ -11,7 +11,6 @@ import {
   PracticeAttempt,
   PaymentSubmission,
   AppTheme,
-  Domain,
 } from '../types';
 import {
   INITIAL_QUESTIONS,
@@ -22,7 +21,7 @@ import {
   DEMO_STUDENT,
   DEMO_ADMIN,
 } from '../data/seedData';
-import { estimateSATScore } from '../lib/utils';
+import { estimateSATScore, ALL_DOMAINS } from '../lib/utils';
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'wbsat_user',
@@ -908,7 +907,7 @@ export function useAppStore() {
   const totalTimeSpentMinutes = Math.round(userAttempts.reduce((acc, a) => acc + a.timeSpentSeconds, 0) / 60);
 
   // Domain breakdown
-  const domainStats = (['algebra', 'advanced_math', 'problem_solving_data_analysis', 'geometry_trigonometry', 'information_ideas', 'craft_structure', 'expression_ideas', 'standard_english_conventions'] as Domain[]).map(
+  const domainStats = ALL_DOMAINS.map(
     (dom) => {
       const domAttempts = userAttempts.filter((a) => a.domain === dom);
       const correct = domAttempts.filter((a) => a.isCorrect).length;

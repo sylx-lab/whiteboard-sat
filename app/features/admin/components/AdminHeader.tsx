@@ -1,89 +1,84 @@
+'use client';
+
 import React from 'react';
-import Link from 'next/link';
-import { Shield, ChevronRight, Plus, ExternalLink } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 import { AdminSubPage } from './AdminSidebar';
+
+/** Single source of truth for every admin page's title and purpose. */
+export const SUB_PAGE_META: Record<AdminSubPage, { title: string; description: string }> = {
+  overview: {
+    title: 'Overview',
+    description: 'Platform activity, the payment queue, and content counts at a glance.',
+  },
+  payments: {
+    title: 'Payments',
+    description: 'Verify bKash, Nagad, and bank transfer references to release student access.',
+  },
+  candidates: {
+    title: 'Students',
+    description: 'Review accounts, grant or revoke passes, and suspend access.',
+  },
+  questions: {
+    title: 'Question bank',
+    description: 'Author and edit SAT questions with a live KaTeX preview.',
+  },
+  courses: {
+    title: 'Courses',
+    description: 'Manage the course catalog and the video lessons inside each course.',
+  },
+  'mock-tests': {
+    title: 'Mock tests',
+    description: 'Configure timed, module-based Digital SAT mock exams.',
+  },
+  resources: {
+    title: 'Resources',
+    description: 'Publish formula sheets, grammar guides, and strategy PDFs.',
+  },
+};
 
 interface AdminHeaderProps {
   activeSubPage: AdminSubPage;
-  totalRevenue: number;
   onQuickAction?: () => void;
   quickActionLabel?: string;
+  onOpenMobileNav: () => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   activeSubPage,
-  totalRevenue,
   onQuickAction,
   quickActionLabel,
+  onOpenMobileNav,
 }) => {
-  const getSubPageTitles = (page: AdminSubPage) => {
-    switch (page) {
-      case 'overview':
-        return { title: 'Operational Analytics & Overview', category: 'Dashboard' };
-      case 'payments':
-        return { title: 'Manual Payment Verification Queue', category: 'Financials' };
-      case 'candidates':
-        return { title: 'Candidate Roster & Access Controls', category: 'Users' };
-      case 'courses':
-        return { title: 'Course Catalog & Video Lesson CMS', category: 'Content' };
-      case 'resources':
-        return { title: 'Study Resource Library CMS', category: 'Content' };
-      case 'mock-tests':
-        return { title: 'Digital SAT Mock Test CMS', category: 'Content' };
-      case 'questions':
-        return { title: 'SAT Question Bank Builder & KaTeX Editor', category: 'Content' };
-      default:
-        return { title: 'Admin Console', category: 'System' };
-    }
-  };
-
-  const info = getSubPageTitles(activeSubPage);
+  const meta = SUB_PAGE_META[activeSubPage];
 
   return (
-    <header className="bg-[#0D918A] text-white p-4 sm:p-6 shadow-xs border-b border-[rgba(255,255,255,0.15)]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left Breadcrumbs & Page Title */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-teal-100 font-bold uppercase tracking-wider">
-            <span className="flex items-center gap-1 text-white">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Admin Console</span>
-            </span>
-            <ChevronRight className="w-3.5 h-3.5 text-teal-200" />
-            <span className="text-teal-100">{info.category}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-teal-200" />
-            <span className="text-white capitalize">{activeSubPage.replace('-', ' ')}</span>
-          </div>
-
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{info.title}</h2>
-        </div>
-
-        {/* Right Metric Ticker & Action Buttons */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="px-3.5 py-2 bg-teal-800/60 hover:bg-teal-800 border border-teal-200/30 text-white font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-            title="Switch to Student Portal"
+    <header className="bg-[#0D918A] text-white px-4 sm:px-6 py-4 sticky top-0 z-30">
+      <div className="max-w-7xl mx-auto w-full flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <button
+            onClick={onOpenMobileNav}
+            aria-label="Open navigation"
+            className="p-2 -ml-1 rounded-[10px] bg-white/10 hover:bg-white/20 transition-colors cursor-pointer lg:hidden shrink-0"
           >
-            <span>Student App</span>
-            <ExternalLink className="w-3.5 h-3.5 text-teal-200" />
-          </Link>
+            <Menu className="w-4 h-4" />
+          </button>
 
-          <div className="px-4 py-2 bg-[#087C76] rounded-2xl border border-[rgba(255,255,255,0.2)] text-right">
-            <div className="text-[10px] text-teal-100 font-bold uppercase tracking-wider">Verified Revenue</div>
-            <div className="text-lg font-black text-white font-mono">৳{totalRevenue.toLocaleString()}</div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight">{meta.title}</h1>
+            <p className="text-[13px] text-teal-50/90 mt-0.5 leading-relaxed">{meta.description}</p>
           </div>
-
-          {onQuickAction && quickActionLabel && (
-            <button
-              onClick={onQuickAction}
-              className="px-4 py-2.5 bg-white text-[#0D918A] hover:bg-teal-50 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{quickActionLabel}</span>
-            </button>
-          )}
         </div>
+
+        {onQuickAction && quickActionLabel && (
+          <button
+            onClick={onQuickAction}
+            className="h-10 px-4 bg-white text-[#0D918A] hover:bg-teal-50 text-[12px] font-bold rounded-[10px] transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{quickActionLabel}</span>
+            <span className="sm:hidden">New</span>
+          </button>
+        )}
       </div>
     </header>
   );

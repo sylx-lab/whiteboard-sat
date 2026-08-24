@@ -1,17 +1,20 @@
+'use client';
+
 import React from 'react';
 import {
   CreditCard,
-  Sparkles,
+  Wallet,
   Users,
   Database,
   BookOpen,
   FileText,
   Award,
-  ChevronRight,
-  ArrowUpRight,
+  ArrowRight,
+  LucideIcon,
 } from 'lucide-react';
 import { PaymentSubmission, UserProfile, Course, ResourceItem, MockTest, Question } from '../../../types';
 import { AdminSubPage } from '../components/AdminSidebar';
+import { Pill } from '../components/ui';
 
 interface OverviewViewProps {
   payments: PaymentSubmission[];
@@ -23,6 +26,98 @@ interface OverviewViewProps {
   onNavigateSubPage: (page: AdminSubPage) => void;
 }
 
+const PREVIEW_LIMIT = 4;
+
+const StatCard: React.FC<{
+  label: string;
+  value: string;
+  caption: string;
+  icon: LucideIcon;
+  accent: string;
+  onClick?: () => void;
+}> = ({ label, value, caption, icon: Icon, accent, onClick }) => {
+  const content = (
+    <>
+      <div className="space-y-1 min-w-0">
+        <div className="text-[12px] text-[#58708A] font-medium">{label}</div>
+        <div className="text-2xl font-bold text-[#071126] font-mono tabular-nums">{value}</div>
+        <div className="text-[11px] text-[#58708A]">{caption}</div>
+      </div>
+      <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${accent}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+    </>
+  );
+
+  const base =
+    'p-5 rounded-2xl bg-white border border-[#E2E8F0] flex items-start justify-between gap-3 text-left transition-colors';
+
+  return onClick ? (
+    <button onClick={onClick} className={`${base} hover:border-[#0D918A]/50 cursor-pointer w-full`}>
+      {content}
+    </button>
+  ) : (
+    <div className={base}>{content}</div>
+  );
+};
+
+const ContentPanel: React.FC<{
+  icon: LucideIcon;
+  accent: string;
+  title: string;
+  subtitle: string;
+  items: { id: string; primary: string; secondary: string; trailing: React.ReactNode }[];
+  emptyLabel: string;
+  onOpen: () => void;
+  openLabel: string;
+}> = ({ icon: Icon, accent, title, subtitle, items, emptyLabel, onOpen, openLabel }) => (
+  <section className="p-5 rounded-2xl bg-white border border-[#E2E8F0] flex flex-col gap-4">
+    <div className="flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${accent}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="min-w-0">
+        <h2 className="text-base font-bold text-[#071126] leading-tight">{title}</h2>
+        <p className="text-[12px] text-[#58708A]">{subtitle}</p>
+      </div>
+    </div>
+
+    <ul className="space-y-2 flex-1">
+      {items.length === 0 ? (
+        <li className="text-[13px] text-[#58708A] py-4 text-center">{emptyLabel}</li>
+      ) : (
+        items.slice(0, PREVIEW_LIMIT).map((item) => (
+          <li key={item.id}>
+            <button
+              onClick={onOpen}
+              className="w-full p-3 rounded-xl bg-[#F8FBFB] hover:bg-[#F1F8F7] border border-[#E2E8F0] transition-colors cursor-pointer flex items-center justify-between gap-3 text-left"
+            >
+              <div className="min-w-0">
+                <div className="text-[13px] font-semibold text-[#071126] truncate">{item.primary}</div>
+                <div className="text-[11px] text-[#58708A] truncate">{item.secondary}</div>
+              </div>
+              <div className="shrink-0">{item.trailing}</div>
+            </button>
+          </li>
+        ))
+      )}
+      {items.length > PREVIEW_LIMIT && (
+        <li className="text-[12px] text-[#58708A] pl-3">
+          +{items.length - PREVIEW_LIMIT} more
+        </li>
+      )}
+    </ul>
+
+    <button
+      onClick={onOpen}
+      className="h-10 w-full rounded-[10px] bg-white hover:bg-[#F1F8F7] border border-[#E2E8F0] text-[12px] font-semibold text-[#071126] transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+    >
+      {openLabel}
+      <ArrowRight className="w-4 h-4" />
+    </button>
+  </section>
+);
+
 export const OverviewView: React.FC<OverviewViewProps> = ({
   payments,
   users,
@@ -33,261 +128,127 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onNavigateSubPage,
 }) => {
   const pendingPayments = payments.filter((p) => p.status === 'pending');
-  const verifiedPayments = payments.filter((p) => p.status === 'verified');
-  const totalVerifiedRevenue = verifiedPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalVerifiedRevenue = payments
+    .filter((p) => p.status === 'verified')
+    .reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200 pb-10">
-      {/* Top Welcome Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0D918A] to-[#087C76] text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-teal-100 font-bold uppercase tracking-wider">
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>SAT Supervisor Console</span>
+    <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Pending payments are the only thing in this console that is time-sensitive,
+          so they get a banner rather than sitting inside the stat grid. */}
+      {pendingPayments.length > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 grid place-items-center shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[13px] font-bold text-amber-900">
+                {pendingPayments.length} payment{pendingPayments.length === 1 ? '' : 's'} waiting for
+                verification
+              </div>
+              <div className="text-[12px] text-amber-800/90">
+                Students stay locked out of premium content until each transfer is verified.
+              </div>
+            </div>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">Platform Performance & CMS Overview</h2>
-          <p className="text-xs text-teal-100/90 max-w-xl leading-relaxed">
-            Monitor real-time candidate registrations, manual bKash/Nagad payment verification queues, course curriculum modules, and question bank assets.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => onNavigateSubPage('payments')}
-            className="px-4 py-2.5 bg-white text-[#0D918A] hover:bg-teal-50 font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+            className="h-10 px-4 bg-[#0D918A] hover:bg-[#087C76] text-white text-[12px] font-semibold rounded-[10px] transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0"
           >
-            <span>Verification Queue ({pendingPayments.length})</span>
-            <ArrowUpRight className="w-4 h-4" />
+            Open queue
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      )}
 
-      {/* KPI Highlight Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          label="Verified revenue"
+          value={`৳${totalVerifiedRevenue.toLocaleString()}`}
+          caption="Approved transfers"
+          icon={Wallet}
+          accent="bg-emerald-50 text-emerald-600"
           onClick={() => onNavigateSubPage('payments')}
-          className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer flex items-center justify-between group"
-        >
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500 font-semibold">Pending Verification</div>
-            <div className="text-3xl font-black text-slate-900 font-mono">{pendingPayments.length}</div>
-            <div className="text-[11px] text-amber-600 font-medium">bKash / Nagad queue</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <CreditCard className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between group">
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500 font-semibold">Verified Revenue</div>
-            <div className="text-3xl font-black text-slate-900 font-mono">৳{totalVerifiedRevenue.toLocaleString()}</div>
-            <div className="text-[11px] text-emerald-600 font-medium">Approved transfers</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Sparkles className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div
+        />
+        <StatCard
+          label="Pending verification"
+          value={String(pendingPayments.length)}
+          caption="bKash / Nagad queue"
+          icon={CreditCard}
+          accent="bg-amber-50 text-amber-600"
+          onClick={() => onNavigateSubPage('payments')}
+        />
+        <StatCard
+          label="Students"
+          value={String(users.length)}
+          caption="Registered accounts"
+          icon={Users}
+          accent="bg-teal-50 text-[#0D918A]"
           onClick={() => onNavigateSubPage('candidates')}
-          className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer flex items-center justify-between group"
-        >
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500 font-semibold">Active Candidates</div>
-            <div className="text-3xl font-black text-slate-900 font-mono">{users.length}</div>
-            <div className="text-[11px] text-[#0D918A] font-medium">Registered accounts</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-[#0D918A]/10 text-[#0D918A] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div
+        />
+        <StatCard
+          label="Questions"
+          value={String(questions.length)}
+          caption="In the question bank"
+          icon={Database}
+          accent="bg-indigo-50 text-indigo-600"
           onClick={() => onNavigateSubPage('questions')}
-          className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer flex items-center justify-between group"
-        >
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500 font-semibold">Question Bank Size</div>
-            <div className="text-3xl font-black text-slate-900 font-mono">{questions.length}</div>
-            <div className="text-[11px] text-indigo-600 font-medium">KaTeX formatted</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Database className="w-6 h-6" />
-          </div>
-        </div>
+        />
       </div>
 
-      {/* Main CMS Content Grid - Spacious Design */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Courses Card */}
-        <div className="p-7 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 space-y-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-[#0D918A]/10 text-[#0D918A] flex items-center justify-center font-bold">
-                  <BookOpen className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">Course Catalog</h3>
-                  <p className="text-xs text-slate-500">{courses.length} Active Courses</p>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <ContentPanel
+          icon={BookOpen}
+          accent="bg-teal-50 text-[#0D918A]"
+          title="Courses"
+          subtitle={`${courses.length} in the catalog`}
+          openLabel="Manage courses"
+          emptyLabel="No courses yet."
+          onOpen={() => onNavigateSubPage('courses')}
+          items={courses.map((c) => ({
+            id: c.id,
+            primary: c.title,
+            secondary: `${c.lessonsCount} lessons • ${c.totalHours} hrs`,
+            trailing: (
+              <span className="font-mono text-[13px] font-semibold text-[#087C76] tabular-nums">
+                ৳{c.price}
+              </span>
+            ),
+          }))}
+        />
 
-              <button
-                onClick={() => onNavigateSubPage('courses')}
-                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
-                title="Manage Courses"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+        <ContentPanel
+          icon={Award}
+          accent="bg-rose-50 text-rose-600"
+          title="Mock tests"
+          subtitle={`${mockTests.length} configured`}
+          openLabel="Manage mock tests"
+          emptyLabel="No mock tests yet."
+          onOpen={() => onNavigateSubPage('mock-tests')}
+          items={mockTests.map((m) => ({
+            id: m.id,
+            primary: m.title,
+            secondary: `${m.totalQuestions} questions • ${m.totalTimeMinutes} min`,
+            trailing: <Pill tone="danger">{m.difficulty}</Pill>,
+          }))}
+        />
 
-            <div className="space-y-3 text-xs">
-              {courses.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => onNavigateSubPage('courses')}
-                  className="p-4 rounded-2xl bg-slate-50/70 hover:bg-teal-50/40 border border-slate-100 hover:border-teal-200 transition-all cursor-pointer flex items-center justify-between gap-3 group"
-                >
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="font-bold text-slate-900 truncate group-hover:text-[#0D918A] transition-colors">
-                      {c.title}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      {c.lessonsCount} lessons • {c.totalHours} hrs
-                    </div>
-                  </div>
-                  <span className="font-mono font-black text-sm text-[#0D918A] shrink-0">
-                    ৳{c.price}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => onNavigateSubPage('courses')}
-            className="w-full py-2.5 bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-[#0D918A] font-bold text-xs rounded-xl border border-slate-200/80 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-          >
-            <span>Manage All Courses</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Resources Card */}
-        <div className="p-7 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 space-y-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                  <FileText className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">Study Resources</h3>
-                  <p className="text-xs text-slate-500">{resources.length} Guides & Sheets</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onNavigateSubPage('resources')}
-                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
-                title="Manage Resources"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {resources.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => onNavigateSubPage('resources')}
-                  className="p-4 rounded-2xl bg-slate-50/70 hover:bg-emerald-50/40 border border-slate-100 hover:border-emerald-200 transition-all cursor-pointer flex items-center justify-between gap-3 group"
-                >
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="font-bold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">
-                      {r.title}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      {r.readTime} • {r.category.replace('_', ' ')}
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 ${
-                      r.is_free ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
-                    }`}
-                  >
-                    {r.is_free ? 'Free' : 'Premium'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => onNavigateSubPage('resources')}
-            className="w-full py-2.5 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold text-xs rounded-xl border border-slate-200/80 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-          >
-            <span>Manage All Resources</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Digital SAT Mocks Card */}
-        <div className="p-7 rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 space-y-5 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
-                  <Award className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">Digital SAT Mocks</h3>
-                  <p className="text-xs text-slate-500">{mockTests.length} Official Mocks</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onNavigateSubPage('mock-tests')}
-                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
-                title="Manage Mock Tests"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {mockTests.map((m) => (
-                <div
-                  key={m.id}
-                  onClick={() => onNavigateSubPage('mock-tests')}
-                  className="p-4 rounded-2xl bg-slate-50/70 hover:bg-rose-50/40 border border-slate-100 hover:border-rose-200 transition-all cursor-pointer flex items-center justify-between gap-3 group"
-                >
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="font-bold text-slate-900 truncate group-hover:text-rose-700 transition-colors">
-                      {m.title}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      {m.totalQuestions} Questions • {m.totalTimeMinutes} mins
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[10px] font-bold uppercase shrink-0">
-                    {m.difficulty}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => onNavigateSubPage('mock-tests')}
-            className="w-full py-2.5 bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-xl border border-slate-200/80 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-          >
-            <span>Manage Mock Tests</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        <ContentPanel
+          icon={FileText}
+          accent="bg-emerald-50 text-emerald-600"
+          title="Resources"
+          subtitle={`${resources.length} published`}
+          openLabel="Manage resources"
+          emptyLabel="No resources yet."
+          onOpen={() => onNavigateSubPage('resources')}
+          items={resources.map((r) => ({
+            id: r.id,
+            primary: r.title,
+            secondary: `${r.readTime} • ${r.category.replace(/_/g, ' ')}`,
+            trailing: <Pill tone={r.is_free ? 'neutral' : 'brand'}>{r.is_free ? 'Free' : 'Premium'}</Pill>,
+          }))}
+        />
       </div>
     </div>
   );
