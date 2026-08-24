@@ -44,7 +44,7 @@ export const CandidatesView: React.FC<CandidatesViewProps> = ({
     const q = search.toLowerCase();
     return (
       u.name.toLowerCase().includes(q) ||
-      u.phone.toLowerCase().includes(q) ||
+      (u.phone?.toLowerCase().includes(q) ?? false) ||
       (u.email || '').toLowerCase().includes(q)
     );
   });

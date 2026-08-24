@@ -249,7 +249,8 @@ export interface AdminPermission {
 export interface UserProfile {
   id: string;
   name: string;
-  phone: string;
+  /** Absent for Google sign-in accounts, which Google gives us no phone for. */
+  phone?: string;
   email?: string;
   role: 'student' | 'admin' | 'sub_admin';
   targetScore: number;
@@ -257,8 +258,16 @@ export interface UserProfile {
   createdAt: string;
   access: AccessGrants;
   permissions?: AdminPermission;
+  /** ISO timestamp; absent means the address has not been confirmed yet. */
+  emailVerifiedAt?: string;
+  /** Bookmark button on QuestionCard; previously component-local, so it died on unmount. */
+  bookmarkedQuestionIds?: string[];
   isSuspended?: boolean;
   status?: 'active' | 'suspended';
 }
+
+export type AuthResult =
+  | { ok: true; user: UserProfile }
+  | { ok: false; error: string };
 
 export type AppTheme = 'white' | 'warm' | 'dark';

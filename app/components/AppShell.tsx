@@ -94,6 +94,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           onClose={() => setIsAuthModalOpen(false)}
           onLogin={store.loginWithPhoneOrEmail}
           onRegister={store.registerUser}
+          onForgotPassword={store.requestPasswordReset}
           onQuickRoleSelect={store.switchDemoRole}
         />
       </div>
@@ -126,6 +127,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         onClose={() => setIsAuthModalOpen(false)}
         onLogin={store.loginWithPhoneOrEmail}
         onRegister={store.registerUser}
+        onForgotPassword={store.requestPasswordReset}
         onQuickRoleSelect={store.switchDemoRole}
       />
 

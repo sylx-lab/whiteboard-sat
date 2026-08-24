@@ -32,7 +32,7 @@ export const StaffView: React.FC<StaffViewProps> = ({ users, currentUser }) => {
     const q = search.toLowerCase();
     return (
       u.name.toLowerCase().includes(q) ||
-      u.phone.toLowerCase().includes(q) ||
+      (u.phone?.toLowerCase().includes(q) ?? false) ||
       (u.email || '').toLowerCase().includes(q)
     );
   });

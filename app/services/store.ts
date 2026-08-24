@@ -12,6 +12,7 @@ import {
   PaymentSubmission,
   AppTheme,
   AdminPermission,
+  AuthResult,
 } from '../types';
 import {
   INITIAL_QUESTIONS,
@@ -134,7 +135,7 @@ const INITIAL_PAYMENTS: PaymentSubmission[] = [
     id: 'pay-002',
     userId: DEMO_STUDENT.id,
     userName: DEMO_STUDENT.name,
-    userPhone: DEMO_STUDENT.phone,
+    userPhone: DEMO_STUDENT.phone ?? '',
     productId: 'plan-math',
     productName: 'Premium Math Pass',
     productTitle: 'Premium Math Pass',
@@ -362,6 +363,22 @@ export function useAppStore() {
   useEffect(() => saveToStorage(STORAGE_KEYS.PAYMENTS, payments), [payments]);
   useEffect(() => saveToStorage(STORAGE_KEYS.COURSE_PROGRESS, courseProgress), [courseProgress]);
 
+  // Adopt the signed-in user from the JWT cookie. Returning null leaves the
+  // localStorage demo profile in place, so the demo role switcher still works
+  // without a database.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data?.user) setCurrentUser(data.user);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Apply Theme CSS class to <body> whenever theme changes, including on
   // initial mount (previously this only ran when the user manually toggled
   // the theme, so a saved warm/dark preference never applied after reload).
@@ -401,80 +418,55 @@ export function useAppStore() {
   };
 
   // --- AUTHENTICATION & PROFILES ---
-  const loginUser = (phoneOrEmail: string): boolean => {
-    const trimmed = phoneOrEmail.trim().toLowerCase();
-    const found = allUsers.find(
-      (u) =>
-        u.phone.toLowerCase() === trimmed ||
-        (u.email && u.email.toLowerCase() === trimmed)
-    );
-
-    if (found) {
-      if (found.isSuspended || found.status === 'suspended') {
-        return false;
-      }
-      setCurrentUser(found);
-      return true;
-    }
-
-    // Auto-create basic profile if phone number provided
-    const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
-      name: 'SAT Student',
-      phone: phoneOrEmail,
-      role: 'student',
-      targetScore: 1550,
-      createdAt: new Date().toISOString().split('T')[0],
-      status: 'active',
-      access: {
-        premiumMath: false,
-        premiumReadingWriting: false,
-        redbookPractice: false,
-        enrolledCourseIds: [],
-        fullPremium: false,
-      },
-    };
-    setAllUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    return true;
+  /**
+   * Real sign-in: POST to /api/auth/login, which sets an httpOnly JWT cookie.
+   * The demo role switcher below still works offline against localStorage.
+   */
+  const loginUser = async (phoneOrEmail: string, password: string): Promise<AuthResult> => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneOrEmail, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error ?? 'Unable to sign in.' };
+    setCurrentUser(data.user);
+    return { ok: true, user: data.user };
   };
 
-  const registerUser = (
+  const registerUser = async (
     name: string,
     phone: string,
+    password: string,
     email?: string,
     targetScore: number = 1550
-  ): UserProfile => {
-    const existing = allUsers.find((u) => u.phone === phone);
-    if (existing) {
-      setCurrentUser(existing);
-      return existing;
-    }
-
-    const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
-      name,
-      phone,
-      email,
-      role: 'student',
-      targetScore,
-      createdAt: new Date().toISOString().split('T')[0],
-      status: 'active',
-      access: {
-        premiumMath: false,
-        premiumReadingWriting: false,
-        redbookPractice: false,
-        enrolledCourseIds: [],
-        fullPremium: false,
-      },
-    };
-
-    setAllUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    return newUser;
+  ): Promise<AuthResult> => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, email, password, targetScore }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error ?? 'Unable to create the account.' };
+    setCurrentUser(data.user);
+    return { ok: true, user: data.user };
   };
 
-  const logoutUser = () => {
+  /** Always resolves: the endpoint deliberately does not say whether the account exists. */
+  const requestPasswordReset = async (email: string): Promise<void> => {
+    await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).catch(() => {});
+  };
+
+  const resendVerificationEmail = async (): Promise<void> => {
+    await fetch('/api/auth/resend-verification', { method: 'POST' }).catch(() => {});
+  };
+
+  const logoutUser = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setCurrentUser(null);
   };
 
@@ -1037,6 +1029,8 @@ export function useAppStore() {
     loginUser,
     loginWithPhoneOrEmail: loginUser,
     registerUser,
+    requestPasswordReset,
+    resendVerificationEmail,
     logoutUser,
     logout: logoutUser,
     switchUser,

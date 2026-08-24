@@ -53,6 +53,7 @@ export default function PricingPage() {
         onClose={() => setIsAuthOpen(false)}
         onLogin={store.loginWithPhoneOrEmail}
         onRegister={store.registerUser}
+        onForgotPassword={store.requestPasswordReset}
         onQuickRoleSelect={store.switchDemoRole}
       />
     </>

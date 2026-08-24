@@ -1,0 +1,130 @@
+import { MongoClient } from 'mongodb';
+import type { Db } from 'mongodb';
+import type {
+  Course,
+  MockTest,
+  MockTestAttempt,
+  PaymentSubmission,
+  PracticeAttempt,
+  PracticeSession,
+  Question,
+  ResourceItem,
+  UserProfile,
+} from '../types.ts';
+
+/**
+ * Document shapes = the app types, with `id` moved to `_id` and the store's
+ * legacy alias/derived fields dropped. See CLAUDE.md: `answer_choices` mirrors
+ * `choices`, MockTest totals come from `deriveTotals`, `status` mirrors
+ * `isSuspended`, `timestamp` mirrors `attemptedAt`. Persisting both halves is
+ * how they drift, so only one is stored.
+ */
+type Doc<T extends { id: string }> = Omit<T, 'id'> & { _id: string };
+
+export const fromDoc = <T extends { _id: string }>({ _id, ...rest }: T) => ({ id: _id, ...rest });
+export const toDoc = <T extends { id: string }>({ id, ...rest }: T) => ({ _id: id, ...rest });
+
+export type QuestionDoc = Doc<Omit<Question, 'answer_choices'>>;
+export type CourseDoc = Doc<Course>;
+export type ResourceDoc = Doc<ResourceItem>;
+export type MockTestDoc = Doc<Omit<MockTest, 'totalQuestions' | 'totalTimeMinutes'>>;
+export type MockAttemptDoc = Doc<MockTestAttempt>;
+export type PracticeAttemptDoc = Doc<Omit<PracticeAttempt, 'timestamp'>>;
+export type PaymentDoc = Doc<Omit<PaymentSubmission, 'createdAt' | 'productTitle'>>;
+export type PracticeSessionDoc = Doc<PracticeSession>;
+/**
+ * courseProgress was its own localStorage key; it is 1:1 with a user, so it embeds.
+ * `passwordHash` is DB-only and never leaves the server; see publicUser().
+ */
+export type UserDoc = Doc<Omit<UserProfile, 'status'>> & {
+  courseProgress: Record<string, string[]>;
+  passwordHash?: string;
+  /** Set for Google sign-in accounts, which have no password and no phone. */
+  googleId?: string;
+};
+
+/**
+ * The only way a user document should reach the client. Destructuring rather
+ * than a Mongo projection so the compiler also knows the secrets are gone.
+ */
+export const publicUser = (doc: UserDoc): UserProfile => {
+  const { passwordHash: _hash, googleId: _google, ...rest } = doc;
+  return fromDoc(rest) as UserProfile;
+};
+
+// ponytail: no Mongoose. types.ts is already the schema, and the unique
+// indexes below are the only constraints app code cannot enforce itself.
+// Add $jsonSchema validators if untrusted writers ever reach the DB.
+
+// ponytail: sized for serverless (Vercel-style), where each instance owns its
+// own pool. On a single long-running Node server raise maxPoolSize to ~50 and
+// minPoolSize to ~10.
+// Cached on globalThis so `next dev` HMR reuses one pool instead of leaking one per reload.
+const g = globalThis as { _mongo?: Promise<MongoClient> };
+const connect = () => (g._mongo ??= new MongoClient(process.env.MONGODB_URI!, {
+  maxPoolSize: 5,
+  minPoolSize: 0,
+  maxIdleTimeMS: 30_000,
+  connectTimeoutMS: 10_000,
+  socketTimeoutMS: 30_000,
+  serverSelectionTimeoutMS: 5_000,
+}).connect());
+
+export async function db(): Promise<Db> {
+  return (await connect()).db();
+}
+
+export const collections = {
+  users: async () => (await db()).collection<UserDoc>('users'),
+  questions: async () => (await db()).collection<QuestionDoc>('questions'),
+  courses: async () => (await db()).collection<CourseDoc>('courses'),
+  resources: async () => (await db()).collection<ResourceDoc>('resources'),
+  mockTests: async () => (await db()).collection<MockTestDoc>('mockTests'),
+  mockAttempts: async () => (await db()).collection<MockAttemptDoc>('mockAttempts'),
+  practiceAttempts: async () => (await db()).collection<PracticeAttemptDoc>('practiceAttempts'),
+  payments: async () => (await db()).collection<PaymentDoc>('payments'),
+  practiceSessions: async () => (await db()).collection<PracticeSessionDoc>('practiceSessions'),
+};
+
+/**
+ * Timestamps stay ISO-8601 UTC strings, as the app types already have them:
+ * they sort and range-query correctly as strings, so no conversion layer is
+ * needed. Switch to BSON Date only if analytics needs $dateTrunc.
+ */
+export async function ensureIndexes() {
+  const c = collections;
+  await Promise.all([
+    (await c.users()).createIndexes([
+      { key: { phone: 1 }, unique: true, sparse: true },
+      { key: { email: 1 }, unique: true, sparse: true },
+      { key: { googleId: 1 }, unique: true, sparse: true },
+      { key: { role: 1 } },
+    ]),
+    (await c.questions()).createIndexes([
+      { key: { code: 1 }, unique: true },
+      // the bank's drill-down + the editor's datalists
+      { key: { domain: 1, topic: 1, status: 1 } },
+      { key: { status: 1, is_free: 1 } },
+      { key: { question_text: 'text', stimulus: 'text', topic: 'text' } },
+    ]),
+    (await c.courses()).createIndex({ slug: 1 }, { unique: true }),
+    (await c.resources()).createIndex({ category: 1, subject: 1 }),
+    (await c.mockAttempts()).createIndex({ userId: 1, startedAt: -1 }),
+    (await c.practiceAttempts()).createIndexes([
+      { key: { userId: 1, attemptedAt: -1 } },   // dashboard history
+      { key: { userId: 1, domain: 1 } },         // domainStats breakdown
+    ]),
+    // resume-in-progress lookup; mock attempts already persisted, practice did not
+    (await c.practiceSessions()).createIndex({ userId: 1, isCompleted: 1, startedAt: -1 }),
+    (await c.payments()).createIndexes([
+      { key: { status: 1, submittedAt: -1 } },   // admin verification queue
+      { key: { userId: 1 } },
+    ]),
+  ]);
+}
+
+if (process.argv[1]?.endsWith('db.ts')) {
+  await ensureIndexes();
+  console.log('indexes ensured');
+  await (await connect()).close();
+}
