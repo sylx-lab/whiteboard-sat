@@ -31,13 +31,15 @@ import {
 } from 'lucide-react';
 import {
   EditorShell,
+  EditorTopBar,
   EditorPanes,
   EditorSection,
   Field,
   inputClass,
   textareaClass,
+  editorPrimaryButtonClass,
 } from './EditorShell';
-import { Pill, Button, IconAction, Modal, EmptyState } from './ui';
+import { Pill, Button, IconAction, EmptyState } from './ui';
 import { useQuestionForm, QuestionFormFields, QuestionPreview } from './questionForm';
 
 interface MockTestVisualEditorProps {
@@ -147,6 +149,24 @@ export const MockTestVisualEditor: React.FC<MockTestVisualEditorProps> = ({
   };
 
   const pickingModule = modules.find((m) => m.id === pickingModuleId) || null;
+
+  // A full screen rather than a modal: the create-new form needs the same split-pane
+  // width and live preview as the standalone question editor. This component stays
+  // mounted, so the unsaved mock test is never at risk.
+  if (pickingModule) {
+    return (
+      <ModuleQuestionScreen
+        module={pickingModule}
+        allQuestions={allQuestions}
+        onCreateQuestion={onCreateQuestion}
+        onBack={() => setPickingModuleId(null)}
+        onConfirm={(questions) => {
+          updateModule(pickingModule.id, { questions });
+          setPickingModuleId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <EditorShell
@@ -485,47 +505,35 @@ export const MockTestVisualEditor: React.FC<MockTestVisualEditorProps> = ({
           </div>
         }
       />
-
-      {pickingModule && (
-        <QuestionPicker
-          module={pickingModule}
-          allQuestions={allQuestions}
-          onCreateQuestion={onCreateQuestion}
-          onClose={() => setPickingModuleId(null)}
-          onConfirm={(questions) => {
-            updateModule(pickingModule.id, { questions });
-            setPickingModuleId(null);
-          }}
-        />
-      )}
     </EditorShell>
   );
 };
 
 /**
- * Pick a module's questions. Two paths: choose from the bank, or author a new
- * question inline — the latter writes to the bank (so it stays reusable) and
- * selects it into this module in one step.
+ * Full-screen question chooser for one module. Two paths: pick from the bank, or
+ * author a new question with the same split-pane form and live preview as the
+ * standalone editor. Creating writes to the bank (so it stays reusable) and selects
+ * it into this module in one step.
  */
-const QuestionPicker: React.FC<{
+const ModuleQuestionScreen: React.FC<{
   module: MockTestModule;
   allQuestions: Question[];
   onCreateQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
-  onClose: () => void;
+  onBack: () => void;
   onConfirm: (questions: Question[]) => void;
-}> = ({ module: mod, allQuestions, onCreateQuestion, onClose, onConfirm }) => {
+}> = ({ module: mod, allQuestions, onCreateQuestion, onBack, onConfirm }) => {
   const [tab, setTab] = useState<'existing' | 'create'>('existing');
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(mod.questions.map((q) => q.id))
   );
-  const [justCreated, setJustCreated] = useState<string | null>(null);
+  const [createdCodes, setCreatedCodes] = useState<string[]>([]);
 
   // A new question must land in this module's section, so the subject is fixed.
   const createCtl = useQuestionForm({
     allQuestions,
     lockedSubject: mod.section,
-    idScope: 'picker',
+    idScope: 'module-picker',
   });
 
   const pool = useMemo(() => eligibleQuestions(allQuestions, mod.section), [allQuestions, mod.section]);
@@ -556,185 +564,212 @@ const QuestionPicker: React.FC<{
     const created = onCreateQuestion(
       createCtl.buildPayload() as unknown as Omit<Question, 'id' | 'created_at' | 'updated_at'>
     );
-    // Select it straight away and hand the author back a blank form in the same category.
+    // Select it and hand back a blank form in the same category, so several
+    // questions can be authored in a row without leaving the screen.
     setSelectedIds((prev) => new Set(prev).add(created.id));
-    setJustCreated(created.code);
+    setCreatedCodes((prev) => [...prev, created.code]);
     createCtl.reset(true);
-    setTab('existing');
-    setSearch('');
   };
 
-  const confirm = () => {
+  const applySelection = () => {
     // Keep bank order so a module's question sequence is stable and predictable.
     onConfirm(pool.filter((q) => selectedIds.has(q.id)));
   };
 
-  const tabButton = (value: 'existing' | 'create', label: string) => (
+  const handleBack = () => {
+    if (createCtl.isDirty && !window.confirm('Discard the question you are writing?')) return;
+    onBack();
+  };
+
+  const tabButton = (value: 'existing' | 'create', label: string, count?: number) => (
     <button
       type="button"
       role="tab"
       aria-selected={tab === value}
       onClick={() => setTab(value)}
-      className={`h-9 px-3.5 rounded-[10px] text-[12px] font-semibold transition-colors cursor-pointer ${
+      className={`h-9 px-4 rounded-[10px] text-[12px] font-semibold transition-colors cursor-pointer ${
         tab === value ? 'bg-white text-[#087C76] shadow-xs' : 'text-[#58708A] hover:text-[#071126]'
       }`}
     >
       {label}
+      {count !== undefined && <span className="font-normal text-[#58708A]"> · {count}</span>}
     </button>
   );
 
+  const listPane = (
+    <div className="max-w-5xl mx-auto w-full p-4 sm:p-6 space-y-4">
+      <div className="relative max-w-md">
+        <label className="sr-only" htmlFor="picker-search">
+          Search questions
+        </label>
+        <Search className="w-4 h-4 text-[#58708A] absolute left-3 top-3 pointer-events-none" />
+        <input
+          id="picker-search"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Code, topic, or question text…"
+          className="w-full h-10 pl-9 pr-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors"
+        />
+      </div>
+
+      {pool.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0]">
+          <EmptyState
+            icon={ListChecks}
+            title={`No published ${formatSubjectName(mod.section)} questions`}
+            description="Author one here, or publish the drafts you already have in the question bank."
+            action={{ label: 'Create new question', onClick: () => setTab('create') }}
+          />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0]">
+          <EmptyState
+            icon={Search}
+            title="No matching questions"
+            description={`Nothing in this section matches “${search}”.`}
+            action={{ label: 'Clear search', onClick: () => setSearch('') }}
+          />
+        </div>
+      ) : (
+        sections.map((section) =>
+          section.groups.map((group) => (
+            // min-w-0: a fieldset defaults to min-inline-size:min-content, which
+            // refuses to shrink and pushes long question text past its container.
+            <fieldset key={group.key} className="space-y-2 min-w-0">
+              <legend className="text-[13px] font-bold text-[#071126] pb-1">
+                {group.label}
+                <span className="text-[#58708A] font-normal"> · {group.questions.length}</span>
+              </legend>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+                {group.questions.map((q) => {
+                  const isSelected = selectedIds.has(q.id);
+                  return (
+                    <label
+                      key={q.id}
+                      className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors min-w-0 ${
+                        isSelected
+                          ? 'bg-[#F1F8F7] border-[#0D918A]'
+                          : 'bg-white border-[#E2E8F0] hover:bg-[#F8FBFB]'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggle(q.id)}
+                        className="mt-0.5 w-4 h-4 shrink-0 accent-[#0D918A]"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <span className="font-mono font-semibold text-[#071126]">{q.code}</span>
+                          <span className="text-[#58708A]">{q.topic}</span>
+                          <Pill
+                            tone={
+                              q.difficulty === 'easy'
+                                ? 'success'
+                                : q.difficulty === 'medium'
+                                ? 'warning'
+                                : 'danger'
+                            }
+                          >
+                            {q.difficulty}
+                          </Pill>
+                          {q.stimulus && <Pill>passage</Pill>}
+                        </div>
+                        <div className="text-[12px] text-[#58708A] line-clamp-2">
+                          <MathRenderer inline content={q.question_text} />
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ))
+        )
+      )}
+    </div>
+  );
+
   return (
-    <Modal
-      title={`Questions for ${mod.title}`}
-      subtitle={`${selectedIds.size} selected · ${pool.length} published ${formatSubjectName(
-        mod.section
-      )} question${pool.length === 1 ? '' : 's'} in the bank`}
-      icon={ListChecks}
-      onClose={onClose}
-      maxWidth="max-w-2xl"
-      footer={
-        <>
-          <Button type="button" onClick={onClose}>
-            Cancel
-          </Button>
-          {tab === 'create' ? (
-            <Button type="submit" form="picker-create-form" variant="primary" icon={Plus}>
-              Create &amp; add
-            </Button>
-          ) : (
-            <Button type="button" variant="primary" onClick={confirm}>
-              Use {selectedIds.size} question{selectedIds.size === 1 ? '' : 's'}
-            </Button>
-          )}
-        </>
-      }
-    >
-      <div className="space-y-3">
+    <div className="min-h-screen bg-slate-50 text-[#071126] flex flex-col">
+      <EditorTopBar
+        eyebrow={`Mock test · ${formatSubjectName(mod.section)}`}
+        title={`Questions for ${mod.title}`}
+        onBack={handleBack}
+        backLabel="Back to the mock test"
+        status={`${selectedIds.size} selected`}
+      >
+        {tab === 'create' ? (
+          <button type="submit" form="module-create-form" className={editorPrimaryButtonClass}>
+            <Plus className="w-4 h-4" />
+            Create &amp; add
+          </button>
+        ) : (
+          <button type="button" onClick={applySelection} className={editorPrimaryButtonClass}>
+            <CheckCircle2 className="w-4 h-4" />
+            Use {selectedIds.size} question{selectedIds.size === 1 ? '' : 's'}
+          </button>
+        )}
+      </EditorTopBar>
+
+      <div className="px-4 sm:px-6 pt-4 max-w-5xl mx-auto w-full space-y-3">
         <div
           role="tablist"
           aria-label="How to add questions"
           className="inline-flex gap-1 p-1 rounded-xl bg-[#F1F8F7] border border-[#E2E8F0]"
         >
-          {tabButton('existing', 'From existing')}
+          {tabButton('existing', 'From existing', pool.length)}
           {tabButton('create', 'Create new')}
         </div>
 
-        {justCreated && tab === 'existing' && (
+        {createdCodes.length > 0 && (
           <p
             role="status"
             className="flex items-start gap-2 text-[12px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5"
           >
             <CheckCircle2 className="w-4 h-4 mt-px shrink-0" />
             <span>
-              Added <span className="font-mono font-semibold">{justCreated}</span> to the bank and
-              selected it for this module.
+              Added{' '}
+              {createdCodes.map((code, i) => (
+                <span key={code}>
+                  {i > 0 && ', '}
+                  <span className="font-mono font-semibold">{code}</span>
+                </span>
+              ))}{' '}
+              to the question bank and selected {createdCodes.length === 1 ? 'it' : 'them'} for this
+              module.
             </span>
           </p>
         )}
-
-        {tab === 'create' ? (
-          <>
-            <p className="text-[13px] text-[#58708A] leading-relaxed">
-              This saves a real {formatSubjectName(mod.section)} question to the bank, so it can be
-              reused in other tests and in practice.
-            </p>
-            <form id="picker-create-form" onSubmit={handleCreate} className="space-y-4">
-              <QuestionFormFields ctl={createCtl} variant="compact" />
-            </form>
-            <div className="space-y-2 pt-1">
-              <div className="text-[12px] font-semibold text-[#58708A]">Preview</div>
-              <QuestionPreview ctl={createCtl} compact />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="relative">
-              <label className="sr-only" htmlFor="picker-search">
-                Search questions
-              </label>
-              <Search className="w-4 h-4 text-[#58708A] absolute left-3 top-3 pointer-events-none" />
-              <input
-                id="picker-search"
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Code, topic, or question text…"
-                className="w-full h-10 pl-9 pr-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors"
-              />
-            </div>
-
-            {pool.length === 0 ? (
-              <EmptyState
-                icon={ListChecks}
-                title={`No published ${formatSubjectName(mod.section)} questions`}
-                description="Author one here, or publish the drafts you already have in the question bank."
-                action={{ label: 'Create new question', onClick: () => setTab('create') }}
-              />
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                icon={Search}
-                title="No matching questions"
-                description={`Nothing in this section matches “${search}”.`}
-                action={{ label: 'Clear search', onClick: () => setSearch('') }}
-              />
-            ) : (
-              sections.map((section) =>
-                section.groups.map((group) => (
-                  // min-w-0: a fieldset defaults to min-inline-size:min-content, which
-                  // refuses to shrink and pushes long question text past the modal edge.
-                  <fieldset key={group.key} className="space-y-1.5 min-w-0">
-                    <legend className="text-[12px] font-semibold text-[#071126] pb-1">
-                      {group.label}
-                      <span className="text-[#58708A] font-normal"> · {group.questions.length}</span>
-                    </legend>
-
-                    {group.questions.map((q) => {
-                      const isSelected = selectedIds.has(q.id);
-                      return (
-                        <label
-                          key={q.id}
-                          className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'bg-[#F1F8F7] border-[#0D918A]'
-                              : 'bg-white border-[#E2E8F0] hover:bg-[#F8FBFB]'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggle(q.id)}
-                            className="mt-0.5 w-4 h-4 shrink-0 accent-[#0D918A]"
-                          />
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                              <span className="font-mono font-semibold text-[#071126]">{q.code}</span>
-                              <span className="text-[#58708A]">{q.topic}</span>
-                              <Pill
-                                tone={
-                                  q.difficulty === 'easy'
-                                    ? 'success'
-                                    : q.difficulty === 'medium'
-                                    ? 'warning'
-                                    : 'danger'
-                                }
-                              >
-                                {q.difficulty}
-                              </Pill>
-                            </div>
-                            <div className="text-[12px] text-[#58708A] truncate">
-                              <MathRenderer inline content={q.question_text} />
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </fieldset>
-                ))
-              )
-            )}
-          </>
-        )}
       </div>
-    </Modal>
+
+      {tab === 'create' ? (
+        <EditorPanes
+          form={
+            <form id="module-create-form" onSubmit={handleCreate} className="space-y-4">
+              <p className="text-[13px] text-[#58708A] leading-relaxed">
+                This saves a real {formatSubjectName(mod.section)} question to the bank, so it can be
+                reused in other tests and in practice. Saving keeps the category and clears the
+                content, ready for the next one.
+              </p>
+              <QuestionFormFields ctl={createCtl} variant="full" />
+            </form>
+          }
+          preview={
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#58708A]">
+                <Eye className="w-4 h-4" />
+                <span>Student preview</span>
+              </div>
+              <QuestionPreview ctl={createCtl} />
+            </div>
+          }
+        />
+      ) : (
+        listPane
+      )}
+    </div>
   );
 };

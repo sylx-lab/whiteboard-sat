@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { Question, Subject, Domain, Difficulty, QuestionStatus, AnswerChoice } from '../../../types';
-import { MathTextEditor } from '../../../components/MathTextEditor';
+import { VisualMathEditor } from '../../../components/VisualMathEditor';
 import { MathRenderer } from '../../../components/MathRenderer';
-import { domainsForSubject, formatDomainName } from '../../../lib/utils';
+import { domainsForSubject, formatDomainName, formatSubjectName } from '../../../lib/utils';
 import { suggestQuestionCode, findCodeConflict, distinctValues } from '../lib/questionCodes';
 import {
   Database,
@@ -244,22 +244,31 @@ export const QuestionFormFields: React.FC<{
 
       <EditorSection icon={Database} title="Category">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {isFull && (
-            <Field label="Subject">
-              <select
-                value={form.subject}
-                onChange={(e) => {
-                  const subject = e.target.value as Subject;
-                  update({ subject, domain: domainsForSubject(subject)[0] });
-                  if (subject === 'reading_writing') setShowPassage(true);
-                }}
-                className={inputClass}
-              >
-                <option value="math">Math</option>
-                <option value="reading_writing">Reading &amp; Writing</option>
-              </select>
-            </Field>
-          )}
+          {isFull &&
+            (ctl.lockedSubject ? (
+              <Field label="Subject" hint="Set by the module you are adding to">
+                <div
+                  className={`${inputClass} flex items-center bg-[#F8FBFB] text-[#58708A] cursor-not-allowed`}
+                >
+                  {formatSubjectName(form.subject)}
+                </div>
+              </Field>
+            ) : (
+              <Field label="Subject">
+                <select
+                  value={form.subject}
+                  onChange={(e) => {
+                    const subject = e.target.value as Subject;
+                    update({ subject, domain: domainsForSubject(subject)[0] });
+                    if (subject === 'reading_writing') setShowPassage(true);
+                  }}
+                  className={inputClass}
+                >
+                  <option value="math">Math</option>
+                  <option value="reading_writing">Reading &amp; Writing</option>
+                </select>
+              </Field>
+            ))}
 
           <Field label="Domain" className={isFull ? undefined : 'sm:col-span-2'}>
             <select
@@ -354,7 +363,7 @@ export const QuestionFormFields: React.FC<{
 
       {showPassage ? (
         <EditorSection icon={FileText} title="Passage / stimulus" hint="Shown above the question">
-          <MathTextEditor
+          <VisualMathEditor
             ariaLabel="Passage or stimulus"
             value={form.stimulus}
             onChange={(v) => update({ stimulus: v })}
@@ -383,7 +392,7 @@ export const QuestionFormFields: React.FC<{
       )}
 
       <EditorSection title="Question" hint="Wrap math in $…$">
-        <MathTextEditor
+        <VisualMathEditor
           ariaLabel="Question text"
           required
           value={form.questionText}
@@ -452,7 +461,7 @@ export const QuestionFormFields: React.FC<{
       </EditorSection>
 
       <EditorSection icon={Lightbulb} title="Explanation" hint="Shown after a student answers">
-        <MathTextEditor
+        <VisualMathEditor
           ariaLabel="Explanation"
           required
           value={form.explanation}

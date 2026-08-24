@@ -112,10 +112,19 @@ both halves of the app need it:
 A module stores **copies** of its `Question` objects, not ids (the seed data does the same). That
 makes a mock a stable snapshot, so editing a question later does not silently change a live exam.
 
-The module question picker offers both "From existing" and "Create new". The create path writes a
-real question to the bank via `onCreateQuestion` (so it stays reusable in practice and other tests)
-and then selects it — it never stores a module-only question. Its subject is locked to the module's
-section, since a question in the wrong section would not appear in that module's pool.
+Choosing a module's questions is a **full screen inside the editor**, not a modal:
+`MockTestVisualEditor` swaps its whole body for `ModuleQuestionScreen` while `pickingModuleId` is
+set. The component stays mounted, so an unsaved mock test is never at risk — that is why this is a
+screen swap rather than a route. It offers "From existing" and "Create new"; the create tab renders
+the same `EditorPanes` split (full form + live preview) as the standalone question editor, and
+writes a real question to the bank via `onCreateQuestion` so it stays reusable. Saving keeps the
+category and clears the content, so several questions can be authored in a row without leaving.
+Its subject is locked to the module's section, since a question in the wrong section would not
+appear in that module's pool.
+
+`EditorTopBar` / `editorPrimaryButtonClass` in `EditorShell.tsx` are what keep that screen's chrome
+identical to the route-level editors — use them for any new editor sub-screen instead of
+re-authoring a header.
 
 One layout trap worth knowing: a `<fieldset>` has `min-inline-size: min-content` in the UA
 stylesheet and will not shrink, so a fieldset wrapping `truncate`d text overflows its container.
@@ -144,6 +153,21 @@ The `Question` fields the editor writes that are easy to miss: `stimulus` (the p
 `QuestionCard` renders above the question — mandatory in practice for Reading & Writing),
 `status` (`draft` questions still appear in the admin bank, badged, and are filterable), and
 `source` (a student-facing filter in `PracticeHub`, so a new value there fragments that filter).
+
+### The visual math editor
+
+`app/components/VisualMathEditor.tsx` is the field used for question text, passages, and
+explanations. It is a textarea over a `$…$` source document, plus a **symbol palette** whose button
+faces are the real symbols rendered with KaTeX — clicking one splices LaTeX in at the caret.
+
+- Palette contents live in `app/lib/mathSymbols.ts` (data only). `mathSymbols.test.ts` renders every
+  entry through KaTeX with `throwOnError: true`, in three states: the button face, the snippet with
+  slots filled, and the snippet with slots left empty. That check is what caught `\overparen` not
+  existing in KaTeX 0.18 — **add symbols there, not inline in the component**, so they stay covered.
+- Insertion logic is `app/lib/mathInsert.ts`. It is caret-aware: outside math a snippet gets wrapped
+  in `$…$`, inside math it does not, and a non-empty selection is moved into the snippet's first
+  `{}` slot. `$$` counts as one delimiter and `\$` is a literal.
+- `{}` in an `insert` string marks a slot; the caret lands in the first one.
 
 ### Math rendering
 

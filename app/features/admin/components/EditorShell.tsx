@@ -21,6 +21,52 @@ interface EditorShellProps {
   children: React.ReactNode;
 }
 
+/**
+ * The sticky editor header. Shared by `EditorShell` (route-level editors) and by
+ * in-editor sub-screens such as the mock test module question picker, so both wear
+ * identical chrome.
+ */
+export const EditorTopBar: React.FC<{
+  eyebrow: string;
+  title: string;
+  onBack: () => void;
+  backLabel?: string;
+  /** Right-hand note, e.g. "Unsaved changes" or a selection count. */
+  status?: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ eyebrow, title, onBack, backLabel = 'Back', status, children }) => (
+  <header className="bg-[#0D918A] text-white px-4 sm:px-6 py-3 flex items-center justify-between gap-3 sticky top-0 z-30">
+    <div className="flex items-center gap-3 min-w-0">
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label={backLabel}
+        title={backLabel}
+        className="p-2 bg-white/10 hover:bg-white/20 rounded-[10px] transition-colors cursor-pointer shrink-0"
+      >
+        <ArrowLeft className="w-4 h-4" />
+      </button>
+      <div className="min-w-0">
+        <div className="text-[11px] text-teal-100 font-semibold">{eyebrow}</div>
+        <h1 className="text-[15px] font-bold tracking-tight truncate">{title}</h1>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2 shrink-0">
+      {status && <span className="hidden sm:inline text-[11px] text-teal-100 font-medium">{status}</span>}
+      {children}
+    </div>
+  </header>
+);
+
+/** Primary action styling for the top bar, so every editor's save button matches. */
+export const editorPrimaryButtonClass =
+  'h-10 px-4 bg-white text-[#0D918A] hover:bg-teal-50 text-[12px] font-bold rounded-[10px] transition-colors cursor-pointer inline-flex items-center gap-1.5';
+
+/** Secondary action styling for the top bar. */
+export const editorSecondaryButtonClass =
+  'h-10 px-3.5 bg-white/10 hover:bg-white/20 text-white text-[12px] font-semibold rounded-[10px] transition-colors cursor-pointer inline-flex items-center gap-1.5';
+
 export const EditorShell: React.FC<EditorShellProps> = ({
   eyebrow,
   title,
@@ -60,47 +106,33 @@ export const EditorShell: React.FC<EditorShellProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#071126] flex flex-col">
-      <header className="bg-[#0D918A] text-white px-4 sm:px-6 py-3 flex items-center justify-between gap-3 sticky top-0 z-30">
-        <div className="flex items-center gap-3 min-w-0">
+      <EditorTopBar
+        eyebrow={eyebrow}
+        title={title}
+        onBack={handleBack}
+        backLabel="Back to admin console"
+        status={isDirty ? 'Unsaved changes' : undefined}
+      >
+        {secondaryAction && (
           <button
             type="button"
-            onClick={handleBack}
-            aria-label="Back to admin console"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-[10px] transition-colors cursor-pointer shrink-0"
+            onClick={secondaryAction.onClick}
+            className={`${editorSecondaryButtonClass} hidden sm:inline-flex`}
           >
-            <ArrowLeft className="w-4 h-4" />
+            {secondaryAction.icon && <secondaryAction.icon className="w-4 h-4" />}
+            {secondaryAction.label}
           </button>
-          <div className="min-w-0">
-            <div className="text-[11px] text-teal-100 font-semibold">{eyebrow}</div>
-            <h1 className="text-[15px] font-bold tracking-tight truncate">{title}</h1>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {isDirty && (
-            <span className="hidden sm:inline text-[11px] text-teal-100 font-medium">Unsaved changes</span>
-          )}
-          {secondaryAction && (
-            <button
-              type="button"
-              onClick={secondaryAction.onClick}
-              className="h-10 px-3.5 bg-white/10 hover:bg-white/20 text-white text-[12px] font-semibold rounded-[10px] transition-colors cursor-pointer hidden sm:inline-flex items-center gap-1.5"
-            >
-              {secondaryAction.icon && <secondaryAction.icon className="w-4 h-4" />}
-              {secondaryAction.label}
-            </button>
-          )}
-          <button
-            type="submit"
-            form={formId}
-            title={`${saveLabel} (⌘S / Ctrl+S)`}
-            className="h-10 px-4 bg-white text-[#0D918A] hover:bg-teal-50 text-[12px] font-bold rounded-[10px] transition-colors cursor-pointer inline-flex items-center gap-1.5"
-          >
-            <Save className="w-4 h-4" />
-            {saveLabel}
-          </button>
-        </div>
-      </header>
+        )}
+        <button
+          type="submit"
+          form={formId}
+          title={`${saveLabel} (⌘S / Ctrl+S)`}
+          className={editorPrimaryButtonClass}
+        >
+          <Save className="w-4 h-4" />
+          {saveLabel}
+        </button>
+      </EditorTopBar>
 
       {children}
     </div>
