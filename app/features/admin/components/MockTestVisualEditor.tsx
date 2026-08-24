@@ -39,7 +39,7 @@ import {
   textareaClass,
   editorPrimaryButtonClass,
 } from './EditorShell';
-import { Pill, Button, IconAction, EmptyState } from './ui';
+import { Pill, Button, IconAction, EmptyState, DifficultyDot } from './ui';
 import { useQuestionForm, QuestionFormFields, QuestionPreview } from './questionForm';
 
 interface MockTestVisualEditorProps {
@@ -661,21 +661,11 @@ const ModuleQuestionScreen: React.FC<{
                         className="mt-0.5 w-4 h-4 shrink-0 accent-[#0D918A]"
                       />
                       <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                          <span className="font-mono font-semibold text-[#071126]">{q.code}</span>
-                          <span className="text-[#58708A]">{q.topic}</span>
-                          <Pill
-                            tone={
-                              q.difficulty === 'easy'
-                                ? 'success'
-                                : q.difficulty === 'medium'
-                                ? 'warning'
-                                : 'danger'
-                            }
-                          >
-                            {q.difficulty}
-                          </Pill>
-                          {q.stimulus && <Pill>passage</Pill>}
+                        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                          <span className="font-mono font-semibold text-[#58708A]">{q.code}</span>
+                          <span className="text-[13px] font-medium text-[#071126]">{q.topic}</span>
+                          <DifficultyDot difficulty={q.difficulty} />
+                          {q.stimulus && <span className="text-[#58708A]">passage</span>}
                         </div>
                         <div className="text-[12px] text-[#58708A] line-clamp-2">
                           <MathRenderer inline content={q.question_text} />

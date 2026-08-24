@@ -107,21 +107,23 @@ export function useQuestionForm(opts: {
   initialQuestion?: Question | null;
   allQuestions: Question[];
   lockedSubject?: Subject;
+  /** Pre-fills a new question, e.g. the category the author is adding into. */
+  seed?: Partial<QuestionFormState>;
   idScope?: string;
 }): QuestionFormController {
-  const { initialQuestion, allQuestions, lockedSubject, idScope = 'q' } = opts;
+  const { initialQuestion, allQuestions, lockedSubject, seed, idScope = 'q' } = opts;
 
   const [form, setForm] = useState<QuestionFormState>(() =>
     initialQuestion
       ? questionFormFromQuestion(initialQuestion)
-      : blankQuestionForm(lockedSubject ?? 'math')
+      : { ...blankQuestionForm(seed?.subject ?? lockedSubject ?? 'math'), ...seed }
   );
   const [isDirty, setIsDirty] = useState(false);
   // Reading & Writing questions almost always carry a passage; Math rarely does,
   // so the section is opt-in there rather than empty clutter.
   const [showPassage, setShowPassage] = useState(
     Boolean(initialQuestion?.stimulus) ||
-      (initialQuestion?.subject ?? lockedSubject ?? 'math') === 'reading_writing'
+      (initialQuestion?.subject ?? seed?.subject ?? lockedSubject ?? 'math') === 'reading_writing'
   );
 
   const update = (patch: Partial<QuestionFormState>) => {
@@ -181,7 +183,7 @@ export function useQuestionForm(opts: {
             status: prev.status,
             isFree: prev.isFree,
           }
-        : blankQuestionForm(lockedSubject ?? prev.subject)
+        : { ...blankQuestionForm(seed?.subject ?? lockedSubject ?? prev.subject), ...seed }
     );
     setIsDirty(false);
   };

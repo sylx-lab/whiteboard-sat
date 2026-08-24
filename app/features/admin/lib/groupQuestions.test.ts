@@ -74,3 +74,53 @@ test('reports uncovered domains', () => {
   assert.ok(!missingDomains([q('algebra', 'A')]).includes('algebra'));
   assert.equal(missingDomains([q('algebra', 'A')]).length, 7);
 });
+
+test('counts the difficulty mix per group', () => {
+  const sections = groupQuestions(
+    [
+      q('algebra', 'A', { difficulty: 'easy' }),
+      q('algebra', 'B', { difficulty: 'hard' }),
+      q('algebra', 'C', { difficulty: 'hard' }),
+    ],
+    'domain'
+  );
+  assert.deepEqual(sections[0].groups[0].difficultyMix, { easy: 1, medium: 0, hard: 2 });
+});
+
+test('lists a domain group\'s distinct topics, sorted', () => {
+  const sections = groupQuestions(
+    [q('algebra', 'Slopes'), q('algebra', 'Circles'), q('algebra', 'Slopes')],
+    'domain'
+  );
+  assert.deepEqual(sections[0].groups[0].topics, ['Circles', 'Slopes']);
+});
+
+test('includeEmptyDomains produces a card for every domain and both subjects', () => {
+  const sections = groupQuestions([], 'domain', { includeEmptyDomains: true });
+  assert.deepEqual(
+    sections.map((s) => s.subject),
+    ['math', 'reading_writing']
+  );
+  assert.equal(sections.flatMap((s) => s.groups).length, 8);
+  assert.ok(sections.every((s) => s.total === 0));
+});
+
+test('includeEmptyDomains keeps College Board order and real counts', () => {
+  const sections = groupQuestions([q('geometry_trigonometry', 'Circles')], 'domain', {
+    includeEmptyDomains: true,
+  });
+  assert.deepEqual(
+    sections[0].groups.map((g) => [g.key, g.questions.length]),
+    [
+      ['algebra', 0],
+      ['advanced_math', 0],
+      ['problem_solving_data_analysis', 0],
+      ['geometry_trigonometry', 1],
+    ]
+  );
+});
+
+test('includeEmptyDomains is ignored when grouping by topic', () => {
+  const sections = groupQuestions([q('algebra', 'Slopes')], 'topic', { includeEmptyDomains: true });
+  assert.equal(sections.flatMap((s) => s.groups).length, 1);
+});

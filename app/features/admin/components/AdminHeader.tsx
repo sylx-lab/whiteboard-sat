@@ -18,6 +18,14 @@ export const SUB_PAGE_META: Record<AdminSubPage, { title: string; description: s
     title: 'Students',
     description: 'Review accounts, grant or revoke passes, and suspend access.',
   },
+  staff: {
+    title: 'Team',
+    description: 'Add staff members and choose exactly what each of them can manage.',
+  },
+  topics: {
+    title: 'Topics',
+    description: 'Rename topics across the bank, merge duplicates, and tidy category drift.',
+  },
   questions: {
     title: 'Question bank',
     description: 'Author and edit SAT questions with a live KaTeX preview.',

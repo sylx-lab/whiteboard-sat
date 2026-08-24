@@ -30,7 +30,7 @@ export const AdminCard: React.FC<{ children: React.ReactNode; className?: string
 
 /** Filter row: search + selects on the left, list-level actions on the right. */
 export const Toolbar: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex flex-col lg:flex-row lg:items-center gap-2.5">{children}</div>
+  <div className="flex flex-wrap items-center gap-2">{children}</div>
 );
 
 export const SearchInput: React.FC<{
@@ -38,19 +38,20 @@ export const SearchInput: React.FC<{
   onChange: (v: string) => void;
   placeholder: string;
   label: string;
-}> = ({ value, onChange, placeholder, label }) => (
-  <div className="relative flex-1 lg:max-w-xs">
+  className?: string;
+}> = ({ value, onChange, placeholder, label, className = 'flex-1 min-w-45 lg:max-w-xs' }) => (
+  <div className={cn('relative', className)}>
     <label className="sr-only" htmlFor={`search-${label}`}>
       {label}
     </label>
-    <Search className="w-4 h-4 text-[#58708A] absolute left-3 top-3 pointer-events-none" />
+    <Search className="w-4 h-4 text-[#58708A] absolute left-2.5 top-2.5 pointer-events-none" />
     <input
       id={`search-${label}`}
       type="search"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-10 pl-9 pr-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors"
+      className="w-full h-9 pl-8 pr-2.5 bg-white border border-[#E2E8F0] rounded-lg text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors"
     />
   </div>
 );
@@ -60,13 +61,15 @@ export const FilterSelect = <T extends string>({
   onChange,
   options,
   label,
+  className,
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: string }[];
   label: string;
+  className?: string;
 }) => (
-  <div>
+  <div className={className}>
     <label className="sr-only" htmlFor={`filter-${label}`}>
       {label}
     </label>
@@ -74,7 +77,10 @@ export const FilterSelect = <T extends string>({
       id={`filter-${label}`}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="h-10 px-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-medium text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors cursor-pointer"
+      className={cn(
+        'h-9 px-2.5 bg-white border border-[#E2E8F0] rounded-lg text-[12px] font-medium text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors cursor-pointer',
+        className && 'w-full'
+      )}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -122,6 +128,27 @@ export const EmptyState: React.FC<{
   </div>
 );
 
+const DIFFICULTY_DOT: Record<'easy' | 'medium' | 'hard', string> = {
+  easy: 'bg-emerald-500',
+  medium: 'bg-amber-500',
+  hard: 'bg-rose-500',
+};
+
+/**
+ * Difficulty as a colour-coded dot plus muted text rather than a filled pill.
+ * Every question has a difficulty, so a pill on each row is just chroma noise —
+ * pills are reserved for exceptions (draft, archived).
+ */
+export const DifficultyDot: React.FC<{
+  difficulty: 'easy' | 'medium' | 'hard';
+  className?: string;
+}> = ({ difficulty, className = '' }) => (
+  <span className={cn('inline-flex items-center gap-1.5', className)}>
+    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DIFFICULTY_DOT[difficulty]}`} />
+    <span className="text-[11px] text-[#58708A]">{difficulty}</span>
+  </span>
+);
+
 type PillTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info';
 
 const PILL_TONES: Record<PillTone, string> = {
@@ -165,25 +192,29 @@ export const IconAction: React.FC<{
   </button>
 );
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-[#0D918A] hover:bg-[#087C76] text-white border border-transparent',
   secondary: 'bg-white hover:bg-[#F1F8F7] text-[#071126] border border-[#E2E8F0]',
   danger: 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200',
+  ghost: 'bg-transparent hover:bg-[#F8FBFB] text-[#58708A] hover:text-[#071126] border border-transparent',
 };
 
 export const Button: React.FC<
   {
     variant?: ButtonVariant;
+    /** `sm` matches the h-9 toolbar controls; `md` is for forms and dialogs. */
+    size?: 'sm' | 'md';
     icon?: LucideIcon;
     children: React.ReactNode;
   } & React.ButtonHTMLAttributes<HTMLButtonElement>
-> = ({ variant = 'secondary', icon: Icon, children, className = '', ...rest }) => (
+> = ({ variant = 'secondary', size = 'md', icon: Icon, children, className = '', ...rest }) => (
   <button
     {...rest}
     className={cn(
-      'h-10 px-3.5 rounded-[10px] text-[12px] font-semibold transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed',
+      'rounded-lg text-[12px] font-semibold transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed',
+      size === 'sm' ? 'h-9 px-2.5' : 'h-10 px-3.5',
       BUTTON_VARIANTS[variant],
       className
     )}
@@ -279,3 +310,42 @@ export const Modal: React.FC<{
     </div>
   );
 };
+
+/**
+ * Labelled toggle row. Used for access passes and staff permissions, so both read
+ * as the same kind of control. Changes apply immediately — there is no save step
+ * on an access screen.
+ */
+export const ToggleRow: React.FC<{
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  /** Shown instead of the hint while the toggle is forced on by something else. */
+  lockedReason?: string;
+}> = ({ label, hint, checked, onChange, disabled = false, lockedReason }) => (
+  <label
+    className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
+      disabled
+        ? 'border-[#E2E8F0] bg-[#F8FBFB] cursor-not-allowed'
+        : 'border-[#E2E8F0] bg-white hover:bg-[#F8FBFB] cursor-pointer'
+    }`}
+  >
+    <input
+      type="checkbox"
+      checked={checked}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.checked)}
+      className="mt-0.5 w-4 h-4 shrink-0 accent-[#0D918A] disabled:opacity-50"
+    />
+    <span className="min-w-0 flex-1">
+      <span className="block text-[13px] font-medium text-[#071126]">{label}</span>
+      {(lockedReason || hint) && (
+        <span className="block text-[12px] text-[#58708A] leading-relaxed">
+          {lockedReason || hint}
+        </span>
+      )}
+    </span>
+  </label>
+);

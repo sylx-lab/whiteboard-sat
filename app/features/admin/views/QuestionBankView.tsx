@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Question, Subject, Difficulty, QuestionStatus } from '../../../types';
 import { planQuestionImport, describeImport } from '../lib/importQuestions';
-import { groupQuestions, missingDomains, GroupBy } from '../lib/groupQuestions';
+import { groupQuestions, GroupBy, QuestionGroup, UNCATEGORISED } from '../lib/groupQuestions';
 import { formatDomainName } from '../../../lib/utils';
 import { MathRenderer } from '../../../components/MathRenderer';
 import {
@@ -15,24 +15,23 @@ import {
   Upload,
   Database,
   SearchX,
-  ChevronDown,
   ChevronRight,
+  ChevronLeft,
   X,
   CheckCircle2,
   AlertTriangle,
   FileText,
+  Lock,
 } from 'lucide-react';
 import {
-  AdminCard,
-  Toolbar,
-  SearchInput,
-  FilterSelect,
-  ResultCount,
   EmptyState,
   Pill,
   Button,
-  IconAction,
   Modal,
+  Toolbar,
+  SearchInput,
+  FilterSelect,
+  DifficultyDot,
 } from '../components/ui';
 
 interface QuestionBankViewProps {
@@ -44,13 +43,14 @@ interface QuestionBankViewProps {
 type SubjectFilter = 'all' | Subject;
 type DifficultyFilter = 'all' | Difficulty;
 type StatusFilter = 'all' | QuestionStatus;
-type GroupMode = GroupBy | 'none';
 
-const DIFFICULTY_TONE = {
-  easy: 'success',
-  medium: 'warning',
-  hard: 'danger',
-} as const;
+/** Where "add a question here" should land, with the category pre-filled. */
+const newQuestionHref = (group: QuestionGroup, browseBy: GroupBy) => {
+  if (browseBy === 'domain') return `/admin/questions/new?domain=${encodeURIComponent(group.key)}`;
+  // "Uncategorised" is a bucket, not a topic worth pre-filling.
+  if (group.key === UNCATEGORISED) return '/admin/questions/new';
+  return `/admin/questions/new?topic=${encodeURIComponent(group.key)}`;
+};
 
 export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
   questions,
@@ -58,28 +58,35 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
   onAddQuestion,
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // The open category lives in the URL, so browser back steps up a level and the
+  // editor can send the author straight back to where they were adding.
+  const category = searchParams.get('category');
+
   const [search, setSearch] = useState('');
-  const [groupMode, setGroupMode] = useState<GroupMode>('domain');
+  const [browseBy, setBrowseBy] = useState<GroupBy>('domain');
   const [subjectFilter, setSubjectFilter] = useState<SubjectFilter>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [bulkJsonText, setBulkJsonText] = useState('');
-  // Inline import feedback instead of a native alert(), so the result stays readable.
   const [importResult, setImportResult] = useState<
     { tone: 'success' | 'error'; message: string } | null
   >(null);
 
-  const isFiltering =
-    search.trim() !== '' ||
-    subjectFilter !== 'all' ||
-    difficultyFilter !== 'all' ||
-    statusFilter !== 'all';
+  const openCategory = (key: string | null) =>
+    router.push(key ? `/admin?tab=questions&category=${encodeURIComponent(key)}` : '/admin?tab=questions', {
+      scroll: false,
+    });
 
-  const filtered = useMemo(
+  const isSearching = search.trim() !== '';
+  const hasFilters =
+    isSearching || subjectFilter !== 'all' || difficultyFilter !== 'all' || statusFilter !== 'all';
+
+  const matching = useMemo(
     () =>
       questions.filter((q) => {
         if (subjectFilter !== 'all' && q.subject !== subjectFilter) return false;
@@ -97,13 +104,20 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     [questions, subjectFilter, difficultyFilter, statusFilter, search]
   );
 
-  const sections = useMemo(
-    () => (groupMode === 'none' ? [] : groupQuestions(filtered, groupMode)),
-    [filtered, groupMode]
+  // The overview counts every category — including empty domains, so the first
+  // question in a gap can be added straight from its card.
+  const overviewSections = useMemo(
+    () => groupQuestions(matching, browseBy, { includeEmptyDomains: !hasFilters }),
+    [matching, browseBy, hasFilters]
   );
 
-  // Gaps are only meaningful against the whole bank, not a filtered slice.
-  const gaps = useMemo(() => missingDomains(questions), [questions]);
+  const activeGroup = useMemo(
+    () =>
+      category
+        ? groupQuestions(matching, browseBy).flatMap((s) => s.groups).find((g) => g.key === category)
+        : undefined,
+    [matching, browseBy, category]
+  );
 
   const clearFilters = () => {
     setSearch('');
@@ -111,14 +125,6 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     setDifficultyFilter('all');
     setStatusFilter('all');
   };
-
-  const toggleGroup = (key: string) =>
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
 
   const handleExportJSON = () => {
     const dataStr =
@@ -133,7 +139,6 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
 
   const handleImport = (e: React.FormEvent) => {
     e.preventDefault();
-
     let plan;
     try {
       plan = planQuestionImport(bulkJsonText, questions);
@@ -149,7 +154,6 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     }
 
     plan.accept.forEach(onAddQuestion);
-
     const { ok, message } = describeImport(plan);
     setImportResult({ tone: ok ? 'success' : 'error', message });
     if (ok) {
@@ -158,130 +162,217 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     }
   };
 
-  /** One question row, shared by the grouped and flat layouts. */
-  const renderQuestion = (q: Question) => {
+  /** Proportional easy/medium/hard bar, so coverage skew is visible on the card. */
+  const difficultyBar = (mix: QuestionGroup['difficultyMix'], total: number) => {
+    if (total === 0) {
+      return <div className="h-1 rounded-full bg-[#E2E8F0]" />;
+    }
+    const segments = [
+      { key: 'easy', count: mix.easy, color: 'bg-emerald-500' },
+      { key: 'medium', count: mix.medium, color: 'bg-amber-500' },
+      { key: 'hard', count: mix.hard, color: 'bg-rose-500' },
+    ].filter((s) => s.count > 0);
+
+    return (
+      <div className="h-1 rounded-full bg-[#E2E8F0] overflow-hidden flex">
+        {segments.map((s) => (
+          <div
+            key={s.key}
+            className={s.color}
+            style={{ width: `${(s.count / total) * 100}%` }}
+            title={`${s.count} ${s.key}`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const categoryCard = (group: QuestionGroup) => {
+    const total = group.questions.length;
+    const isEmpty = total === 0;
+
+    return (
+      <div
+        key={group.key}
+        className={`relative rounded-xl border p-4 transition-colors ${
+          isEmpty
+            ? 'border-dashed border-[#E2E8F0] bg-[#F8FBFB] hover:border-[#0D918A]'
+            : 'border-[#E2E8F0] bg-white hover:border-[#0D918A]'
+        }`}
+      >
+        {/* Stretched hit area: the whole card opens the category. */}
+        {!isEmpty && (
+          <button
+            onClick={() => openCategory(group.key)}
+            aria-label={`Open ${group.label}`}
+            className="absolute inset-0 rounded-xl cursor-pointer"
+          />
+        )}
+
+        <div className="relative pointer-events-none space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="text-[13px] font-semibold text-[#071126] leading-snug">{group.label}</h4>
+            {group.draftCount > 0 && <Pill tone="warning">{group.draftCount} draft</Pill>}
+          </div>
+
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-[#071126] tabular-nums leading-none">
+              {total}
+            </span>
+            <span className="text-[12px] text-[#58708A]">
+              question{total === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          {difficultyBar(group.difficultyMix, total)}
+
+          <p className="text-[11px] text-[#58708A] leading-relaxed line-clamp-2 min-h-8">
+            {isEmpty
+              ? 'Nothing here yet.'
+              : group.topics.length
+              ? group.topics.join(' · ')
+              : `${total} question${total === 1 ? '' : 's'}`}
+          </p>
+        </div>
+
+        <div className="relative flex items-center gap-2 pt-3 mt-1 border-t border-[#E2E8F0]">
+          {!isEmpty && (
+            <span className="text-[12px] font-semibold text-[#087C76] inline-flex items-center gap-1 pointer-events-none">
+              Open
+              <ChevronRight className="w-3.5 h-3.5" />
+            </span>
+          )}
+          <button
+            onClick={() => router.push(newQuestionHref(group, browseBy))}
+            className="ml-auto text-[12px] font-semibold text-[#58708A] hover:text-[#087C76] transition-colors cursor-pointer inline-flex items-center gap-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {isEmpty ? 'Add the first' : 'Add'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRow = (q: Question) => {
     const isExpanded = expandedId === q.id;
     const choices = q.choices || q.answer_choices || [];
     const status = q.status || 'published';
 
     return (
-      <li key={q.id}>
-        <div className="py-2.5 flex items-start gap-2">
+      <li key={q.id} className="border-b border-[#E2E8F0] last:border-b-0">
+        <div className="group flex items-start gap-2 pl-2 pr-3">
           <button
             onClick={() => setExpandedId(isExpanded ? null : q.id)}
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? `Collapse ${q.code}` : `Expand ${q.code}`}
-            className="p-1 mt-0.5 rounded text-[#58708A] hover:text-[#071126] hover:bg-[#F1F8F7] transition-colors cursor-pointer shrink-0"
+            className="flex-1 min-w-0 py-2.5 flex items-start gap-2 text-left cursor-pointer"
           >
-            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2 text-[12px]">
-              <span className="font-mono font-semibold text-[#071126] bg-[#F1F8F7] px-2 py-0.5 rounded border border-[#E2E8F0]">
-                {q.code}
-              </span>
-              {/* Show whichever category axis is *not* the current grouping. */}
-              <span className="text-[#58708A]">
-                {groupMode === 'topic' ? formatDomainName(q.domain) : q.topic}
-              </span>
-              {q.stimulus && (
-                <span
-                  className="text-[#58708A] inline-flex items-center gap-1"
-                  title="Has a passage or stimulus"
-                >
-                  <FileText className="w-3.5 h-3.5" />
+            <ChevronRight
+              className={`w-3.5 h-3.5 mt-1 shrink-0 text-[#58708A] transition-transform ${
+                isExpanded ? 'rotate-90' : ''
+              }`}
+            />
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-mono text-[11px] font-semibold text-[#58708A] shrink-0">
+                  {q.code}
                 </span>
-              )}
-              <Pill tone={DIFFICULTY_TONE[q.difficulty]}>{q.difficulty}</Pill>
-              <Pill tone={q.is_free ? 'neutral' : 'brand'}>{q.is_free ? 'Free' : 'Premium'}</Pill>
-              {status !== 'published' && <Pill tone="warning">{status}</Pill>}
-            </div>
-
-            {!isExpanded && (
-              <div className="text-[13px] text-[#58708A] truncate">
+                <span className="text-[13px] font-medium text-[#071126] truncate">{q.topic}</span>
+              </div>
+              <div className="text-[12px] text-[#58708A] truncate">
                 <MathRenderer inline content={q.question_text} />
               </div>
+            </div>
+          </button>
+
+          {/* Only exceptions get a marker: free/published are the defaults. */}
+          <div className="flex items-center gap-2 shrink-0 py-2.5">
+            {q.stimulus && (
+              <span title="Has a passage" className="text-[#58708A]">
+                <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="sr-only">Has a passage</span>
+              </span>
             )}
+            {!q.is_free && (
+              <span title="Premium only" className="text-[#087C76]">
+                <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="sr-only">Premium only</span>
+              </span>
+            )}
+            {status !== 'published' && <Pill tone="warning">{status}</Pill>}
+            <DifficultyDot difficulty={q.difficulty} className="hidden sm:inline-flex w-16" />
           </div>
 
-          <div className="flex items-center gap-0.5 shrink-0">
-            <IconAction
-              icon={Edit3}
-              label={`Edit question ${q.code}`}
+          {/* Visible on touch, revealed on hover where hover exists. */}
+          <div className="flex items-center shrink-0 py-1.5 gap-0.5 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+            <button
               onClick={() => router.push(`/admin/questions/${q.id}`)}
-            />
-            <IconAction
-              icon={Trash2}
-              tone="danger"
-              label={`Delete question ${q.code}`}
+              aria-label={`Edit question ${q.code}`}
+              title="Edit"
+              className="p-1.5 rounded-lg text-[#58708A] hover:text-[#0D918A] hover:bg-[#F1F8F7] transition-colors cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+            <button
               onClick={() => {
                 if (confirm(`Delete question ${q.code}? This cannot be undone.`)) {
                   onDeleteQuestion(q.id);
                 }
               }}
-            />
+              aria-label={`Delete question ${q.code}`}
+              title="Delete"
+              className="p-1.5 rounded-lg text-[#58708A] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
         {isExpanded && (
-          <div className="pb-4 pl-8 space-y-3 animate-in fade-in duration-150">
-            <div className="flex flex-wrap items-center gap-2 text-[12px] text-[#58708A]">
-              <span className="font-semibold text-[#087C76]">{formatDomainName(q.domain)}</span>
-              <span aria-hidden="true">•</span>
-              <span>{q.topic}</span>
-              {q.subtopic && (
-                <>
-                  <span aria-hidden="true">•</span>
-                  <span>{q.subtopic}</span>
-                </>
-              )}
-              {q.source && (
-                <>
-                  <span aria-hidden="true">•</span>
-                  <span>{q.source}</span>
-                </>
-              )}
+          <div className="pl-7 pr-3 pb-4 space-y-2.5 animate-in fade-in duration-150">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#58708A]">
+              <span className="text-[#087C76] font-medium">{formatDomainName(q.domain)}</span>
+              {q.subtopic && <span>· {q.subtopic}</span>}
+              {q.source && <span>· {q.source}</span>}
             </div>
 
             {q.stimulus && (
-              <div className="text-[13px] text-[#071126] bg-white p-3.5 rounded-xl border border-[#E2E8F0] leading-relaxed">
-                <div className="text-[12px] font-semibold text-[#58708A] mb-1">Passage</div>
+              <div className="text-[13px] text-[#071126] bg-[#F8FBFB] p-3 rounded-lg border border-[#E2E8F0] leading-relaxed max-h-52 overflow-y-auto">
                 <MathRenderer content={q.stimulus} />
               </div>
             )}
 
-            <div className="text-[13px] text-[#071126] bg-[#F8FBFB] p-3.5 rounded-xl border border-[#E2E8F0] leading-relaxed">
+            <div className="text-[13px] text-[#071126] leading-relaxed">
               <MathRenderer content={q.question_text} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px]">
-              {choices.map((c) => (
-                <div
-                  key={c.id}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 ${
-                    c.id === q.correct_answer
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
-                      : 'bg-white border-[#E2E8F0] text-[#071126]'
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 rounded-full grid place-items-center text-[11px] font-mono font-bold shrink-0 ${
-                      c.id === q.correct_answer
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-[#F1F8F7] text-[#58708A]'
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[12px]">
+              {choices.map((c) => {
+                const isCorrect = c.id === q.correct_answer;
+                return (
+                  <div
+                    key={c.id}
+                    className={`px-2.5 py-2 rounded-lg flex items-start gap-2 min-w-0 ${
+                      isCorrect ? 'bg-emerald-50 text-emerald-900' : 'bg-[#F8FBFB] text-[#071126]'
                     }`}
                   >
-                    {c.id}
-                  </span>
-                  <MathRenderer inline content={c.text} />
-                </div>
-              ))}
+                    <span
+                      className={`text-[11px] font-mono font-bold shrink-0 ${
+                        isCorrect ? 'text-emerald-700' : 'text-[#58708A]'
+                      }`}
+                    >
+                      {c.id}
+                    </span>
+                    <div className="min-w-0">
+                      <MathRenderer inline content={c.text} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {q.explanation && (
-              <div className="text-[13px] text-[#071126] bg-[#F1F8F7] p-3.5 rounded-xl border border-[#E2E8F0] leading-relaxed">
-                <div className="text-[12px] font-semibold text-[#087C76] mb-1">Explanation</div>
+              <div className="text-[12px] text-[#58708A] leading-relaxed border-l-2 border-[#E2E8F0] pl-3">
                 <MathRenderer content={q.explanation} />
               </div>
             )}
@@ -291,12 +382,14 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     );
   };
 
+  const questionList = (items: Question[]) => <ul>{items.map(renderRow)}</ul>;
+
   return (
     <div className="space-y-4">
       {importResult && (
         <div
           role="status"
-          className={`flex items-start gap-2.5 p-3.5 rounded-2xl border text-[13px] ${
+          className={`flex items-start gap-2.5 p-3.5 rounded-xl border text-[13px] ${
             importResult.tone === 'success'
               ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
               : 'bg-rose-50 border-rose-200 text-rose-900'
@@ -318,37 +411,15 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
         </div>
       )}
 
-      <AdminCard>
-        <div className="space-y-2.5">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+        <div className="p-3 border-b border-[#E2E8F0]">
           <Toolbar>
             <SearchInput
               label="Search questions"
               value={search}
               onChange={setSearch}
-              placeholder="Code, topic, or question text…"
+              placeholder="Search code, topic, or question text…"
             />
-            <FilterSelect<GroupMode>
-              label="Group by"
-              value={groupMode}
-              onChange={setGroupMode}
-              options={[
-                { value: 'domain', label: 'Group by domain' },
-                { value: 'topic', label: 'Group by topic' },
-                { value: 'none', label: 'No grouping' },
-              ]}
-            />
-            <div className="flex items-center gap-2 lg:ml-auto">
-              <ResultCount shown={filtered.length} total={questions.length} noun="questions" />
-              <Button icon={Download} onClick={handleExportJSON} title="Export the whole bank as JSON">
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-              <Button icon={Upload} onClick={() => setIsImportOpen(true)} title="Import a JSON question pack">
-                <span className="hidden sm:inline">Import</span>
-              </Button>
-            </div>
-          </Toolbar>
-
-          <Toolbar>
             <FilterSelect<SubjectFilter>
               label="Subject"
               value={subjectFilter}
@@ -364,7 +435,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
               value={difficultyFilter}
               onChange={setDifficultyFilter}
               options={[
-                { value: 'all', label: 'All difficulties' },
+                { value: 'all', label: 'Any difficulty' },
                 { value: 'easy', label: 'Easy' },
                 { value: 'medium', label: 'Medium' },
                 { value: 'hard', label: 'Hard' },
@@ -375,20 +446,39 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
               value={statusFilter}
               onChange={setStatusFilter}
               options={[
-                { value: 'all', label: 'All statuses' },
+                { value: 'all', label: 'Any status' },
                 { value: 'published', label: 'Published' },
                 { value: 'draft', label: 'Draft' },
                 { value: 'archived', label: 'Archived' },
               ]}
             />
-            {isFiltering && (
-              <button
-                onClick={clearFilters}
-                className="h-10 px-3 text-[12px] font-medium text-[#58708A] hover:text-[#071126] rounded-[10px] hover:bg-[#F1F8F7] transition-colors cursor-pointer"
-              >
-                Clear filters
-              </button>
+
+            {hasFilters && (
+              <Button size="sm" variant="ghost" onClick={clearFilters}>
+                Clear
+              </Button>
             )}
+
+            <div className="flex items-center gap-1 ml-auto">
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={Download}
+                onClick={handleExportJSON}
+                title="Export the whole bank as JSON"
+              >
+                <span className="hidden lg:inline">Export</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={Upload}
+                onClick={() => setIsImportOpen(true)}
+                title="Import a JSON question pack"
+              >
+                <span className="hidden lg:inline">Import</span>
+              </Button>
+            </div>
           </Toolbar>
         </div>
 
@@ -399,86 +489,107 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
             description="Author a question with the live KaTeX editor, or import a JSON pack."
             action={{ label: 'New question', onClick: () => router.push('/admin/questions/new') }}
           />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={SearchX}
-            title="No matching questions"
-            description="Nothing matches the current search and filters."
-            action={{ label: 'Clear filters', onClick: clearFilters }}
-          />
-        ) : groupMode === 'none' ? (
-          <ul className="divide-y divide-[#E2E8F0]">{filtered.map(renderQuestion)}</ul>
+        ) : isSearching ? (
+          /* A search should answer directly, not make you guess which category to open. */
+          <>
+            <div className="px-3 py-2.5 border-b border-[#E2E8F0] flex items-center gap-2">
+              <h3 className="text-[13px] font-semibold text-[#071126]">
+                {matching.length} result{matching.length === 1 ? '' : 's'}
+              </h3>
+              <span className="text-[12px] text-[#58708A] truncate">for “{search}”</span>
+              <button
+                onClick={clearFilters}
+                className="ml-auto text-[12px] font-medium text-[#58708A] hover:text-[#071126] transition-colors cursor-pointer shrink-0"
+              >
+                Back to categories
+              </button>
+            </div>
+            {matching.length === 0 ? (
+              <EmptyState
+                icon={SearchX}
+                title="No matching questions"
+                description="Nothing matches the current search and filters."
+                action={{ label: 'Clear filters', onClick: clearFilters }}
+              />
+            ) : (
+              questionList(matching)
+            )}
+          </>
+        ) : activeGroup ? (
+          /* Level 2 — one category's questions. */
+          <>
+            <div className="px-3 py-2.5 border-b border-[#E2E8F0] flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => openCategory(null)}
+                className="text-[12px] font-medium text-[#58708A] hover:text-[#071126] transition-colors cursor-pointer inline-flex items-center gap-1 shrink-0"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                All categories
+              </button>
+              <span className="text-[#E2E8F0]" aria-hidden="true">
+                /
+              </span>
+              <h3 className="text-[13px] font-semibold text-[#071126]">{activeGroup.label}</h3>
+              <span className="text-[12px] text-[#58708A] tabular-nums">
+                {activeGroup.questions.length}
+              </span>
+              <Button
+                size="sm"
+                variant="primary"
+                icon={Plus}
+                onClick={() => router.push(newQuestionHref(activeGroup, browseBy))}
+                className="ml-auto"
+              >
+                New question
+              </Button>
+            </div>
+            {activeGroup.questions.length === 0 ? (
+              <EmptyState
+                icon={Database}
+                title={`No questions in ${activeGroup.label}`}
+                description="Add the first one, and it will be pre-filled with this category."
+                action={{
+                  label: 'New question',
+                  onClick: () => router.push(newQuestionHref(activeGroup, browseBy)),
+                }}
+              />
+            ) : (
+              questionList(activeGroup.questions)
+            )}
+          </>
         ) : (
-          <div className="space-y-5">
-            {sections.map((section) => (
+          /* Level 1 — the category overview. */
+          <div className="p-3 space-y-5">
+            <div className="flex items-center gap-2">
+              <FilterSelect<GroupBy>
+                label="Browse by"
+                value={browseBy}
+                onChange={setBrowseBy}
+                options={[
+                  { value: 'domain', label: 'Browse by domain' },
+                  { value: 'topic', label: 'Browse by topic' },
+                ]}
+              />
+              <span className="text-[12px] text-[#58708A]">
+                {matching.length} question{matching.length === 1 ? '' : 's'} in{' '}
+                {overviewSections.reduce((n, s) => n + s.groups.length, 0)} categories
+              </span>
+            </div>
+
+            {overviewSections.map((section) => (
               <section key={section.subject} className="space-y-2">
-                <div className="flex items-center gap-2 pb-1">
-                  <h3 className="text-[13px] font-bold text-[#071126]">{section.label}</h3>
-                  <span className="text-[12px] text-[#58708A]">
-                    {section.total} question{section.total === 1 ? '' : 's'}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[13px] font-semibold text-[#071126]">{section.label}</h3>
+                  <span className="text-[12px] text-[#58708A] tabular-nums">{section.total}</span>
                 </div>
-
-                <div className="space-y-1.5">
-                  {section.groups.map((group) => {
-                    // While filtering, keep every matching category open — hunting through
-                    // collapsed headers for your search hit is the whole pain being removed.
-                    const isOpen = isFiltering || !collapsedGroups.has(group.key);
-
-                    return (
-                      <div
-                        key={group.key}
-                        className="rounded-xl border border-[#E2E8F0] overflow-hidden"
-                      >
-                        <button
-                          onClick={() => toggleGroup(group.key)}
-                          aria-expanded={isOpen}
-                          className="w-full px-3 py-2.5 bg-[#F8FBFB] hover:bg-[#F1F8F7] transition-colors cursor-pointer flex items-center gap-2 text-left"
-                        >
-                          {isOpen ? (
-                            <ChevronDown className="w-4 h-4 text-[#58708A] shrink-0" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-[#58708A] shrink-0" />
-                          )}
-                          <span className="text-[13px] font-semibold text-[#071126] flex-1 min-w-0 truncate">
-                            {group.label}
-                          </span>
-                          {group.draftCount > 0 && (
-                            <Pill tone="warning">{group.draftCount} draft</Pill>
-                          )}
-                          <span className="text-[12px] text-[#58708A] tabular-nums shrink-0">
-                            {group.questions.length}
-                          </span>
-                        </button>
-
-                        {isOpen && (
-                          <ul className="divide-y divide-[#E2E8F0] px-3">
-                            {group.questions.map(renderQuestion)}
-                          </ul>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                  {section.groups.map(categoryCard)}
                 </div>
               </section>
             ))}
-
-            {/* Coverage gaps: which SAT domains have nothing authored yet. */}
-            {groupMode === 'domain' && !isFiltering && gaps.length > 0 && (
-              <div className="p-3.5 rounded-xl bg-[#F8FBFB] border border-dashed border-[#E2E8F0] space-y-1.5">
-                <div className="text-[12px] font-semibold text-[#071126]">
-                  {gaps.length} domain{gaps.length === 1 ? '' : 's'} with no questions yet
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {gaps.map((d) => (
-                    <Pill key={d}>{formatDomainName(d)}</Pill>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
-      </AdminCard>
+      </div>
 
       {isImportOpen && (
         <Modal
@@ -518,7 +629,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
               placeholder={
                 '[{"code":"M-ALG-999","subject":"math","domain":"algebra","topic":"Linear Equations","question_text":"If $x=5$, what is $2x$?","answer_choices":[{"id":"A","text":"10"}],"correct_answer":"A","explanation":"$2\\\\times5=10$"}]'
               }
-              className="w-full px-3 py-2.5 bg-white border border-[#E2E8F0] rounded-[10px] font-mono text-[11px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
+              className="w-full px-3 py-2.5 bg-white border border-[#E2E8F0] rounded-lg font-mono text-[11px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
             />
           </form>
         </Modal>

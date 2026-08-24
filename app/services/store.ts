@@ -11,6 +11,7 @@ import {
   PracticeAttempt,
   PaymentSubmission,
   AppTheme,
+  AdminPermission,
 } from '../types';
 import {
   INITIAL_QUESTIONS,
@@ -22,6 +23,17 @@ import {
   DEMO_ADMIN,
 } from '../data/seedData';
 import { estimateSATScore, ALL_DOMAINS } from '../lib/utils';
+
+/** Every admin capability off — the starting point for a new staff member. */
+const BLANK_PERMISSIONS: AdminPermission = {
+  canManageStudents: false,
+  canManagePurchases: false,
+  canManagePractice: false,
+  canManageCourses: false,
+  canManageMockTests: false,
+  canManageResources: false,
+  canManageSubAdmins: false,
+};
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'wbsat_user',
@@ -708,6 +720,74 @@ export function useAppStore() {
     );
   };
 
+  /** Patch one user in the roster, keeping currentUser in sync if it is them. */
+  const patchUser = (userId: string, patch: (u: UserProfile) => UserProfile) => {
+    setAllUsers((prev) => prev.map((u) => (u.id === userId ? patch(u) : u)));
+    setCurrentUser((prev) => (prev && prev.id === userId ? patch(prev) : prev));
+  };
+
+  // --- COURSE ENROLLMENT ---
+  const toggleCourseEnrollment = (userId: string, courseId: string) => {
+    patchUser(userId, (u) => {
+      const enrolled = u.access.enrolledCourseIds.includes(courseId);
+      return {
+        ...u,
+        access: {
+          ...u.access,
+          enrolledCourseIds: enrolled
+            ? u.access.enrolledCourseIds.filter((id) => id !== courseId)
+            : [...u.access.enrolledCourseIds, courseId],
+        },
+      };
+    });
+  };
+
+  // --- STAFF ROLES & PERMISSIONS ---
+  const setUserRole = (userId: string, role: UserProfile['role']) => {
+    patchUser(userId, (u) => ({
+      ...u,
+      role,
+      // A new staff member starts with nothing granted; permissions are then chosen
+      // explicitly rather than inherited from whatever the account had before.
+      permissions: role === 'sub_admin' ? u.permissions ?? BLANK_PERMISSIONS : u.permissions,
+    }));
+  };
+
+  const setUserPermissions = (userId: string, updates: Partial<AdminPermission>) => {
+    patchUser(userId, (u) => ({
+      ...u,
+      permissions: { ...BLANK_PERMISSIONS, ...(u.permissions ?? {}), ...updates },
+    }));
+  };
+
+  const createStaffUser = (
+    name: string,
+    phone: string,
+    email?: string,
+    permissions: Partial<AdminPermission> = {}
+  ): UserProfile => {
+    const staff: UserProfile = {
+      id: `user-staff-${Date.now()}`,
+      name,
+      phone,
+      email,
+      role: 'sub_admin',
+      targetScore: 1600,
+      createdAt: new Date().toISOString().split('T')[0],
+      status: 'active',
+      access: {
+        premiumMath: true,
+        premiumReadingWriting: true,
+        redbookPractice: true,
+        enrolledCourseIds: [],
+        fullPremium: true,
+      },
+      permissions: { ...BLANK_PERMISSIONS, ...permissions },
+    };
+    setAllUsers((prev) => [...prev, staff]);
+    return staff;
+  };
+
   const toggleStudentSuspension = (userId: string) => {
     setAllUsers((prev) =>
       prev.map((u) => {
@@ -743,6 +823,22 @@ export function useAppStore() {
   const updateQuestion = (id: string, updates: Partial<Question>) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, ...updates, updated_at: new Date().toISOString().split('T')[0] } : q))
+    );
+  };
+
+  /**
+   * Apply a batch of topic edits from the Topics view in one pass, so a rename or
+   * merge across 40 questions is a single state update rather than 40.
+   */
+  const applyTopicUpdates = (updates: { questionId: string; topic: string }[]) => {
+    if (updates.length === 0) return;
+    const byId = new Map(updates.map((u) => [u.questionId, u.topic]));
+    const today = new Date().toISOString().split('T')[0];
+    setQuestions((prev) =>
+      prev.map((q) => {
+        const topic = byId.get(q.id);
+        return topic === undefined ? q : { ...q, topic, updated_at: today };
+      })
     );
   };
 
@@ -962,6 +1058,12 @@ export function useAppStore() {
     addQuestion,
     updateQuestion,
     deleteQuestion,
+    applyTopicUpdates,
+    // Access, roles & staff
+    toggleCourseEnrollment,
+    setUserRole,
+    setUserPermissions,
+    createStaffUser,
     // Course & Lesson CRUD
     addCourse,
     updateCourse,

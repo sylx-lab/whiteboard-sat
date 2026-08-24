@@ -217,6 +217,29 @@ Conventions these encode:
   the dashboard's `domainStats` all read from there, so don't re-declare a domain list.
   `groupQuestions` derives a question's subject from its **domain**, not its stored `subject` field,
   because imported rows can disagree and the domain is what score breakdowns key on.
+- **The question bank is a two-level drill-down**, not an accordion or a rail:
+  1. *Overview* — a grid of category cards per subject, each with its count, a proportional
+     easy/medium/hard bar, and its topics. Empty domains get a card too
+     (`groupQuestions(..., { includeEmptyDomains: true })`) so the first question in a gap can be
+     added straight from it.
+  2. *Category* — that category's questions as a dense hairline list.
+  A search skips level 1 entirely and answers directly, because making someone guess which category
+  holds their hit is the thing being avoided.
+- **The open category lives in the URL** (`?tab=questions&category=<key>`), so browser back steps up
+  a level and the editor can return the author to the category they were adding into. An unknown
+  key falls back to the overview rather than an empty pane.
+- **"Add" on a card seeds the editor.** `/admin/questions/new?domain=…` / `?topic=…` is read by the
+  route page into `useQuestionForm`'s `seed`, which pre-fills the category. Keep new pre-fill going
+  through `seed` rather than adding editor props.
+- **Badge only the exceptions.** Free, published, and medium are the defaults, so they get no
+  marker; premium gets a lock, a passage gets a document icon, draft/archived get a `Pill`.
+  Difficulty uses `DifficultyDot`, not a filled pill, because every row has one and pills on every
+  row are just chroma noise.
+- **Row actions** are `[@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100`
+  — quiet on pointer devices, always visible on touch. Don't use a bare `opacity-0`.
+- **Toolbar controls are `h-9` / `rounded-lg`** (`SearchInput`, `FilterSelect`, `Button size="sm"`);
+  form and dialog controls stay `h-10`. Mixing the two in one row is the tell that something
+  bypassed the primitives.
 - **Every list needs both empty states** — "nothing exists yet" (offer the create action) and
   "nothing matches the filter" (offer to clear it) — plus a `ResultCount`.
 - **Editors are real forms.** The Save button lives in `EditorShell` and reaches the form via

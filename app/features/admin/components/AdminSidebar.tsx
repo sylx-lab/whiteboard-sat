@@ -12,6 +12,8 @@ import {
   Award,
   Database,
   Shield,
+  ShieldCheck,
+  Tags,
   PanelLeftClose,
   PanelLeftOpen,
   ExternalLink,
@@ -22,19 +24,23 @@ export type AdminSubPage =
   | 'overview'
   | 'payments'
   | 'candidates'
+  | 'staff'
   | 'courses'
   | 'resources'
   | 'mock-tests'
-  | 'questions';
+  | 'questions'
+  | 'topics';
 
 export const ADMIN_SUB_PAGES: AdminSubPage[] = [
   'overview',
   'payments',
   'candidates',
+  'staff',
   'courses',
   'resources',
   'mock-tests',
   'questions',
+  'topics',
 ];
 
 interface AdminSidebarProps {
@@ -47,6 +53,10 @@ interface AdminSidebarProps {
   totalCoursesCount: number;
   totalResourcesCount: number;
   totalMockTestsCount: number;
+  totalStaffCount: number;
+  totalTopicsCount: number;
+  /** Pages this person may open. Anything else is hidden, not just disabled. */
+  allowedPages: AdminSubPage[];
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   /** Mobile drawer state — the sidebar is off-canvas below lg. */
@@ -54,7 +64,7 @@ interface AdminSidebarProps {
   onCloseMobile: () => void;
 }
 
-const SECTIONS = ['Analytics', 'Financials & users', 'Content'] as const;
+const SECTIONS = ['Analytics', 'People & payments', 'Content'] as const;
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   activeSubPage,
@@ -66,34 +76,50 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   totalCoursesCount,
   totalResourcesCount,
   totalMockTestsCount,
+  totalStaffCount,
+  totalTopicsCount,
+  allowedPages,
   isCollapsed,
   onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
 }) => {
-  const navItems: {
+  type NavItem = {
     id: AdminSubPage;
     label: string;
     icon: typeof BarChart3;
     section: (typeof SECTIONS)[number];
     count?: number;
     urgent?: boolean;
-  }[] = [
+  };
+
+  const allNavItems: NavItem[] = [
     { id: 'overview', label: 'Overview', icon: BarChart3, section: 'Analytics' },
     {
       id: 'payments',
       label: 'Payments',
       icon: CreditCard,
-      section: 'Financials & users',
+      section: 'People & payments',
       count: pendingPaymentsCount || undefined,
       urgent: pendingPaymentsCount > 0,
     },
-    { id: 'candidates', label: 'Students', icon: Users, section: 'Financials & users', count: totalUsersCount },
+    {
+      id: 'candidates',
+      label: 'Students',
+      icon: Users,
+      section: 'People & payments',
+      count: totalUsersCount,
+    },
+    { id: 'staff', label: 'Team', icon: ShieldCheck, section: 'People & payments', count: totalStaffCount },
     { id: 'questions', label: 'Question bank', icon: Database, section: 'Content', count: totalQuestionsCount },
+    { id: 'topics', label: 'Topics', icon: Tags, section: 'Content', count: totalTopicsCount },
     { id: 'courses', label: 'Courses', icon: BookOpen, section: 'Content', count: totalCoursesCount },
     { id: 'mock-tests', label: 'Mock tests', icon: Award, section: 'Content', count: totalMockTestsCount },
     { id: 'resources', label: 'Resources', icon: FileText, section: 'Content', count: totalResourcesCount },
   ];
+
+  // Pages a staff member cannot manage are hidden outright, not shown disabled.
+  const navItems = allNavItems.filter((item) => allowedPages.includes(item.id));
 
   const showLabels = !isCollapsed;
 
@@ -150,6 +176,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <nav className="flex-1 overflow-y-auto p-2.5 space-y-5" aria-label="Admin sections">
           {SECTIONS.map((section) => {
             const items = navItems.filter((i) => i.section === section);
+            if (items.length === 0) return null;
             return (
               <div key={section} className="space-y-0.5">
                 {showLabels && (

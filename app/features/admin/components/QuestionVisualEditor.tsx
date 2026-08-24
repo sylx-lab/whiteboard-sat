@@ -5,12 +5,19 @@ import { Question } from '../../../types';
 import { Eye, Plus } from 'lucide-react';
 import { EditorShell, EditorPanes } from './EditorShell';
 import { Pill } from './ui';
-import { useQuestionForm, QuestionFormFields, QuestionPreview } from './questionForm';
+import {
+  useQuestionForm,
+  QuestionFormFields,
+  QuestionPreview,
+  QuestionFormState,
+} from './questionForm';
 
 interface QuestionVisualEditorProps {
   initialQuestion?: Question | null;
   /** The rest of the bank — powers code suggestions, duplicate warnings, and datalists. */
   allQuestions: Question[];
+  /** Pre-fills a new question, e.g. the category the author clicked "add" from. */
+  seed?: Partial<QuestionFormState>;
   onSave: (questionData: Record<string, unknown>) => void;
   /** Save and reset the form for the next question — used when authoring in bulk. */
   onSaveAndNew?: (questionData: Record<string, unknown>) => void;
@@ -19,10 +26,11 @@ interface QuestionVisualEditorProps {
 export const QuestionVisualEditor: React.FC<QuestionVisualEditorProps> = ({
   initialQuestion,
   allQuestions,
+  seed,
   onSave,
   onSaveAndNew,
 }) => {
-  const ctl = useQuestionForm({ initialQuestion, allQuestions, idScope: 'editor' });
+  const ctl = useQuestionForm({ initialQuestion, allQuestions, seed, idScope: 'editor' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
