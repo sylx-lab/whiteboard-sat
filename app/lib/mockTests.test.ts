@@ -10,7 +10,11 @@ import {
   isPlayable,
   eligibleQuestions,
   moduleTitle,
+  makeModule,
+  scoreAttempt,
 } from './mockTests.ts';
+import { INITIAL_QUESTIONS } from '../data/seedData.ts';
+import type { Question } from '../types.ts';
 
 type Mod = ReturnType<typeof standardSatModules>[number];
 
@@ -114,4 +118,48 @@ test('eligible questions match the section and exclude drafts', () => {
     eligibleQuestions(bank, 'math').map((x: { id: string }) => x.id),
     ['a', 'd']
   );
+});
+
+test('scoreAttempt counts only real matches, and unanswered questions are wrong', () => {
+  const q = (id: string, domain: Question['domain'], answer: 'A' | 'B'): Question => ({
+    ...INITIAL_QUESTIONS[0],
+    id,
+    domain,
+    correct_answer: answer,
+  });
+  const test1 = {
+    modules: [
+      makeModule('t1', 'math', 1, 35, 'm1'),
+      makeModule('t1', 'reading_writing', 1, 32, 'm2'),
+    ],
+  };
+  test1.modules[0].questions = [q('a', 'algebra', 'A'), q('b', 'algebra', 'B')];
+  test1.modules[1].questions = [q('c', 'craft_structure', 'A')];
+
+  const interaction = (questionId: string, selectedAnswer: 'A' | 'B' | null, seconds: number) => ({
+    questionId,
+    selectedAnswer,
+    isSubmitted: true,
+    isMarkedForReview: false,
+    isBookmarked: false,
+    crossedOutChoices: [],
+    timeSpentSeconds: seconds,
+  });
+
+  const summary = scoreAttempt(test1, {
+    a: interaction('a', 'A', 30),
+    b: interaction('b', 'A', 20),
+    // 'c' never answered
+  });
+
+  assert.equal(summary.totalQuestions, 3);
+  assert.equal(summary.totalCorrect, 1);
+  assert.equal(summary.mathCorrect, 1);
+  assert.equal(summary.mathTotal, 2);
+  assert.equal(summary.rwCorrect, 0);
+  assert.equal(summary.rwTotal, 1);
+  assert.equal(summary.timeSpentSeconds, 50);
+  assert.deepEqual(summary.domainBreakdown.algebra, { correct: 1, total: 2 });
+  assert.deepEqual(summary.domainBreakdown.craft_structure, { correct: 0, total: 1 });
+  assert.equal(summary.accuracyPercent, 33);
 });

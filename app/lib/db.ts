@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import type { Db } from 'mongodb';
+import { deriveTotals } from './mockTests.ts';
 import type {
   Course,
   MockTest,
@@ -50,6 +51,56 @@ export type UserDoc = Doc<Omit<UserProfile, 'status'>> & {
 export const publicUser = (doc: UserDoc): UserProfile => {
   const { passwordHash: _hash, googleId: _google, ...rest } = doc;
   return fromDoc(rest) as UserProfile;
+};
+
+/**
+ * Doc -> app type. The Doc types above deliberately store one half of each
+ * alias/derived pair; these put the mirror back, so client code that reads
+ * `answer_choices`, `totalQuestions`, `createdAt`, `timestamp` or `status`
+ * keeps working without the database holding two copies that can disagree.
+ */
+export const hydrate = {
+  question: (d: QuestionDoc): Question => {
+    const q = fromDoc(d) as Question;
+    // `?? q.answer_choices` covers documents written before the seed used
+    // dehydrate.question and stored the alias instead of `choices`.
+    const choices = q.choices ?? q.answer_choices ?? [];
+    return { ...q, choices, answer_choices: choices };
+  },
+  course: (d: CourseDoc): Course => fromDoc(d) as Course,
+  resource: (d: ResourceDoc): ResourceItem => fromDoc(d) as ResourceItem,
+  mockTest: (d: MockTestDoc): MockTest => {
+    const t = fromDoc(d) as Omit<MockTest, 'totalQuestions' | 'totalTimeMinutes'>;
+    return { ...t, ...deriveTotals(t.modules) };
+  },
+  mockAttempt: (d: MockAttemptDoc): MockTestAttempt => fromDoc(d) as MockTestAttempt,
+  practiceAttempt: (d: PracticeAttemptDoc): PracticeAttempt => {
+    const a = fromDoc(d) as Omit<PracticeAttempt, 'timestamp'>;
+    return { ...a, timestamp: a.attemptedAt };
+  },
+  practiceSession: (d: PracticeSessionDoc): PracticeSession => fromDoc(d) as PracticeSession,
+  payment: (d: PaymentDoc): PaymentSubmission => {
+    const p = fromDoc(d) as Omit<PaymentSubmission, 'createdAt' | 'productTitle'>;
+    return { ...p, createdAt: p.submittedAt, productTitle: p.productName };
+  },
+  /** publicUser + the `status` mirror of isSuspended. Never returns passwordHash. */
+  user: (d: UserDoc): UserProfile => {
+    const u = publicUser(d);
+    return { ...u, status: u.isSuspended ? 'suspended' : 'active' };
+  },
+};
+
+/** App type -> doc, dropping the mirrors hydrate() puts back. */
+export const dehydrate = {
+  question: ({ answer_choices, ...q }: Question): QuestionDoc =>
+    toDoc({ ...q, choices: q.choices ?? answer_choices ?? [] }),
+  course: (c: Course): CourseDoc => toDoc(c),
+  resource: (r: ResourceItem): ResourceDoc => toDoc(r),
+  mockTest: ({ totalQuestions: _q, totalTimeMinutes: _m, ...t }: MockTest): MockTestDoc => toDoc(t),
+  mockAttempt: (a: MockTestAttempt): MockAttemptDoc => toDoc(a),
+  practiceAttempt: ({ timestamp: _t, ...a }: PracticeAttempt): PracticeAttemptDoc => toDoc(a),
+  practiceSession: (s: PracticeSession): PracticeSessionDoc => toDoc(s),
+  payment: ({ createdAt: _c, productTitle: _pt, ...p }: PaymentSubmission): PaymentDoc => toDoc(p),
 };
 
 // ponytail: no Mongoose. types.ts is already the schema, and the unique

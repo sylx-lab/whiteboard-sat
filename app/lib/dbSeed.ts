@@ -1,4 +1,4 @@
-import { collections, ensureIndexes, toDoc } from './db.ts';
+import { collections, dehydrate, ensureIndexes } from './db.ts';
 import { hashPassword } from './auth.ts';
 import {
   DEMO_ADMIN,
@@ -19,10 +19,14 @@ const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'whiteboard123';
 async function upsert<T extends { id: string }>(
   collection: { updateOne: (f: object, u: object, o: object) => Promise<unknown> },
   rows: T[],
+  // The same doc mapper the API routes write through, so the seed cannot store
+  // a shape the readers do not expect (it used to save `answer_choices`, which
+  // QuestionDoc drops, leaving every seeded question with no choices).
+  toDocument: (row: T) => { _id: string },
 ) {
   await Promise.all(
     rows.map((row) => {
-      const { _id, ...rest } = toDoc(row);
+      const { _id, ...rest } = toDocument(row);
       return collection.updateOne({ _id }, { $set: rest, $setOnInsert: { _id } }, { upsert: true });
     }),
   );
@@ -32,10 +36,10 @@ const passwordHash = await hashPassword(DEMO_PASSWORD);
 const users = await collections.users();
 
 await Promise.all([
-  upsert(await collections.questions(), INITIAL_QUESTIONS),
-  upsert(await collections.courses(), INITIAL_COURSES),
-  upsert(await collections.resources(), INITIAL_RESOURCES),
-  upsert(await collections.mockTests(), INITIAL_MOCK_TESTS),
+  upsert(await collections.questions(), INITIAL_QUESTIONS, dehydrate.question),
+  upsert(await collections.courses(), INITIAL_COURSES, dehydrate.course),
+  upsert(await collections.resources(), INITIAL_RESOURCES, dehydrate.resource),
+  upsert(await collections.mockTests(), INITIAL_MOCK_TESTS, dehydrate.mockTest),
   ...[DEMO_STUDENT, DEMO_ADMIN].map(({ id, status: _status, ...rest }) =>
     users.updateOne(
       { _id: id },

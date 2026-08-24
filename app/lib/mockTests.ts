@@ -1,4 +1,5 @@
-import type { MockTest, MockTestModule, Question, Subject } from '../types';
+import { estimateSATScore } from './utils.ts';
+import type { MockTest, MockTestAttempt, MockTestModule, Question, Subject } from '../types';
 
 /**
  * The real Digital SAT shape: two Reading & Writing modules then two Math modules,
@@ -124,4 +125,65 @@ export function isPlayable(test: Pick<MockTest, 'modules'>): boolean {
 /** Questions eligible for a module: published, and matching the module's section. */
 export function eligibleQuestions(questions: Question[], section: Subject): Question[] {
   return questions.filter((q) => q.subject === section && (q.status || 'published') === 'published');
+}
+
+/**
+ * Score a finished attempt. Lifted out of the store so the server owns the
+ * number: a client that can post its own scoreSummary can post a 1600.
+ * Unanswered questions simply never match, so they count as wrong.
+ */
+export function scoreAttempt(
+  test: Pick<MockTest, 'modules'>,
+  interactions: MockTestAttempt['interactions'],
+): NonNullable<MockTestAttempt['scoreSummary']> {
+  let mathCorrect = 0;
+  let mathTotal = 0;
+  let rwCorrect = 0;
+  let rwTotal = 0;
+  let totalCorrect = 0;
+  let totalQuestions = 0;
+  let timeSpentSeconds = 0;
+  const domainBreakdown: Record<string, { correct: number; total: number }> = {};
+
+  for (const mod of test.modules) {
+    for (const q of mod.questions) {
+      totalQuestions += 1;
+      domainBreakdown[q.domain] ??= { correct: 0, total: 0 };
+      domainBreakdown[q.domain].total += 1;
+      if (mod.section === 'math') mathTotal += 1;
+      if (mod.section === 'reading_writing') rwTotal += 1;
+
+      const interaction = interactions[q.id];
+      if (!interaction) continue;
+      timeSpentSeconds += interaction.timeSpentSeconds || 0;
+      if (interaction.selectedAnswer !== q.correct_answer) continue;
+
+      totalCorrect += 1;
+      domainBreakdown[q.domain].correct += 1;
+      if (mod.section === 'math') mathCorrect += 1;
+      if (mod.section === 'reading_writing') rwCorrect += 1;
+    }
+  }
+
+  const { mathScore, rwScore, totalScore } = estimateSATScore(
+    mathCorrect,
+    mathTotal,
+    rwCorrect,
+    rwTotal,
+  );
+
+  return {
+    totalCorrect,
+    totalQuestions,
+    accuracyPercent: Math.round((totalCorrect / Math.max(1, totalQuestions)) * 100),
+    mathScoreEstimated: mathScore,
+    rwScoreEstimated: rwScore,
+    totalScoreEstimated: totalScore,
+    mathCorrect,
+    mathTotal,
+    rwCorrect,
+    rwTotal,
+    timeSpentSeconds,
+    domainBreakdown,
+  };
 }

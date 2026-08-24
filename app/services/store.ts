@@ -23,7 +23,9 @@ import {
   DEMO_STUDENT,
   DEMO_ADMIN,
 } from '../data/seedData';
-import { estimateSATScore, ALL_DOMAINS } from '../lib/utils';
+import { ALL_DOMAINS } from '../lib/utils';
+import { canSeeCourse, canSeeMockTest, canSeeQuestion, applyPlanGrants } from '../lib/access';
+import { scoreAttempt } from '../lib/mockTests';
 
 /** Every admin capability off — the starting point for a new staff member. */
 const BLANK_PERMISSIONS: AdminPermission = {
@@ -392,30 +394,11 @@ export function useAppStore() {
   };
 
   // --- ACCESS CONTROL ENGINE ---
-  const hasAccessToQuestion = (q: Question): boolean => {
-    if (q.is_free) return true;
-    if (!currentUser) return false;
-    if (currentUser.role === 'admin') return true;
-    if (currentUser.access.fullPremium) return true;
-    if (q.subject === 'math' && currentUser.access.premiumMath) return true;
-    if (q.subject === 'reading_writing' && currentUser.access.premiumReadingWriting) return true;
-    return false;
-  };
-
-  const hasAccessToCourse = (courseId: string): boolean => {
-    if (!currentUser) return false;
-    if (currentUser.role === 'admin') return true;
-    if (currentUser.access.fullPremium) return true;
-    return currentUser.access.enrolledCourseIds.includes(courseId);
-  };
-
-  const hasAccessToMockTest = (test: MockTest): boolean => {
-    if (test.is_free) return true;
-    if (!currentUser) return false;
-    if (currentUser.role === 'admin') return true;
-    if (currentUser.access.fullPremium) return true;
-    return false;
-  };
+  // The predicates live in lib/access.ts, shared with the API routes: what the
+  // UI locks and what the server refuses to send have to be the same rule.
+  const hasAccessToQuestion = (q: Question): boolean => canSeeQuestion(currentUser, q);
+  const hasAccessToCourse = (courseId: string): boolean => canSeeCourse(currentUser, courseId);
+  const hasAccessToMockTest = (test: MockTest): boolean => canSeeMockTest(currentUser, test);
 
   // --- AUTHENTICATION & PROFILES ---
   /**
@@ -520,74 +503,18 @@ export function useAppStore() {
   const finalizeMockTest = (attemptId: string) => {
     setMockAttempts((prev) => {
       const target = prev.find((a) => a.id === attemptId);
-      if (!target) return prev;
+      const test = target && mockTests.find((t) => t.id === target.testId);
+      if (!target || !test) return prev;
 
-      const test = mockTests.find((t) => t.id === target.testId);
-      if (!test) return prev;
-
-      let mathCorrect = 0;
-      let mathTotal = 0;
-      let rwCorrect = 0;
-      let rwTotal = 0;
-      let totalCorrect = 0;
-      let totalQuestions = 0;
-      let totalTime = 0;
-
-      const domainMap: Record<string, { correct: number; total: number }> = {};
-
-      test.modules.forEach((mod) => {
-        mod.questions.forEach((q) => {
-          totalQuestions += 1;
-          if (!domainMap[q.domain]) {
-            domainMap[q.domain] = { correct: 0, total: 0 };
-          }
-          domainMap[q.domain].total += 1;
-
-          if (mod.section === 'math') mathTotal += 1;
-          if (mod.section === 'reading_writing') rwTotal += 1;
-
-          const interaction = target.interactions[q.id];
-          if (interaction) {
-            totalTime += interaction.timeSpentSeconds || 0;
-            if (interaction.selectedAnswer === q.correct_answer) {
-              totalCorrect += 1;
-              domainMap[q.domain].correct += 1;
-              if (mod.section === 'math') mathCorrect += 1;
-              if (mod.section === 'reading_writing') rwCorrect += 1;
-            }
-          }
-        });
-      });
-
-      const { mathScore, rwScore, totalScore } = estimateSATScore(
-        mathCorrect,
-        mathTotal,
-        rwCorrect,
-        rwTotal
-      );
-
-      const completedAttempt: MockTestAttempt = {
+      // scoreAttempt is the same function the server runs on submit, so an
+      // offline finalize and a server finalize cannot disagree.
+      const completed: MockTestAttempt = {
         ...target,
         status: 'completed',
         completedAt: new Date().toISOString(),
-        scoreSummary: {
-          totalCorrect,
-          totalQuestions,
-          accuracyPercent: Math.round((totalCorrect / Math.max(1, totalQuestions)) * 100),
-          mathScoreEstimated: mathScore,
-          rwScoreEstimated: rwScore,
-          totalScoreEstimated: totalScore,
-          mathCorrect,
-          mathTotal,
-          rwCorrect,
-          rwTotal,
-          timeSpentSeconds: totalTime,
-          domainBreakdown: domainMap,
-        },
+        scoreSummary: scoreAttempt(test, target.interactions),
       };
-
-      const updated = prev.map((a) => (a.id === attemptId ? completedAttempt : a));
-      return updated;
+      return prev.map((a) => (a.id === attemptId ? completed : a));
     });
   };
 
@@ -675,30 +602,7 @@ export function useAppStore() {
         let nextAccess = { ...u.access };
 
         if ('grants' in grantsOrPlan) {
-          const g = grantsOrPlan.grants;
-          if (g.allCourses || g.fullPremium) {
-            nextAccess = {
-              premiumMath: true,
-              premiumReadingWriting: true,
-              redbookPractice: true,
-              enrolledCourseIds: courses.map((c) => c.id),
-              fullPremium: true,
-            };
-          } else {
-            if (g.premiumMath) {
-              nextAccess.premiumMath = true;
-              nextAccess.redbookPractice = true;
-              if (!nextAccess.enrolledCourseIds.includes('c-math-800')) {
-                nextAccess.enrolledCourseIds.push('c-math-800');
-              }
-            }
-            if (g.premiumReadingWriting) {
-              nextAccess.premiumReadingWriting = true;
-              if (!nextAccess.enrolledCourseIds.includes('c-rw-750')) {
-                nextAccess.enrolledCourseIds.push('c-rw-750');
-              }
-            }
-          }
+          nextAccess = applyPlanGrants(nextAccess, grantsOrPlan, courses.map((c) => c.id));
         } else {
           nextAccess = { ...nextAccess, ...grantsOrPlan };
         }

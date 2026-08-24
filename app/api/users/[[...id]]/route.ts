@@ -1,0 +1,140 @@
+import { can, NO_PERMISSIONS } from '../../../features/admin/lib/permissions.ts';
+import { bad, denied, newId, readBody, requireUser, today } from '../../../lib/api.ts';
+import { collections, hydrate } from '../../../lib/db.ts';
+import type { UserDoc } from '../../../lib/db.ts';
+import type { AccessGrants } from '../../../types.ts';
+
+/**
+ * The admin console's Students and Team lists, and the one editor behind both
+ * (`/admin/people/[id]`). Which permission a change needs depends on the change:
+ * passes and suspension are student management, role and permissions are team
+ * management. The self-edit guards from the UI are repeated here, because a UI
+ * guard is a hint and this is the rule.
+ */
+type Ctx = { params: Promise<{ id?: string[] }> };
+
+export async function GET(request: Request, ctx: Ctx) {
+  const user = await requireUser();
+  if (denied(user)) return user;
+  if (!can(user, 'canManageStudents') && !can(user, 'canManageSubAdmins')) {
+    return bad('You do not have permission to do that', 403);
+  }
+
+  const users = await collections.users();
+  const id = (await ctx.params).id?.[0];
+  if (id) {
+    const doc = await users.findOne({ _id: id });
+    return doc ? Response.json({ item: hydrate.user(doc) }) : bad('Not found', 404);
+  }
+
+  const role = new URL(request.url).searchParams.get('role') as UserDoc['role'] | null;
+  const docs = await users.find(role ? { role } : {}).sort({ createdAt: -1 }).toArray();
+  return Response.json({ items: docs.map(hydrate.user) });
+}
+
+/**
+ * POST /api/users — add a staff member. No password is set: they sign in by
+ * running the forgot-password flow against the email given here, so nobody has
+ * to invent a password on someone else's behalf.
+ */
+export async function POST(request: Request) {
+  const user = await requireUser();
+  if (denied(user)) return user;
+  if (!can(user, 'canManageSubAdmins')) return bad('You do not have permission to do that', 403);
+
+  const body = await readBody(request);
+  if (!body?.name?.trim()) return bad('A name is required');
+  if (!body.phone?.trim() && !body.email?.trim()) return bad('A phone number or email is required');
+
+  const doc: UserDoc = {
+    _id: newId('user-staff'),
+    name: body.name.trim(),
+    ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
+    ...(body.email?.trim() ? { email: body.email.trim().toLowerCase() } : {}),
+    role: 'sub_admin',
+    targetScore: 1600,
+    createdAt: today(),
+    access: {
+      premiumMath: true,
+      premiumReadingWriting: true,
+      redbookPractice: true,
+      enrolledCourseIds: [],
+      fullPremium: true,
+    },
+    permissions: { ...NO_PERMISSIONS, ...(body.permissions ?? {}) },
+    courseProgress: {},
+  };
+
+  const users = await collections.users();
+  const clash = await users.findOne({
+    $or: [doc.phone ? { phone: doc.phone } : null, doc.email ? { email: doc.email } : null].filter(
+      Boolean,
+    ) as object[],
+  });
+  if (clash) return bad('An account with that phone or email already exists', 409);
+
+  await users.insertOne(doc);
+  return Response.json({ item: hydrate.user(doc) }, { status: 201 });
+}
+
+/** PATCH /api/users/<id> — { role?, permissions?, access?, isSuspended? }. Applies immediately. */
+export async function PATCH(request: Request, ctx: Ctx) {
+  const user = await requireUser();
+  if (denied(user)) return user;
+  const id = (await ctx.params).id?.[0];
+  if (!id) return bad('Which person? PATCH /api/users/<id>');
+
+  const body = await readBody(request);
+  if (!body) return bad('Expected a JSON body');
+  const wantsStaffChange = 'role' in body || 'permissions' in body;
+  const wantsStudentChange = 'access' in body || 'isSuspended' in body;
+
+  if (wantsStaffChange && !can(user, 'canManageSubAdmins')) {
+    return bad('You do not have permission to change roles', 403);
+  }
+  if (wantsStudentChange && !can(user, 'canManageStudents')) {
+    return bad('You do not have permission to change access', 403);
+  }
+  if (!wantsStaffChange && !wantsStudentChange) return bad('Nothing to change');
+  // Nobody edits themselves out of — or further into — their own authority.
+  if (id === user.id && (wantsStaffChange || 'isSuspended' in body)) {
+    return bad('You cannot change your own role, permissions or suspension');
+  }
+
+  const users = await collections.users();
+  const existing = await users.findOne({ _id: id });
+  if (!existing) return bad('Not found', 404);
+
+  const set: Record<string, unknown> = {};
+  if ('role' in body) {
+    if (!['student', 'admin', 'sub_admin'].includes(body.role)) return bad('Unknown role');
+    set.role = body.role;
+    // A new staff member starts with nothing granted, chosen explicitly after.
+    if (body.role === 'sub_admin') set.permissions = existing.permissions ?? { ...NO_PERMISSIONS };
+  }
+  if ('permissions' in body) {
+    set.permissions = { ...NO_PERMISSIONS, ...(existing.permissions ?? {}), ...body.permissions };
+  }
+  if ('isSuspended' in body) set.isSuspended = !!body.isSuspended;
+  if ('access' in body) set.access = normalizeAccess({ ...existing.access, ...body.access }, await allCourseIds());
+
+  await users.updateOne({ _id: id }, { $set: set });
+  return Response.json({ item: hydrate.user({ ...existing, ...set } as UserDoc) });
+}
+
+const allCourseIds = async () =>
+  (await (await collections.courses()).find({}).project({ _id: 1 }).toArray()).map((c) =>
+    String(c._id),
+  );
+
+/** A full pass implies the subject passes and every course, exactly as the editor shows it. */
+function normalizeAccess(access: AccessGrants, courseIds: string[]): AccessGrants {
+  if (!access.fullPremium) return access;
+  return {
+    premiumMath: true,
+    premiumReadingWriting: true,
+    redbookPractice: true,
+    enrolledCourseIds: courseIds,
+    fullPremium: true,
+  };
+}
