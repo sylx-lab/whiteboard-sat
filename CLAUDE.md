@@ -86,6 +86,40 @@ Navigation still speaks the `NavView` string union from `Navbar.tsx` — a lefto
 
 `app/data/seedData.ts` supplies `INITIAL_*` fallbacks (questions, courses, resources, plans, mock tests) plus `DEMO_STUDENT` / `DEMO_ADMIN`. Store keys are all `wbsat_*` (`STORAGE_KEYS` in `store.ts`). **Clearing the `wbsat_*` localStorage keys resets the app to seed state** — that's the reset procedure. `currentUser` defaults to `DEMO_STUDENT`; the Navbar role switcher swaps to `DEMO_ADMIN` (there is no real auth).
 
+### Roles, staff, and permissions
+
+`AdminPermission` and the `sub_admin` role are part of the data model, and
+`app/features/admin/lib/permissions.ts` is the only thing that interprets them:
+
+- `permissionsFor(user)` — a full `admin` **implicitly** has every permission (never read from
+  `user.permissions`, so an admin cannot be edited into a lockout); a `sub_admin` gets exactly what
+  was granted, defaulting to none; suspension revokes everything, admins included.
+- `canOpenAdmin(user)` gates the console. `PAGE_PERMISSION` in `AdminPanel.tsx` maps each
+  `AdminSubPage` to the permission it needs; pages a person cannot manage are **hidden** from the
+  sidebar, and deep-linking one lands on Overview rather than erroring.
+- Access and role editing is one full-route page, `/admin/people/[id]` (`PersonAccessEditor`),
+  reached from both the Students and Team lists via `?from=`. It edits passes, per-course
+  enrolment, role, and permissions. Changes **apply immediately** — there is no save step, so it
+  uses `EditorTopBar` with a Done button rather than `EditorShell`'s submit.
+- Self-edit guards: you cannot suspend yourself, change your own role, or alter your own permissions.
+- A full pass implies the subject passes and all courses, so those toggles render locked-on rather
+  than pretending to be independent.
+
+### Topics
+
+Topics are free text on a question, so the bank drifts into near-duplicates. `lib/topics.ts` backs
+the Topics view and is pure — it returns the edits, and `store.applyTopicUpdates` writes them all in
+one state update rather than one per question.
+
+- **Renaming a topic onto an existing name *is* the merge.** There is no separate merge primitive
+  for that case; `mergeTopics` only exists for collapsing several at once.
+- Topics are scoped **per domain**: the same string under two domains is two topics.
+- `findDuplicateTopics` normalises case, punctuation, and `&`/`and`, then suggests the most-used
+  variant as the merge target — tie-broken toward the better-capitalised spelling, since
+  "Linear Equations" should win over "linear equations".
+- The 8 SAT domains stay fixed. They drive `domainBreakdown` and the 200–800 score estimates, so
+  the taxonomy UI deliberately manages only the topic layer.
+
 ### Access control and payments
 
 Three predicates in the store gate content: `hasAccessToQuestion`, `hasAccessToCourse`, `hasAccessToMockTest`. All three short-circuit `true` for `role === 'admin'` and for `access.fullPremium`. Payment flow is manual bKash/Nagad reference submission → `submitPayment` (status `pending`) → admin `verifyPayment` → `grantStudentAccess` expands the matching plan's `grants` into the user's `access` object.

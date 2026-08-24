@@ -2,13 +2,24 @@
 
 import React, { useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PaymentSubmission, UserProfile, Question, Course, ResourceItem, MockTest } from '../../types';
+import {
+  PaymentSubmission,
+  UserProfile,
+  Question,
+  Course,
+  ResourceItem,
+  MockTest,
+  AdminPermission,
+} from '../../types';
 import { Shield } from 'lucide-react';
 import { AdminSidebar, AdminSubPage, ADMIN_SUB_PAGES } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
-import { StudentDetailModal } from './components/StudentDetailModal';
+import { canOpenAdmin, permissionsFor } from './lib/permissions';
+import { listTopics } from './lib/topics';
 import { PaymentReceiptModal } from './components/PaymentReceiptModal';
 
+import { StaffView } from './views/StaffView';
+import { TopicsView } from './views/TopicsView';
 import { OverviewView } from './views/OverviewView';
 import { PaymentsView } from './views/PaymentsView';
 import { CandidatesView } from './views/CandidatesView';
@@ -35,6 +46,8 @@ export interface AdminPanelProps {
   onDeleteCourse: (id: string) => void;
   onDeleteResource: (id: string) => void;
   onDeleteMockTest: (id: string) => void;
+  /** Bulk topic rename/merge from the Topics view. */
+  onApplyTopicUpdates: (updates: { questionId: string; topic: string }[]) => void;
 }
 
 /** Primary "create" action per page — kept next to the page title in the header. */
@@ -43,6 +56,23 @@ const QUICK_ACTIONS: Partial<Record<AdminSubPage, { label: string; href: string 
   courses: { label: 'New course', href: '/admin/courses/new' },
   resources: { label: 'New resource', href: '/admin/resources/new' },
   'mock-tests': { label: 'New mock test', href: '/admin/mock-tests/new' },
+  staff: { label: 'New staff member', href: '/admin/staff/new' },
+};
+
+/**
+ * Which permission each page needs. Overview is the landing page for anyone who can
+ * open the console at all, so it has no gate of its own.
+ */
+const PAGE_PERMISSION: Record<AdminSubPage, keyof AdminPermission | null> = {
+  overview: null,
+  payments: 'canManagePurchases',
+  candidates: 'canManageStudents',
+  staff: 'canManageSubAdmins',
+  questions: 'canManagePractice',
+  topics: 'canManagePractice',
+  courses: 'canManageCourses',
+  'mock-tests': 'canManageMockTests',
+  resources: 'canManageResources',
 };
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -62,6 +92,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteCourse,
   onDeleteResource,
   onDeleteMockTest,
+  onApplyTopicUpdates,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,9 +106,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // The active page lives in the URL so browser back/forward and deep links work,
   // and so the visual editors can return the author to the list they came from.
+  const permissions = permissionsFor(currentUser);
+  const allowedPages = ADMIN_SUB_PAGES.filter((page) => {
+    const needed = PAGE_PERMISSION[page];
+    return needed === null || permissions[needed];
+  });
+
   const tabParam = searchParams.get('tab');
-  const activeSubPage: AdminSubPage = ADMIN_SUB_PAGES.includes(tabParam as AdminSubPage)
+  const requestedPage = ADMIN_SUB_PAGES.includes(tabParam as AdminSubPage)
     ? (tabParam as AdminSubPage)
+    : 'overview';
+  // Deep-linking a page you may not manage lands on Overview rather than an error.
+  const activeSubPage: AdminSubPage = allowedPages.includes(requestedPage)
+    ? requestedPage
     : 'overview';
 
   const goToSubPage = (page: AdminSubPage) => {
@@ -87,8 +128,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Inspector state
-  const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
   const [inspectingPayment, setInspectingPayment] = useState<PaymentSubmission | null>(null);
 
   if (!isHydrated) {
@@ -99,7 +138,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     );
   }
 
-  if (currentUser?.role !== 'admin') {
+  if (!canOpenAdmin(currentUser)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full p-8 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-4">
@@ -107,10 +146,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <Shield className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-base font-bold text-[#071126]">Admin access only</h1>
+            <h1 className="text-base font-bold text-[#071126]">No admin access</h1>
             <p className="text-[13px] text-[#58708A] leading-relaxed">
-              You are signed in as a student. Switch to the admin account from the account menu in the
-              student app to open the console.
+              {currentUser?.role === 'sub_admin'
+                ? 'Your staff account has no areas granted yet. Ask a full admin to grant you permissions.'
+                : 'You are signed in as a student. Switch to the admin account from the account menu in the student app to open the console.'}
             </p>
           </div>
         </div>
@@ -119,6 +159,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   }
 
   const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
+  const staffCount = users.filter((u) => u.role === 'admin' || u.role === 'sub_admin').length;
+  const topicCount = listTopics(questions).length;
   const quickAction = QUICK_ACTIONS[activeSubPage];
 
   return (
@@ -133,6 +175,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         totalCoursesCount={courses.length}
         totalResourcesCount={resources.length}
         totalMockTestsCount={mockTests.length}
+        totalStaffCount={staffCount}
+        totalTopicsCount={topicCount}
+        allowedPages={allowedPages}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         isMobileOpen={isMobileNavOpen}
@@ -172,10 +217,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {activeSubPage === 'candidates' && (
             <CandidatesView
               users={users}
-              onInspectUser={setInspectingUser}
               onUpdateUserAccess={onUpdateUserAccess}
               onToggleUserStatus={onToggleUserStatus}
             />
+          )}
+
+          {activeSubPage === 'staff' && <StaffView users={users} currentUser={currentUser} />}
+
+          {activeSubPage === 'topics' && (
+            <TopicsView questions={questions} onApplyTopicUpdates={onApplyTopicUpdates} />
           )}
 
           {activeSubPage === 'courses' && <CoursesView courses={courses} onDeleteCourse={onDeleteCourse} />}
@@ -197,13 +247,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
         </main>
       </div>
-
-      <StudentDetailModal
-        user={inspectingUser}
-        onClose={() => setInspectingUser(null)}
-        onUpdateUserAccess={onUpdateUserAccess}
-        onToggleUserStatus={onToggleUserStatus}
-      />
 
       <PaymentReceiptModal
         payment={inspectingPayment}

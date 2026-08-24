@@ -27,6 +27,7 @@ export default function AdminPage() {
         onDeleteCourse={store.deleteCourse}
         onDeleteResource={store.deleteResource}
         onDeleteMockTest={store.deleteMockTest}
+        onApplyTopicUpdates={store.applyTopicUpdates}
       />
     </Suspense>
   );

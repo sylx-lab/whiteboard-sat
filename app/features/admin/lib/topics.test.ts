@@ -118,3 +118,17 @@ test('summarises topic counts per subject', () => {
   const stats = topicStats([q('algebra', 'A'), q('advanced_math', 'B'), q('craft_structure', 'C')]);
   assert.deepEqual(stats, { total: 3, math: 2, readingWriting: 1 });
 });
+
+test('on a count tie, suggests the better-capitalised variant as the target', () => {
+  const groups = findDuplicateTopics([q('algebra', 'linear equations'), q('algebra', 'Linear Equations')]);
+  assert.equal(groups[0].variants[0].topic, 'Linear Equations');
+});
+
+test('count still beats capitalisation', () => {
+  const groups = findDuplicateTopics([
+    q('algebra', 'linear equations'),
+    q('algebra', 'linear equations'),
+    q('algebra', 'Linear Equations'),
+  ]);
+  assert.equal(groups[0].variants[0].topic, 'linear equations');
+});

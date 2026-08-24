@@ -123,6 +123,10 @@ export function findDuplicateTopics(questions: Question[]): DuplicateGroup[] {
     buckets.set(key, bucket);
   }
 
+  // On a tie, prefer the better-capitalised spelling: "Linear Equations" should win
+  // over "linear equations", not lose to it alphabetically.
+  const capitals = (t: string) => (t.match(/[A-Z]/g) ?? []).length;
+
   const groups: DuplicateGroup[] = [];
   for (const [key, variants] of buckets) {
     if (variants.size < 2) continue;
@@ -132,7 +136,12 @@ export function findDuplicateTopics(questions: Question[]): DuplicateGroup[] {
       domainLabel: formatDomainName(domain),
       variants: [...variants.entries()]
         .map(([topic, count]) => ({ topic, count }))
-        .sort((a, b) => b.count - a.count || a.topic.localeCompare(b.topic)),
+        .sort(
+          (a, b) =>
+            b.count - a.count ||
+            capitals(b.topic) - capitals(a.topic) ||
+            a.topic.localeCompare(b.topic)
+        ),
     });
   }
 

@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { UserProfile } from '../../../types';
-import { Eye, Users, SearchX } from 'lucide-react';
+import { grantedCount } from '../lib/permissions';
+import { Users, SearchX, Settings2 } from 'lucide-react';
 import {
   AdminCard,
   Toolbar,
@@ -12,14 +14,12 @@ import {
   EmptyState,
   Pill,
   Button,
-  IconAction,
   TableShell,
   Row,
 } from '../components/ui';
 
 interface CandidatesViewProps {
   users: UserProfile[];
-  onInspectUser: (user: UserProfile) => void;
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
 }
@@ -28,10 +28,10 @@ type AccessFilter = 'all' | 'premium' | 'free';
 
 export const CandidatesView: React.FC<CandidatesViewProps> = ({
   users,
-  onInspectUser,
   onUpdateUserAccess,
   onToggleUserStatus,
 }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [accessFilter, setAccessFilter] = useState<AccessFilter>('all');
 
@@ -109,7 +109,10 @@ export const CandidatesView: React.FC<CandidatesViewProps> = ({
               <td>
                 <div className="font-semibold text-[#071126] flex items-center gap-1.5">
                   <span>{u.name}</span>
-                  {u.role === 'admin' && <Pill tone="brand">Admin</Pill>}
+                  {u.role === 'admin' && <Pill tone="brand">Full admin</Pill>}
+                  {u.role === 'sub_admin' && (
+                    <Pill tone="info">Staff · {grantedCount(u.permissions)}</Pill>
+                  )}
                 </div>
                 <div className="text-[11px] text-[#58708A]">{u.email || 'No email on file'}</div>
               </td>
@@ -149,7 +152,13 @@ export const CandidatesView: React.FC<CandidatesViewProps> = ({
 
               <td>
                 <div className="flex items-center justify-end gap-1.5">
-                  <IconAction icon={Eye} label={`View ${u.name}'s details`} onClick={() => onInspectUser(u)} />
+                  <Button
+                    size="sm"
+                    icon={Settings2}
+                    onClick={() => router.push(`/admin/people/${u.id}`)}
+                  >
+                    Manage
+                  </Button>
                   <Button
                     variant={u.access.fullPremium ? 'danger' : 'primary'}
                     onClick={() => {
@@ -160,7 +169,7 @@ export const CandidatesView: React.FC<CandidatesViewProps> = ({
                         onUpdateUserAccess(u.id, { fullPremium: !u.access.fullPremium });
                       }
                     }}
-                    className="h-9 px-3"
+                    size="sm"
                   >
                     {u.access.fullPremium ? 'Revoke pass' : 'Grant pass'}
                   </Button>
