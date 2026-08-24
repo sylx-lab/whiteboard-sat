@@ -19,6 +19,7 @@ import {
   UserProfile,
   Domain,
 } from '../../types';
+import { isPlayable } from '../../lib/mockTests';
 import { formatDomainName } from '../../lib/utils';
 import { QuestionCard } from '../../components/QuestionCard';
 import { QuestionNavigator } from '../../components/QuestionNavigator';
@@ -56,6 +57,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
 
   // Start new mock test attempt
   const handleStartTest = (test: MockTest) => {
+    // Starting a test reads modules[0].timeLimitMinutes, so an unconfigured test would
+    // throw. The Start button is disabled for these; this is the belt-and-braces check.
+    if (!isPlayable(test)) return;
+
     const existing = mockAttempts.find(
       (a) => a.testId === test.id && a.userId === (currentUser?.id || 'guest') && a.status === 'in_progress'
     );
@@ -228,10 +233,18 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     }
   };
 
+  // An in-progress attempt saved before the test was edited can point past the end of
+  // the current modules. Resolving these up front means a stale attempt falls through
+  // to the test list instead of crashing the runner on an undefined module.
+  const isRunning = Boolean(activeAttempt && activeTest && activeAttempt.status === 'in_progress');
+  const runnerModule =
+    isRunning && activeTest ? activeTest.modules[activeAttempt!.currentModuleIndex] : undefined;
+  const runnerQuestion = runnerModule?.questions[activeAttempt!.currentQuestionIndex];
+
   // --- 1. FULL SCREEN DIGITAL SAT TEST RUNNER ---
-  if (activeAttempt && activeTest && activeAttempt.status === 'in_progress') {
-    const currentModule = activeTest.modules[activeAttempt.currentModuleIndex];
-    const currentQ = currentModule.questions[activeAttempt.currentQuestionIndex];
+  if (activeAttempt && activeTest && runnerModule && runnerQuestion) {
+    const currentModule = runnerModule;
+    const currentQ = runnerQuestion;
     const moduleQuestionIds = currentModule.questions.map((q) => q.id);
     const interaction = activeAttempt.interactions[currentQ.id];
 
@@ -430,6 +443,8 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             (a) => a.testId === test.id && a.userId === (currentUser?.id || 'guest')
           );
           const status = attempt ? attempt.status : 'not_started';
+          // Tests still being assembled in the admin console have no questions to sit.
+          const playable = isPlayable(test);
 
           return (
             <div
@@ -512,10 +527,18 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   ) : (
                     <button
                       onClick={() => handleStartTest(test)}
-                      className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer group/btn active:scale-[0.98]"
+                      disabled={!playable}
+                      title={playable ? undefined : 'This test is still being prepared'}
+                      className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] disabled:bg-slate-200 disabled:text-[#58708A] disabled:cursor-not-allowed disabled:hover:bg-slate-200 text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer group/btn active:scale-[0.98] disabled:active:scale-100"
                     >
-                      <Play className="w-3.5 h-3.5 fill-white" />
-                      <span>{status === 'completed' ? 'Retake Mock Test' : 'Start Mock Test'}</span>
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>
+                        {!playable
+                          ? 'Coming soon'
+                          : status === 'completed'
+                          ? 'Retake Mock Test'
+                          : 'Start Mock Test'}
+                      </span>
                     </button>
                   )
                 ) : (

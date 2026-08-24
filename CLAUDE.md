@@ -69,8 +69,12 @@ That is what makes browser back/forward, deep links, and "return to the list I c
 never move the active tab back into local state. Because `AdminPanel` calls `useSearchParams`,
 `app/admin/page.tsx` wraps it in `<Suspense>`; keep that wrapper.
 
-The visual editors at `/admin/{questions,courses,resources}/{new,[id]}` are full routes, and each
-returns to `/admin?tab=<list>` on save or cancel.
+All four content types are full-route visual editors —
+`/admin/{questions,courses,resources,mock-tests}/{new,[id]}` — each returning to `/admin?tab=<list>`
+on save or cancel. Nothing in the admin console is edited in a modal; modals are only for read-only
+inspection (payment receipt, student detail) and for picking (the mock test question picker).
+`AdminPanel` therefore only receives the props its *list* views need — the editors reach the store
+directly through their route page, so don't re-add create/update props to `AdminPanelProps`.
 
 ### Layout and navigation
 
@@ -90,13 +94,51 @@ Three predicates in the store gate content: `hasAccessToQuestion`, `hasAccessToC
 
 Lives entirely in `app/features/mocktests/MockTestsHub.tsx`: module-by-module countdown, per-question `QuestionInteractionState` (selected answer, cross-outs, mark-for-review), advance-or-finalize on module submit. The attempt object round-trips through `store.saveMockTestAttempt`; `store.finalizeMockTest` recomputes the score summary using `estimateSATScore` in `app/lib/utils.ts`.
 
+### Mock tests are modules, not metadata
+
+A `MockTest` is only sittable if it has modules with questions in them: `MockTestsHub` reads
+`modules[0].timeLimitMinutes` when starting an attempt. `app/lib/mockTests.ts` is the shared
+authority on that — it lives in `app/lib/` rather than under `features/admin/` precisely because
+both halves of the app need it:
+
+- `deriveTotals` — `totalQuestions`/`totalTimeMinutes` are **computed from the modules**, never typed.
+  Don't reintroduce them as inputs; the stored values would drift from the test students sit.
+- `mockTestIssues` / `isPlayable` — `blocking` means a student cannot start it. The admin editor and
+  list both surface these, and `MockTestsHub` disables its Start button on the same predicate, so a
+  half-built test degrades to "Coming soon" instead of throwing.
+- `standardSatModules` — the real Digital SAT shape (RW 1&2 at 32 min, Math 1&2 at 35 min = 134 min),
+  offered as a one-click scaffold.
+
+A module stores **copies** of its `Question` objects, not ids (the seed data does the same). That
+makes a mock a stable snapshot, so editing a question later does not silently change a live exam.
+
+The module question picker offers both "From existing" and "Create new". The create path writes a
+real question to the bank via `onCreateQuestion` (so it stays reusable in practice and other tests)
+and then selects it — it never stores a module-only question. Its subject is locked to the module's
+section, since a question in the wrong section would not appear in that module's pool.
+
+One layout trap worth knowing: a `<fieldset>` has `min-inline-size: min-content` in the UA
+stylesheet and will not shrink, so a fieldset wrapping `truncate`d text overflows its container.
+Any fieldset in a constrained width needs `min-w-0`.
+
 ### Authoring a question
 
-`QuestionVisualEditor` takes `allQuestions` as well as the record being edited. That is not
-incidental — it powers the next-free code suggestion (`lib/questionCodes.ts`), the duplicate-code
-warning, and the `<datalist>` options for topic/subtopic/source. Topic is free text, so those
-datalists are the only thing keeping the bank's categories from drifting into near-duplicates;
-keep feeding them when adding a category-ish field.
+The question form is defined **once**, in `components/questionForm.tsx`, and used in two places:
+the full-page `QuestionVisualEditor`, and the compact create-new tab inside the mock test question
+picker. Add or change a question field there, not in a caller.
+
+- `useQuestionForm({ initialQuestion, allQuestions, lockedSubject, idScope })` owns the state,
+  `buildPayload`, dirty tracking, code suggestion, and the datalist options.
+- `<QuestionFormFields ctl variant="full" | "compact" />` renders the fields; `compact` drops what
+  context already answers (subject, code, subtopic, source, status).
+- `<QuestionPreview ctl />` is the shared student-facing render.
+- `idScope` must differ per mounted instance — it namespaces the `<datalist>` ids and the
+  `correct-answer` radio group name, which would otherwise collide across two forms on one page.
+
+`allQuestions` is required, not incidental: it powers the next-free code suggestion
+(`lib/questionCodes.ts`), the duplicate-code warning, and the `<datalist>` options for
+topic/subtopic/source. Topic is free text, so those datalists are the only thing keeping the bank's
+categories from drifting into near-duplicates.
 
 The `Question` fields the editor writes that are easy to miss: `stimulus` (the passage
 `QuestionCard` renders above the question — mandatory in practice for Reading & Writing),

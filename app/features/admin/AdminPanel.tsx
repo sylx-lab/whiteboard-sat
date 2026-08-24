@@ -2,22 +2,12 @@
 
 import React, { useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  PaymentSubmission,
-  UserProfile,
-  Question,
-  Course,
-  Lesson,
-  ResourceItem,
-  MockTest,
-  ProductPlan,
-} from '../../types';
+import { PaymentSubmission, UserProfile, Question, Course, ResourceItem, MockTest } from '../../types';
 import { Shield } from 'lucide-react';
 import { AdminSidebar, AdminSubPage, ADMIN_SUB_PAGES } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
 import { StudentDetailModal } from './components/StudentDetailModal';
 import { PaymentReceiptModal } from './components/PaymentReceiptModal';
-import { MockTestEditorModal } from './components/MockTestEditorModal';
 
 import { OverviewView } from './views/OverviewView';
 import { PaymentsView } from './views/PaymentsView';
@@ -35,25 +25,15 @@ export interface AdminPanelProps {
   courses: Course[];
   resources: ResourceItem[];
   mockTests: MockTest[];
-  plans: ProductPlan[];
   onVerifyPayment: (paymentId: string) => void;
   onRejectPayment: (paymentId: string) => void;
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
+  /** The bank's JSON import adds straight from the list view. */
   onAddQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
-  onUpdateQuestion: (id: string, updates: Partial<Question>) => void;
   onDeleteQuestion: (id: string) => void;
-  onAddCourse: (course: Partial<Course> & { title: string }) => Course;
-  onUpdateCourse: (id: string, updates: Partial<Course>) => void;
   onDeleteCourse: (id: string) => void;
-  onAddLessonToCourse: (courseId: string, lesson: Omit<Lesson, 'id' | 'courseId'>) => Lesson;
-  onUpdateLessonInCourse: (courseId: string, lessonId: string, updates: Partial<Lesson>) => void;
-  onDeleteLessonFromCourse: (courseId: string, lessonId: string) => void;
-  onAddResource: (resource: Partial<ResourceItem> & { title: string }) => ResourceItem;
-  onUpdateResource: (id: string, updates: Partial<ResourceItem>) => void;
   onDeleteResource: (id: string) => void;
-  onAddMockTest: (test: Partial<MockTest> & { title: string }) => MockTest;
-  onUpdateMockTest: (id: string, updates: Partial<MockTest>) => void;
   onDeleteMockTest: (id: string) => void;
 }
 
@@ -62,6 +42,7 @@ const QUICK_ACTIONS: Partial<Record<AdminSubPage, { label: string; href: string 
   questions: { label: 'New question', href: '/admin/questions/new' },
   courses: { label: 'New course', href: '/admin/courses/new' },
   resources: { label: 'New resource', href: '/admin/resources/new' },
+  'mock-tests': { label: 'New mock test', href: '/admin/mock-tests/new' },
 };
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -80,8 +61,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteQuestion,
   onDeleteCourse,
   onDeleteResource,
-  onAddMockTest,
-  onUpdateMockTest,
   onDeleteMockTest,
 }) => {
   const router = useRouter();
@@ -108,16 +87,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Inspector & modal state
+  // Inspector state
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
   const [inspectingPayment, setInspectingPayment] = useState<PaymentSubmission | null>(null);
-  const [isMockModalOpen, setIsMockModalOpen] = useState(false);
-  const [editingMockTest, setEditingMockTest] = useState<MockTest | null>(null);
-
-  const openNewMockTest = () => {
-    setEditingMockTest(null);
-    setIsMockModalOpen(true);
-  };
 
   if (!isHydrated) {
     return (
@@ -148,7 +120,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
   const quickAction = QUICK_ACTIONS[activeSubPage];
-  const mockQuickAction = activeSubPage === 'mock-tests' ? { label: 'New mock test' } : undefined;
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#071126] flex">
@@ -171,10 +142,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <div className="flex-1 min-w-0 flex flex-col">
         <AdminHeader
           activeSubPage={activeSubPage}
-          quickActionLabel={quickAction?.label ?? mockQuickAction?.label}
-          onQuickAction={
-            quickAction ? () => router.push(quickAction.href) : mockQuickAction ? openNewMockTest : undefined
-          }
+          quickActionLabel={quickAction?.label}
+          onQuickAction={quickAction ? () => router.push(quickAction.href) : undefined}
           onOpenMobileNav={() => setIsMobileNavOpen(true)}
         />
 
@@ -216,15 +185,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {activeSubPage === 'mock-tests' && (
-            <MockTestsView
-              mockTests={mockTests}
-              onOpenAddMock={openNewMockTest}
-              onOpenEditMock={(m) => {
-                setEditingMockTest(m);
-                setIsMockModalOpen(true);
-              }}
-              onDeleteMock={onDeleteMockTest}
-            />
+            <MockTestsView mockTests={mockTests} onDeleteMock={onDeleteMockTest} />
           )}
 
           {activeSubPage === 'questions' && (
@@ -251,20 +212,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         onReject={onRejectPayment}
       />
 
-      {isMockModalOpen && (
-      <MockTestEditorModal
-        key={editingMockTest?.id ?? 'new'}
-        mockTest={editingMockTest}
-        onClose={() => setIsMockModalOpen(false)}
-        onSave={(data) => {
-          if (editingMockTest) {
-            onUpdateMockTest(editingMockTest.id, data as unknown as Partial<MockTest>);
-          } else {
-            onAddMockTest(data as unknown as Partial<MockTest> & { title: string });
-          }
-        }}
-      />
-      )}
     </div>
   );
 };

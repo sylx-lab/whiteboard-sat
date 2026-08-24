@@ -1,0 +1,127 @@
+import type { MockTest, MockTestModule, Question, Subject } from '../types';
+
+/**
+ * The real Digital SAT shape: two Reading & Writing modules then two Math modules,
+ * 32/32/35/35 minutes. Used to scaffold a new mock so authors are not hand-typing
+ * the official structure every time.
+ */
+export const STANDARD_SAT_STRUCTURE: {
+  section: Subject;
+  moduleNumber: 1 | 2;
+  timeLimitMinutes: number;
+}[] = [
+  { section: 'reading_writing', moduleNumber: 1, timeLimitMinutes: 32 },
+  { section: 'reading_writing', moduleNumber: 2, timeLimitMinutes: 32 },
+  { section: 'math', moduleNumber: 1, timeLimitMinutes: 35 },
+  { section: 'math', moduleNumber: 2, timeLimitMinutes: 35 },
+];
+
+export function moduleTitle(section: Subject, moduleNumber: 1 | 2): string {
+  const label = section === 'math' ? 'Math' : 'Reading & Writing';
+  return `${label} — Module ${moduleNumber}`;
+}
+
+export function makeModule(
+  testId: string,
+  section: Subject,
+  moduleNumber: 1 | 2,
+  timeLimitMinutes: number,
+  idSuffix: string
+): MockTestModule {
+  return {
+    id: `${testId}-mod-${idSuffix}`,
+    testId,
+    title: moduleTitle(section, moduleNumber),
+    section,
+    moduleNumber,
+    timeLimitMinutes,
+    questions: [],
+  };
+}
+
+/** The four standard modules, empty of questions — the author picks those. */
+export function standardSatModules(testId: string): MockTestModule[] {
+  return STANDARD_SAT_STRUCTURE.map((m, i) =>
+    makeModule(testId, m.section, m.moduleNumber, m.timeLimitMinutes, `std-${i + 1}`)
+  );
+}
+
+/**
+ * Totals are derived from the modules rather than typed by hand, so the summary a
+ * student sees can never contradict the test they actually sit.
+ */
+export function deriveTotals(modules: MockTestModule[]): {
+  totalQuestions: number;
+  totalTimeMinutes: number;
+} {
+  return {
+    totalQuestions: modules.reduce((sum, m) => sum + m.questions.length, 0),
+    totalTimeMinutes: modules.reduce((sum, m) => sum + (Number(m.timeLimitMinutes) || 0), 0),
+  };
+}
+
+export interface MockTestIssue {
+  severity: 'blocking' | 'warning';
+  message: string;
+}
+
+/**
+ * Problems worth showing the author before they publish.
+ *
+ * "blocking" means a student cannot sit the test: MockTestsHub reads
+ * `modules[0].timeLimitMinutes` when starting an attempt, so a test with no
+ * modules — or a first module with no questions — is broken for students.
+ */
+export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
+  const issues: MockTestIssue[] = [];
+
+  if (modules.length === 0) {
+    issues.push({
+      severity: 'blocking',
+      message: 'This test has no modules, so students cannot start it.',
+    });
+    return issues;
+  }
+
+  const empty = modules.filter((m) => m.questions.length === 0);
+  if (empty.length) {
+    issues.push({
+      severity: empty[0].id === modules[0].id ? 'blocking' : 'warning',
+      message: `${empty.length} module${empty.length === 1 ? '' : 's'} ${
+        empty.length === 1 ? 'has' : 'have'
+      } no questions: ${empty.map((m) => m.title).join(', ')}.`,
+    });
+  }
+
+  const untimed = modules.filter((m) => !m.timeLimitMinutes || m.timeLimitMinutes < 1);
+  if (untimed.length) {
+    issues.push({
+      severity: 'blocking',
+      message: `${untimed.length} module${untimed.length === 1 ? '' : 's'} ${
+        untimed.length === 1 ? 'has' : 'have'
+      } no time limit.`,
+    });
+  }
+
+  const mismatched = modules.filter((m) => m.questions.some((q) => q.subject !== m.section));
+  if (mismatched.length) {
+    issues.push({
+      severity: 'warning',
+      message: `${mismatched
+        .map((m) => m.title)
+        .join(', ')} contain${mismatched.length === 1 ? 's' : ''} questions from the other section.`,
+    });
+  }
+
+  return issues;
+}
+
+/** True when a student can actually sit this test. */
+export function isPlayable(test: Pick<MockTest, 'modules'>): boolean {
+  return !mockTestIssues(test.modules).some((i) => i.severity === 'blocking');
+}
+
+/** Questions eligible for a module: published, and matching the module's section. */
+export function eligibleQuestions(questions: Question[], section: Subject): Question[] {
+  return questions.filter((q) => q.subject === section && (q.status || 'published') === 'published');
+}

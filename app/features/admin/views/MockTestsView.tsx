@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MockTest } from '../../../types';
-import { Edit3, Trash2, Award, SearchX } from 'lucide-react';
+import { isPlayable } from '../../../lib/mockTests';
+import { Edit3, Trash2, Award, SearchX, AlertTriangle } from 'lucide-react';
 import {
   AdminCard,
   Toolbar,
@@ -16,17 +18,11 @@ import {
 
 interface MockTestsViewProps {
   mockTests: MockTest[];
-  onOpenAddMock: () => void;
-  onOpenEditMock: (test: MockTest) => void;
   onDeleteMock: (testId: string) => void;
 }
 
-export const MockTestsView: React.FC<MockTestsViewProps> = ({
-  mockTests,
-  onOpenAddMock,
-  onOpenEditMock,
-  onDeleteMock,
-}) => {
+export const MockTestsView: React.FC<MockTestsViewProps> = ({ mockTests, onDeleteMock }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
 
   const filtered = mockTests.filter(
@@ -52,7 +48,7 @@ export const MockTestsView: React.FC<MockTestsViewProps> = ({
           icon={Award}
           title="No mock tests yet"
           description="Build a timed, module-based Digital SAT mock for students to sit."
-          action={{ label: 'New mock test', onClick: onOpenAddMock }}
+          action={{ label: 'New mock test', onClick: () => router.push('/admin/mock-tests/new') }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -63,7 +59,9 @@ export const MockTestsView: React.FC<MockTestsViewProps> = ({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((mock) => (
+          {filtered.map((mock) => {
+            const playable = isPlayable(mock);
+            return (
             <article
               key={mock.id}
               className="p-5 rounded-2xl bg-white border border-[#E2E8F0] hover:border-[#0D918A]/50 transition-colors flex flex-col gap-4"
@@ -79,7 +77,7 @@ export const MockTestsView: React.FC<MockTestsViewProps> = ({
                   <IconAction
                     icon={Edit3}
                     label={`Edit ${mock.title}`}
-                    onClick={() => onOpenEditMock(mock)}
+                    onClick={() => router.push(`/admin/mock-tests/${mock.id}`)}
                   />
                   <IconAction
                     icon={Trash2}
@@ -105,11 +103,23 @@ export const MockTestsView: React.FC<MockTestsViewProps> = ({
                 <span>{mock.modules.length} modules</span>
               </div>
 
-              <Button icon={Edit3} onClick={() => onOpenEditMock(mock)} className="w-full">
-                Edit mock test
+              {!playable && (
+                <p className="flex items-start gap-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-2.5 leading-relaxed">
+                  <AlertTriangle className="w-4 h-4 mt-px shrink-0" />
+                  <span>Students cannot start this test yet — it needs modules with questions.</span>
+                </p>
+              )}
+
+              <Button
+                icon={Edit3}
+                onClick={() => router.push(`/admin/mock-tests/${mock.id}`)}
+                className="w-full"
+              >
+                Edit modules &amp; questions
               </Button>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </AdminCard>
