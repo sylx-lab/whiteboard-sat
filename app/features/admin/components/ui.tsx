@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Search, X, LucideIcon } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Search, X, Upload, LucideIcon } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { uploadFile, type UploadFolder } from '../../../services/uploads';
 
 /**
  * Shared admin primitives.
@@ -349,3 +350,67 @@ export const ToggleRow: React.FC<{
     </span>
   </label>
 );
+
+/** What a file input should offer, per kind of thing being attached. */
+export const ACCEPT = {
+  image: 'image/png,image/jpeg,image/webp,image/gif',
+  document: 'application/pdf',
+  any: 'image/png,image/jpeg,image/webp,image/gif,application/pdf',
+} as const;
+
+/**
+ * Picks a file, uploads it straight to R2, hands back the URL it now lives at.
+ *
+ * The upload is a presigned PUT from the browser, so the file never passes
+ * through the app's own server and a 20 MB PDF is not a request body. The
+ * button owns its own progress and error text because every caller would
+ * otherwise re-invent both.
+ */
+export const UploadButton: React.FC<{
+  folder: UploadFolder;
+  onUploaded: (url: string, file: File) => void;
+  accept?: string;
+  label?: string;
+  className?: string;
+}> = ({ folder, onUploaded, accept = ACCEPT.any, label = 'Upload', className }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handle = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      onUploaded(await uploadFile(file, folder), file);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setBusy(false);
+      // Clear it so picking the same file twice still fires a change event.
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className={cn('flex flex-col gap-1', className)}>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-semibold text-[#071126] hover:bg-[#F8FBFB] disabled:opacity-60 disabled:cursor-wait transition-colors cursor-pointer whitespace-nowrap"
+      >
+        <Upload className="w-3.5 h-3.5 text-[#0D918A]" />
+        {busy ? 'Uploading…' : label}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => handle(e.target.files?.[0])}
+      />
+      {error && <p className="text-[11px] text-red-600">{error}</p>}
+    </div>
+  );
+};

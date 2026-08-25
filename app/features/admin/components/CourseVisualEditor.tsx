@@ -7,6 +7,7 @@ import {
   Video,
   Plus,
   Trash2,
+  Paperclip,
   CheckCircle2,
   Eye,
   Play,
@@ -24,7 +25,7 @@ import {
   inputClass,
   textareaClass,
 } from './EditorShell';
-import { Pill, IconAction, Button } from './ui';
+import { Pill, IconAction, Button, UploadButton, ACCEPT } from './ui';
 
 interface CourseVisualEditorProps {
   initialCourse?: Course | null;
@@ -429,6 +430,54 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                                   placeholder="https://www.youtube.com/embed/…"
                                   className={`${inputClass} font-mono`}
                                 />
+                              </Field>
+
+                              <Field
+                                label="Attachments"
+                                hint="Worksheets and notes a student downloads with this lesson"
+                              >
+                                <div className="space-y-1.5">
+                                  {(les.resources ?? []).map((res, i) => (
+                                    <div
+                                      key={`${res.url}-${i}`}
+                                      className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FBFB] px-2.5 h-9"
+                                    >
+                                      <Paperclip className="w-3.5 h-3.5 text-[#58708A] shrink-0" />
+                                      <span className="text-[12px] text-[#071126] truncate flex-1 min-w-0">
+                                        {res.name}
+                                      </span>
+                                      <IconAction
+                                        icon={Trash2}
+                                        label={`Remove ${res.name}`}
+                                        tone="danger"
+                                        onClick={() =>
+                                          updateLesson(les.id, {
+                                            resources: (les.resources ?? []).filter(
+                                              (_, at) => at !== i,
+                                            ),
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  ))}
+                                  <UploadButton
+                                    folder="lessons"
+                                    accept={ACCEPT.any}
+                                    label="Attach a file"
+                                    onUploaded={(url, file) =>
+                                      updateLesson(les.id, {
+                                        resources: [
+                                          ...(les.resources ?? []),
+                                          {
+                                            name: file.name,
+                                            url,
+                                            type: file.type === 'application/pdf' ? 'pdf' : 'link',
+                                          },
+                                        ],
+                                      })
+                                    }
+                                  />
+                                </div>
                               </Field>
                             </div>
                           )}

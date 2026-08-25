@@ -97,6 +97,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const renderContentBody = () => (
     <div className="space-y-5">
+      {/* Figure — a diagram or graph the question refers to */}
+      {question.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- an R2 URL, not a build-time asset
+        <img
+          src={question.imageUrl}
+          alt="Figure for this question"
+          className="max-h-80 w-auto rounded-xl border border-[#E2E8F0] bg-white object-contain"
+        />
+      )}
+
       {/* Question Text */}
       <div className="text-[17px] sm:text-[18px] text-[#071126] font-normal leading-[1.65]">
         <MathRenderer content={question.question_text} />

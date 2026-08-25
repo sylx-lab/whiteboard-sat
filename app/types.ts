@@ -34,6 +34,8 @@ export interface Question {
   difficulty: Difficulty;
   question_text: string;
   stimulus?: string; // passage or context table
+  /** A figure shown above the question text — a diagram, graph or table image. */
+  imageUrl?: string;
   hasMath?: boolean;
   choices?: AnswerChoice[];
   answer_choices?: AnswerChoice[];

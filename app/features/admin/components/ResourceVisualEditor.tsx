@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ResourceItem } from '../../../types';
 import { FileText, Download, Eye } from 'lucide-react';
 import { EditorShell, EditorPanes, EditorSection, Field, inputClass, textareaClass } from './EditorShell';
-import { Pill } from './ui';
+import { Pill, UploadButton, ACCEPT } from './ui';
 
 interface ResourceVisualEditorProps {
   initialResource?: ResourceItem | null;
@@ -155,14 +155,29 @@ export const ResourceVisualEditor: React.FC<ResourceVisualEditorProps> = ({
                 </Field>
               </div>
 
-              <Field label="Download URL" hint="Optional. Must start with http:// or https://">
-                <input
-                  type="url"
-                  value={form.downloadUrl}
-                  onChange={(e) => update({ downloadUrl: e.target.value })}
-                  placeholder="https://…/formula-sheet.pdf"
-                  className={`${inputClass} font-mono`}
-                />
+              <Field label="Download file" hint="Upload a PDF, or paste a URL you host elsewhere">
+                <div className="flex items-start gap-2">
+                  <input
+                    type="url"
+                    value={form.downloadUrl}
+                    onChange={(e) => update({ downloadUrl: e.target.value })}
+                    placeholder="https://…/formula-sheet.pdf"
+                    className={`${inputClass} font-mono flex-1 min-w-0`}
+                  />
+                  <UploadButton
+                    folder="resources"
+                    accept={ACCEPT.document}
+                    label="Upload PDF"
+                    // The title is usually still blank at this point, so the
+                    // file's own name is a better guess than nothing.
+                    onUploaded={(url, file) =>
+                      update({
+                        downloadUrl: url,
+                        ...(form.title.trim() ? {} : { title: file.name.replace(/\.[^.]+$/, '') }),
+                      })
+                    }
+                  />
+                </div>
               </Field>
             </EditorSection>
           </form>

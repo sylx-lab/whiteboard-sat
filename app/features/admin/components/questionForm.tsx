@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { EditorSection, Field, inputClass } from './EditorShell';
+import { UploadButton, ACCEPT } from './ui';
 
 /**
  * One definition of "what a question form is", shared by the full-page editor and
@@ -38,6 +39,7 @@ export interface QuestionFormState {
   status: QuestionStatus;
   isFree: boolean;
   stimulus: string;
+  imageUrl: string;
   questionText: string;
   choices: Record<ChoiceId, string>;
   correctAnswer: ChoiceId;
@@ -56,6 +58,7 @@ export const blankQuestionForm = (subject: Subject = 'math'): QuestionFormState 
   status: 'published',
   isFree: true,
   stimulus: '',
+  imageUrl: '',
   questionText: '',
   choices: { A: '', B: '', C: '', D: '' },
   correctAnswer: 'A',
@@ -76,6 +79,7 @@ export const questionFormFromQuestion = (q: Question): QuestionFormState => {
     status: q.status || 'published',
     isFree: q.is_free,
     stimulus: q.stimulus || '',
+    imageUrl: q.imageUrl || '',
     questionText: q.question_text,
     choices: { A: byId('A'), B: byId('B'), C: byId('C'), D: byId('D') },
     correctAnswer: q.correct_answer,
@@ -160,6 +164,7 @@ export function useQuestionForm(opts: {
       status: form.status,
       is_free: form.isFree,
       stimulus: stimulus || undefined,
+      imageUrl: form.imageUrl.trim() || undefined,
       question_text: form.questionText.trim(),
       choices: choicesPayload,
       answer_choices: choicesPayload,
@@ -402,6 +407,35 @@ export const QuestionFormFields: React.FC<{
           placeholder="If $3x - 7 = 14$, what is the value of $x$?"
           rows={isFull ? 4 : 3}
         />
+
+        {form.imageUrl ? (
+          <div className="flex items-start gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FBFB] p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element -- an R2 URL, not a build-time asset */}
+            <img
+              src={form.imageUrl}
+              alt="Question figure"
+              className="h-16 w-auto rounded-lg border border-[#E2E8F0] bg-white object-contain"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-[#071126]">Figure attached</p>
+              <p className="text-[11px] text-[#58708A] font-mono truncate">{form.imageUrl}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update({ imageUrl: '' })}
+              className="text-[12px] font-semibold text-[#58708A] hover:text-red-600 transition-colors cursor-pointer"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <UploadButton
+            folder="questions"
+            accept={ACCEPT.image}
+            label="Add a figure"
+            onUploaded={(url) => update({ imageUrl: url })}
+          />
+        )}
       </EditorSection>
 
       <EditorSection icon={ListChecks} title="Answer choices" hint="Select the correct one">
@@ -558,6 +592,15 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
         >
           <MathRenderer content={form.stimulus} />
         </div>
+      )}
+
+      {form.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- an R2 URL, not a build-time asset
+        <img
+          src={form.imageUrl}
+          alt="Question figure"
+          className="max-h-48 w-auto rounded-xl border border-[#E2E8F0] bg-white object-contain"
+        />
       )}
 
       <div className="text-[14px] text-[#071126] leading-relaxed">

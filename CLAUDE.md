@@ -75,6 +75,7 @@ The store's return object contains **intentional aliases** for the same function
 | `/api/payments/[[...id]]` | POST (submit), GET (own, or the queue), PATCH `/<id>` `{status}` |
 | `/api/users/[[...id]]` | GET, POST (staff), PATCH `/<id>` (role, permissions, access, suspension) |
 | `/api/me` | PATCH — own profile, lesson progress, bookmarks. Never role or access |
+| `/api/uploads` | POST — a presigned R2 PUT for one file. Staff only |
 
 Three files hold everything they share; a new endpoint should reach for these rather than
 re-implement them:
@@ -100,6 +101,43 @@ Two rules the routes exist to enforce, both of which a client cannot be trusted 
 - **The server prices.** A payment's amount comes from the plan or course being bought, and the
   payer from the session — never from the request body. Verifying expands the plan through
   `applyPlanGrants`, once, on the transition.
+
+### Uploads go to R2, not through the server
+
+`app/lib/r2.ts` + `/api/uploads` + `app/services/uploads.ts`. The browser asks for a signed URL,
+PUTs the file straight to Cloudflare R2, and stores the resulting public URL on the record — so a
+20 MB PDF is never a serverless request body.
+
+- The signature is made with `aws4fetch` and **`allHeaders: true`**. Without that flag `signQuery`
+  signs only `host`, and the URL would accept a PUT of any content type — an uploader could store
+  `text/html` under a `.png` key. `r2.test.ts` asserts `content-type` is in `X-Amz-SignedHeaders`,
+  so this cannot silently regress.
+- `ALLOWED_TYPES` is png/jpeg/webp/gif/pdf. **SVG is excluded on purpose**: it carries script and
+  these files are served from a domain of ours.
+- Keys are `<folder>/<UTC date>/<slug>-<random>.<ext>`, folder ∈ `questions | resources | lessons`.
+  The random tail is what stops two uploads of `figure.png` overwriting each other.
+- `UploadButton` in `admin/components/ui.tsx` is the only upload control — it owns its own progress
+  and error text. Use it rather than wiring a file input to `uploadFile` again.
+- Missing `R2_*` config is a **503 with a message**, not a crash: the app runs fine without a bucket,
+  it just cannot accept files.
+
+Required in `.env` (all five, or uploads stay disabled):
+
+```
+R2_ACCOUNT_ID=          # Cloudflare account id
+R2_ACCESS_KEY_ID=       # an R2 API token with Object Read & Write
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+R2_PUBLIC_URL=          # the bucket's public origin — r2.dev or a custom domain
+```
+
+The bucket also needs a **CORS policy** allowing `PUT` from the app's origin, or the browser's
+upload is blocked before it leaves the page:
+
+```json
+[{ "AllowedOrigins": ["http://localhost:3000", "https://your-domain"],
+   "AllowedMethods": ["PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+```
 
 ### Hydration
 
@@ -364,7 +402,7 @@ Conventions these encode:
 ## Known misleading names and dead code
 
 - `bg-app-canvas` in `AppShell.tsx` has no matching definition — it does nothing.
-- `.env`'s `DESMOS_KEY` is referenced nowhere: `DesmosModal` embeds desmos.com in an iframe rather than using their API. `metadata.json` is likewise unused by Next.js.
+- `DESMOS_KEY` is inlined into the client bundle by `next.config.ts`'s `env` block — a Desmos API key is public by design, and `DesmosModal` loads their calculator with it. Being a *build-time* inline, the deploy platform must have it set for the build, not just at runtime. `metadata.json` is unused by Next.js.
 - Next 16 regenerates a default `CLAUDE.md` if the file is missing (`agentRules` in `next.config.ts`). Edit this file rather than deleting it.
 
 ## Conventions
