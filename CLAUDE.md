@@ -12,6 +12,10 @@ npm run lint     # bare `eslint` (eslint.config.mjs = next core-web-vitals + typ
 npm test         # node --test over app/**/*.test.ts (no framework, plain node:assert)
 npx tsc --noEmit # typecheck (no dedicated script)
 
+npm run db:init                                    # create the indexes
+npm run db:seed                                    # upsert the starting content — no accounts
+npm run db:admin -- "Full Name" <phone|email> [pw] # the only way to make an admin
+
 node --test app/features/admin/lib/importQuestions.test.ts   # a single test file
 ```
 
@@ -151,10 +155,11 @@ by `/api`.
 `currentUser` can be restored from that cache, which is **not** a session: `isSignedIn`, set only
 when `/api/auth/me` answers with a user, is what gates every request that needs one.
 
-**Bootstrapping an admin:** registration always creates a `student`, and only an admin can promote
-anyone, so a database with no admin in it cannot be administered. `db:seed`'s `DEMO_ADMIN` is the
-way in; if you drop those accounts, promote a real one directly:
-`db.users.updateOne({ phone: '<yours>' }, { $set: { role: 'admin' } })`.
+**Bootstrapping an admin.** `db:seed` creates no accounts, registration always creates a `student`,
+and only an admin can promote anyone — so `app/lib/dbAdmin.ts` (`npm run db:admin`) is the only door
+in. Given a phone or email it does not know, it creates an admin; given one it does, it promotes
+that account and leaves the password alone. Omit the password and it generates one and prints it
+once. There is deliberately no default password anywhere in this codebase.
 
 ### Roles, staff, and permissions
 
@@ -358,9 +363,8 @@ Conventions these encode:
 
 ## Known misleading names and dead code
 
-- `app/components/DesmosModal.tsx` — a mock calculator UI with a hardcoded point table, not the Desmos API.
 - `bg-app-canvas` in `AppShell.tsx` has no matching definition — it does nothing.
-- `.env` holds `MONGODB_URI` and `DESMOS_KEY`; neither is referenced anywhere (no `process.env` usage in `app/`). `metadata.json` is likewise unused by Next.js.
+- `.env`'s `DESMOS_KEY` is referenced nowhere: `DesmosModal` embeds desmos.com in an iframe rather than using their API. `metadata.json` is likewise unused by Next.js.
 - Next 16 regenerates a default `CLAUDE.md` if the file is missing (`agentRules` in `next.config.ts`). Edit this file rather than deleting it.
 
 ## Conventions

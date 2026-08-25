@@ -66,9 +66,10 @@ export default function DashboardPage() {
   if (!store.currentUser) {
     return (
       <div className="max-w-md mx-auto my-20 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-xl">
-        <h2 className="text-xl font-bold text-slate-900">Student Sign In Required</h2>
+        <h2 className="text-xl font-bold text-slate-900">Sign in to see your dashboard</h2>
         <p className="text-xs text-slate-500">
-          Please log in to your candidate account or select Demo Student in the navigation bar to access your personal dashboard.
+          Your practice history, mock test scores and course progress live on your account. Sign in
+          from the top of any page to pick up where you left off.
         </p>
         <button
           onClick={() => router.push('/')}

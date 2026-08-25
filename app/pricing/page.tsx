@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '../services/store';
 import { PricingHub } from '../features/pricing/PricingHub';

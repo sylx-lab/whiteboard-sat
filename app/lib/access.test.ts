@@ -6,7 +6,7 @@ import {
   redactMockTest,
   redactQuestion,
 } from './access.ts';
-import { INITIAL_PLANS, INITIAL_QUESTIONS, DEMO_STUDENT } from '../data/seedData.ts';
+import { INITIAL_PLANS, INITIAL_QUESTIONS } from '../data/seedData.ts';
 import type { AccessGrants, UserProfile } from '../types.ts';
 
 const NOTHING: AccessGrants = {
@@ -17,8 +17,19 @@ const NOTHING: AccessGrants = {
   fullPremium: false,
 };
 
+/** A test fixture, not a demo account: the app ships no users at all. */
+const PERSON: UserProfile = {
+  id: 'user-test',
+  name: 'Test Person',
+  phone: '+880 1700 000000',
+  role: 'student',
+  targetScore: 1550,
+  createdAt: '2026-01-01',
+  access: NOTHING,
+};
+
 const student = (access: Partial<AccessGrants>): UserProfile => ({
-  ...DEMO_STUDENT,
+  ...PERSON,
   role: 'student',
   access: { ...NOTHING, ...access },
 });
@@ -34,7 +45,7 @@ test('a premium math question needs the math pass, not just any pass', () => {
 
 test('free questions are visible signed out; admins see everything', () => {
   assert.equal(canSeeQuestion(null, { is_free: true, subject: 'math' }), true);
-  const admin: UserProfile = { ...DEMO_STUDENT, role: 'admin', access: NOTHING };
+  const admin: UserProfile = { ...PERSON, role: 'admin', access: NOTHING };
   assert.equal(canSeeQuestion(admin, { is_free: false, subject: 'reading_writing' }), true);
 });
 

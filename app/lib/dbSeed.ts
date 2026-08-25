@@ -1,8 +1,5 @@
 import { collections, dehydrate, ensureIndexes } from './db.ts';
-import { hashPassword } from './auth.ts';
 import {
-  DEMO_ADMIN,
-  DEMO_STUDENT,
   INITIAL_COURSES,
   INITIAL_MOCK_TESTS,
   INITIAL_QUESTIONS,
@@ -10,11 +7,12 @@ import {
 } from '../data/seedData.ts';
 
 /**
- * `npm run db:seed` — upserts the seed content so a fresh database matches what
- * localStorage used to fall back to. Upsert, not insert, so re-running it is
- * safe and never clobbers real accounts' progress.
+ * `npm run db:seed` — upserts the starting content: the question bank, courses,
+ * resources and mock tests. Upsert, not insert, so re-running it is safe and
+ * never clobbers edits to anything else.
+ *
+ * It creates no accounts. `npm run db:admin` is how the first admin is made.
  */
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'whiteboard123';
 
 async function upsert<T extends { id: string }>(
   collection: { updateOne: (f: object, u: object, o: object) => Promise<unknown> },
@@ -32,23 +30,13 @@ async function upsert<T extends { id: string }>(
   );
 }
 
-const passwordHash = await hashPassword(DEMO_PASSWORD);
-const users = await collections.users();
-
 await Promise.all([
   upsert(await collections.questions(), INITIAL_QUESTIONS, dehydrate.question),
   upsert(await collections.courses(), INITIAL_COURSES, dehydrate.course),
   upsert(await collections.resources(), INITIAL_RESOURCES, dehydrate.resource),
   upsert(await collections.mockTests(), INITIAL_MOCK_TESTS, dehydrate.mockTest),
-  ...[DEMO_STUDENT, DEMO_ADMIN].map(({ id, status: _status, ...rest }) =>
-    users.updateOne(
-      { _id: id },
-      { $set: rest, $setOnInsert: { _id: id, courseProgress: {}, passwordHash } },
-      { upsert: true },
-    ),
-  ),
 ]);
 
 await ensureIndexes();
-console.log(`seeded. demo login: ${DEMO_STUDENT.phone} / ${DEMO_PASSWORD}`);
+console.log('seeded: questions, courses, resources, mock tests. No accounts — run `npm run db:admin`.');
 process.exit(0);

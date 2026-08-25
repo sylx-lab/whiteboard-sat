@@ -1,4 +1,4 @@
-import type { Question, Course, ResourceItem, ProductPlan, MockTest, UserProfile } from '../types';
+import type { Question, Course, ResourceItem, ProductPlan, MockTest } from '../types';
 
 export const INITIAL_QUESTIONS: Question[] = [
   // --- MATH: ALGEBRA ---
@@ -938,47 +938,3 @@ export const INITIAL_MOCK_TESTS: MockTest[] = [
     ],
   },
 ];
-
-export const DEMO_STUDENT: UserProfile = {
-  id: 'user-student-demo',
-  name: 'Abdullah Al Mubin',
-  phone: '+880 1712 345678',
-  email: 'abdullahalmubin8@gmail.com',
-  role: 'student',
-  targetScore: 1550,
-  examDate: '2026-10-05',
-  createdAt: '2026-01-05',
-  access: {
-    premiumMath: true,
-    premiumReadingWriting: false,
-    redbookPractice: true,
-    enrolledCourseIds: ['c-math-800'],
-    fullPremium: false,
-  },
-};
-
-export const DEMO_ADMIN: UserProfile = {
-  id: 'user-admin-demo',
-  name: 'Admin Supervisor (White Board)',
-  phone: '+880 1800 999999',
-  email: 'admin@whiteboardsat.com',
-  role: 'admin',
-  targetScore: 1600,
-  createdAt: '2026-01-01',
-  access: {
-    premiumMath: true,
-    premiumReadingWriting: true,
-    redbookPractice: true,
-    enrolledCourseIds: ['c-math-800', 'c-rw-750', 'c-full-1550'],
-    fullPremium: true,
-  },
-  permissions: {
-    canManageStudents: true,
-    canManageCourses: true,
-    canManagePractice: true,
-    canManageMockTests: true,
-    canManagePurchases: true,
-    canManageResources: true,
-    canManageSubAdmins: true,
-  },
-};

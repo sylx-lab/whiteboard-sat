@@ -254,10 +254,7 @@ export function useAppStore() {
   const hasAccessToMockTest = (test: MockTest): boolean => canSeeMockTest(currentUser, test);
 
   // --- AUTHENTICATION & PROFILES ---
-  /**
-   * Real sign-in: POST to /api/auth/login, which sets an httpOnly JWT cookie.
-   * The demo role switcher below still works offline against localStorage.
-   */
+  /** POST to /api/auth/login, which sets the httpOnly JWT cookie every other call rides on. */
   const loginUser = async (phoneOrEmail: string, password: string): Promise<AuthResult> => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
