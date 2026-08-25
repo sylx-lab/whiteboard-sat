@@ -14,7 +14,7 @@ interface PaymentModalProps {
     referenceNumber: string,
     senderPhoneNumber: string,
     notes?: string
-  ) => PaymentSubmission;
+  ) => Promise<PaymentSubmission>;
   onOpenAuth: () => void;
 }
 
@@ -49,11 +49,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setTimeout(() => setCopiedAccount(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!referenceNumber.trim() || !senderPhone.trim()) return;
 
-    onSubmitPayment(
+    // Awaited so "submitted" is only shown once the server has the reference —
+    // telling someone their payment is in when it never arrived is the one
+    // failure this screen must not have.
+    await onSubmitPayment(
       plan.id,
       plan.price,
       paymentMethod,

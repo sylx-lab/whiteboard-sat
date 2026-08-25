@@ -22,7 +22,7 @@ export default function AdminPage() {
         onRejectPayment={store.rejectPayment}
         onUpdateUserAccess={store.updateUserAccess}
         onToggleUserStatus={store.toggleUserStatus}
-        onAddQuestion={store.addQuestion}
+        onAddQuestion={store.addQuestions}
         onDeleteQuestion={store.deleteQuestion}
         onDeleteCourse={store.deleteCourse}
         onDeleteResource={store.deleteResource}

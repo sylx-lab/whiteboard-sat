@@ -30,10 +30,12 @@ Most of the UI has no tests; verify UI changes with `npm run build` and by exerc
 
 ## Architecture
 
-Next.js 16 App Router, React 19, TypeScript, Tailwind v4. The **UI is still entirely
-client-side** — every component reads `localStorage` through `useAppStore` — but there is now a
-full JSON API and a MongoDB layer behind it (see *The API* below). Nothing but `/api/auth` is
-wired into the store yet, so the two halves currently hold separate copies of the same data.
+Next.js 16 App Router, React 19, TypeScript, Tailwind v4, MongoDB behind a JSON API.
+
+The UI is still client-rendered and still goes through `useAppStore`, but **the store now reads
+and writes through `/api`** (see *The API* below). `localStorage` is only a cache that keeps the
+first paint from being blank — the database is the source of truth, and the effect in `store.ts`
+keyed on the signed-in user replaces the cached copy on every mount.
 
 ### The store is a hook, not a context — this is the main gotcha
 
@@ -46,6 +48,12 @@ Consequence — the mandatory pattern:
 - Feature components under `app/features/**` are presentational — they take props and must not import the store. (`app/components/AppShell.tsx` is the one deliberate exception: it holds the global chrome's own instance.)
 
 Adding new global state means adding it to `store.ts` and threading it through props, not calling `useAppStore()` deeper in the tree.
+
+**Every mutation is `async` now.** They post to `/api`, then update local state *from the response* —
+never optimistically, so a write that fails leaves the UI showing what the database actually holds.
+Three helpers (`createIn`, `patchIn`, `deleteIn`) are what keep each one to a line. A caller that
+navigates or reads the result must `await` it: the server mints ids, recomputes derived fields, and
+grades attempts, so those values do not exist until it answers.
 
 The store's return object contains **intentional aliases** for the same function (`loginUser`/`loginWithPhoneOrEmail`, `switchUser`/`switchDemoRole`, `logoutUser`/`logout`, `finalizeMockTest`/`finalizeMockTestAttempt`, `toggleLessonComplete`/`toggleLessonCompleted`, `grantStudentAccess`/`updateUserAccess`, `toggleStudentSuspension`/`toggleUserStatus`, `mockAttempts`/`mockTestAttempts`) — leftovers from renames. Reuse an existing name; don't add a third.
 
@@ -127,7 +135,26 @@ Navigation still speaks the `NavView` string union from `Navbar.tsx` — a lefto
 
 ### Persistence and seed data
 
-`app/data/seedData.ts` supplies `INITIAL_*` fallbacks (questions, courses, resources, plans, mock tests) plus `DEMO_STUDENT` / `DEMO_ADMIN`. Store keys are all `wbsat_*` (`STORAGE_KEYS` in `store.ts`). **Clearing the `wbsat_*` localStorage keys resets the app to seed state** — that's the reset procedure. `currentUser` defaults to `DEMO_STUDENT`; the Navbar role switcher swaps to `DEMO_ADMIN` (there is no real auth).
+**The app invents nothing.** `app/data/seedData.ts` is no longer imported by any component: the
+store's only use of it is `INITIAL_PLANS`, which is the real catalog and has no collection of its
+own (the payments route prices a purchase from the same list). There is no demo student, no demo
+roster, no seeded attempts or payments, and no role switcher — every list starts empty and is filled
+by `/api`.
+
+- **`npm run db:seed`** upserts `INITIAL_*` content into MongoDB through `dehydrate.*`, plus the two
+  demo accounts. **That is the reset procedure.** Clearing the `wbsat_*` localStorage keys only drops
+  the cache; the next load fetches the same data back from the API.
+- `localStorage` under `wbsat_*` is a **cache of real API data** — it keeps a navigation from
+  flashing empty. Signing out clears all of it, content included, because an admin's cache holds
+  draft questions and unredacted premium text.
+
+`currentUser` can be restored from that cache, which is **not** a session: `isSignedIn`, set only
+when `/api/auth/me` answers with a user, is what gates every request that needs one.
+
+**Bootstrapping an admin:** registration always creates a `student`, and only an admin can promote
+anyone, so a database with no admin in it cannot be administered. `db:seed`'s `DEMO_ADMIN` is the
+way in; if you drop those accounts, promote a real one directly:
+`db.users.updateOne({ phone: '<yours>' }, { $set: { role: 'admin' } })`.
 
 ### Roles, staff, and permissions
 

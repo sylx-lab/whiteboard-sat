@@ -95,7 +95,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           onLogin={store.loginWithPhoneOrEmail}
           onRegister={store.registerUser}
           onForgotPassword={store.requestPasswordReset}
-          onQuickRoleSelect={store.switchDemoRole}
         />
       </div>
     );
@@ -112,7 +111,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         onSetTheme={store.setTheme}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={store.logout}
-        onSwitchRole={store.switchDemoRole}
       />
 
       {/* Main Next.js Page Route Outlet */}
@@ -128,7 +126,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         onLogin={store.loginWithPhoneOrEmail}
         onRegister={store.registerUser}
         onForgotPassword={store.requestPasswordReset}
-        onQuickRoleSelect={store.switchDemoRole}
       />
 
       {/* Payment & Manual Verification Modal */}

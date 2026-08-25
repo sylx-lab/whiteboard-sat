@@ -54,7 +54,6 @@ export default function PricingPage() {
         onLogin={store.loginWithPhoneOrEmail}
         onRegister={store.registerUser}
         onForgotPassword={store.requestPasswordReset}
-        onQuickRoleSelect={store.switchDemoRole}
       />
     </>
   );

@@ -32,7 +32,7 @@ interface MockTestsHubProps {
   currentUser: UserProfile | null;
   hasAccessToMockTest: (test: MockTest) => boolean;
   onSaveAttempt: (attempt: MockTestAttempt) => void;
-  onFinalizeTest: (attemptId: string) => void;
+  onFinalizeTest: (attemptId: string) => Promise<MockTestAttempt | undefined>;
   onOpenPricing: () => void;
 }
 
@@ -199,7 +199,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   };
 
   // Submit Current Module and Advance or Finalize
-  const handleSubmitModule = () => {
+  const handleSubmitModule = async () => {
     if (!activeAttempt || !activeTest) return;
 
     const nextModuleIdx = activeAttempt.currentModuleIndex + 1;
@@ -215,21 +215,19 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       setActiveAttempt(updated);
       onSaveAttempt(updated);
     } else {
-      // Finalize full test
-      onFinalizeTest(activeAttempt.id);
+      // Finalize full test. The scored attempt comes back from the server;
+      // the local copy has no scoreSummary, which is what used to leave the
+      // results screen showing its placeholder numbers.
+      const scored = await onFinalizeTest(activeAttempt.id);
       confetti({
         particleCount: 80,
         spread: 60,
         origin: { y: 0.6 },
       });
 
-      const completed = {
-        ...activeAttempt,
-        status: 'completed' as const,
-      };
       setActiveAttempt(null);
       setActiveTest(null);
-      setSelectedResultAttempt(completed);
+      setSelectedResultAttempt(scored ?? { ...activeAttempt, status: 'completed' as const });
     }
   };
 
@@ -583,7 +581,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="p-5 rounded-xl bg-[#F1F8F7] border border-teal-100 text-center space-y-1">
                   <div className="text-[11px] font-bold text-[#087C76] uppercase tracking-wider">Estimated Total</div>
                   <div className="text-3xl font-extrabold text-[#071126] font-mono">
-                    {selectedResultAttempt.scoreSummary?.totalScoreEstimated || 1480}
+                    {selectedResultAttempt.scoreSummary?.totalScoreEstimated ?? '—'}
                   </div>
                   <div className="text-[11px] text-[#087C76]">Scale: 400 – 1600</div>
                 </div>
@@ -591,20 +589,20 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="p-5 rounded-xl bg-[#FAFAFA] border border-[#E8ECF2] text-center space-y-1">
                   <div className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">Mathematics</div>
                   <div className="text-2xl font-bold text-[#071126] font-mono">
-                    {selectedResultAttempt.scoreSummary?.mathScoreEstimated || 760}
+                    {selectedResultAttempt.scoreSummary?.mathScoreEstimated ?? 0}
                   </div>
                   <div className="text-[11px] text-[#58708A]">
-                    {selectedResultAttempt.scoreSummary?.mathCorrect || 7} / {selectedResultAttempt.scoreSummary?.mathTotal || 8} correct
+                    {selectedResultAttempt.scoreSummary?.mathCorrect ?? 0} / {selectedResultAttempt.scoreSummary?.mathTotal ?? 0} correct
                   </div>
                 </div>
 
                 <div className="p-5 rounded-xl bg-[#FAFAFA] border border-[#E8ECF2] text-center space-y-1">
                   <div className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">Reading & Writing</div>
                   <div className="text-2xl font-bold text-[#071126] font-mono">
-                    {selectedResultAttempt.scoreSummary?.rwScoreEstimated || 720}
+                    {selectedResultAttempt.scoreSummary?.rwScoreEstimated ?? 0}
                   </div>
                   <div className="text-[11px] text-[#58708A]">
-                    {selectedResultAttempt.scoreSummary?.rwCorrect || 6} / {selectedResultAttempt.scoreSummary?.rwTotal || 8} correct
+                    {selectedResultAttempt.scoreSummary?.rwCorrect ?? 0} / {selectedResultAttempt.scoreSummary?.rwTotal ?? 0} correct
                   </div>
                 </div>
               </div>
@@ -614,20 +612,20 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
                   <span className="text-[#58708A] block text-[11px]">Accuracy</span>
                   <strong className="text-sm text-[#071126] font-mono">
-                    {selectedResultAttempt.scoreSummary?.accuracyPercent || 85}%
+                    {selectedResultAttempt.scoreSummary?.accuracyPercent ?? 0}%
                   </strong>
                 </div>
                 <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
                   <span className="text-[#58708A] block text-[11px]">Correct</span>
                   <strong className="text-sm text-emerald-600 font-mono">
-                    {selectedResultAttempt.scoreSummary?.totalCorrect || 13}
+                    {selectedResultAttempt.scoreSummary?.totalCorrect ?? 0}
                   </strong>
                 </div>
                 <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
                   <span className="text-[#58708A] block text-[11px]">Incorrect</span>
                   <strong className="text-sm text-rose-600 font-mono">
-                    {(selectedResultAttempt.scoreSummary?.totalQuestions || 16) -
-                      (selectedResultAttempt.scoreSummary?.totalCorrect || 13)}
+                    {(selectedResultAttempt.scoreSummary?.totalQuestions ?? 0) -
+                      (selectedResultAttempt.scoreSummary?.totalCorrect ?? 0)}
                   </strong>
                 </div>
                 <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">

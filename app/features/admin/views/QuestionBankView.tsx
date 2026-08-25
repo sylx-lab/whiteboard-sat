@@ -37,7 +37,7 @@ import {
 interface QuestionBankViewProps {
   questions: Question[];
   onDeleteQuestion: (qId: string) => void;
-  onAddQuestion: (q: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
+  onAddQuestion: (questions: Omit<Question, 'id' | 'created_at' | 'updated_at'>[]) => Promise<Question[]>;
 }
 
 type SubjectFilter = 'all' | Subject;
@@ -137,7 +137,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     anchor.remove();
   };
 
-  const handleImport = (e: React.FormEvent) => {
+  const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     let plan;
     try {
@@ -153,7 +153,7 @@ export const QuestionBankView: React.FC<QuestionBankViewProps> = ({
       return;
     }
 
-    plan.accept.forEach(onAddQuestion);
+    await onAddQuestion(plan.accept);
     const { ok, message } = describeImport(plan);
     setImportResult({ tone: ok ? 'success' : 'error', message });
     if (ok) {

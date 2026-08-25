@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Phone, User, Mail, Shield, Lock } from 'lucide-react';
+import {X, Phone, User, Mail, Lock} from 'lucide-react';
 import { AuthResult } from '../types';
 
 interface AuthModalProps {
@@ -14,7 +14,6 @@ interface AuthModalProps {
     targetScore?: number
   ) => Promise<AuthResult>;
   onForgotPassword: (email: string) => Promise<void>;
-  onQuickRoleSelect: (role: 'student' | 'admin') => void;
 }
 
 type Mode = 'login' | 'register' | 'forgot';
@@ -25,7 +24,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogin,
   onRegister,
   onForgotPassword,
-  onQuickRoleSelect,
 }) => {
   const [mode, setMode] = useState<Mode>('login');
   const [resetSent, setResetSent] = useState(false);
@@ -116,35 +114,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           >
             <X className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Quick Demo Mode Banners */}
-        <div className="px-6 py-3 bg-[#F1F8F7] border-b border-[#E2E8F0]">
-          <div className="text-[10px] font-bold text-[#58708A] uppercase tracking-wider mb-2">
-            Instant 1-Click Demo Profiles:
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                onQuickRoleSelect('student');
-                onClose();
-              }}
-              className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-teal-50/50 border border-[#E2E8F0] rounded-lg text-[12px] font-medium text-[#071126] transition-colors cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5 text-[#0D918A]" />
-              <span>Student Profile</span>
-            </button>
-            <button
-              onClick={() => {
-                onQuickRoleSelect('admin');
-                onClose();
-              }}
-              className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-purple-50/50 border border-[#E2E8F0] rounded-lg text-[12px] font-medium text-[#071126] transition-colors cursor-pointer"
-            >
-              <Shield className="w-3.5 h-3.5 text-purple-600" />
-              <span>Admin Supervisor</span>
-            </button>
-          </div>
         </div>
 
         {/* Form Body */}

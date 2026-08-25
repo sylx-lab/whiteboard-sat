@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import {
   UserProfile,
   Question,
@@ -14,29 +15,32 @@ import {
   AdminPermission,
   AuthResult,
 } from '../types';
-import {
-  INITIAL_QUESTIONS,
-  INITIAL_COURSES,
-  INITIAL_RESOURCES,
-  INITIAL_PLANS,
-  INITIAL_MOCK_TESTS,
-  DEMO_STUDENT,
-  DEMO_ADMIN,
-} from '../data/seedData';
+// Plans are the real catalog and have no collection of their own — the payments
+// route prices a purchase from this same list. Everything else now comes from /api.
+import { INITIAL_PLANS } from '../data/seedData';
 import { ALL_DOMAINS } from '../lib/utils';
 import { canSeeCourse, canSeeMockTest, canSeeQuestion, applyPlanGrants } from '../lib/access';
-import { scoreAttempt } from '../lib/mockTests';
+import { can } from '../features/admin/lib/permissions';
+import { api } from './api';
 
-/** Every admin capability off — the starting point for a new staff member. */
-const BLANK_PERMISSIONS: AdminPermission = {
-  canManageStudents: false,
-  canManagePurchases: false,
-  canManagePractice: false,
-  canManageCourses: false,
-  canManageMockTests: false,
-  canManageResources: false,
-  canManageSubAdmins: false,
+/** No passes at all — the starting point for a new account, and the fallback
+ * when a grant is applied to a user the roster has not loaded yet. */
+const BLANK_ACCESS: UserProfile['access'] = {
+  premiumMath: false,
+  premiumReadingWriting: false,
+  redbookPractice: false,
+  enrolledCourseIds: [],
+  fullPremium: false,
 };
+
+/** How often a running mock test is checkpointed to the server. See saveMockTestAttempt. */
+const ATTEMPT_CHECKPOINT_MS = 15_000;
+
+/**
+ * /api/auth/me and /api/me answer with the user document, which carries the
+ * embedded lesson progress the app type does not declare.
+ */
+type MeUser = UserProfile & { courseProgress?: Record<string, string[]> };
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'wbsat_user',
@@ -73,284 +77,67 @@ function saveToStorage<T>(key: string, data: T) {
   }
 }
 
-// Initial demo students
-const INITIAL_STUDENTS_LIST: UserProfile[] = [
-  DEMO_STUDENT,
-  DEMO_ADMIN,
-  {
-    id: 'user-std-2',
-    name: 'Nafis Chowdhury',
-    phone: '+880 1911 223344',
-    email: 'nafis.chowdhury@example.com',
-    role: 'student',
-    targetScore: 1520,
-    examDate: '2026-11-01',
-    createdAt: '2026-01-20',
-    status: 'active',
-    access: {
-      premiumMath: false,
-      premiumReadingWriting: false,
-      redbookPractice: false,
-      enrolledCourseIds: [],
-      fullPremium: false,
-    },
-  },
-  {
-    id: 'user-std-3',
-    name: 'Aysha Rahman',
-    phone: '+880 1812 556677',
-    email: 'aysha.r@example.com',
-    role: 'student',
-    targetScore: 1580,
-    examDate: '2026-09-15',
-    createdAt: '2026-02-01',
-    status: 'active',
-    access: {
-      premiumMath: true,
-      premiumReadingWriting: true,
-      redbookPractice: true,
-      enrolledCourseIds: ['c-full-1550'],
-      fullPremium: true,
-    },
-  },
-];
-
-const INITIAL_PAYMENTS: PaymentSubmission[] = [
-  {
-    id: 'pay-001',
-    userId: 'user-std-2',
-    userName: 'Nafis Chowdhury',
-    userPhone: '+880 1911 223344',
-    productId: 'plan-bundle',
-    productName: 'Full 1550+ Master Pass',
-    productTitle: 'Full 1550+ Master Pass',
-    amount: 3900,
-    paymentMethod: 'bKash',
-    referenceNumber: 'BK9X872631',
-    senderPhoneNumber: '+880 1911 223344',
-    notes: 'Sent via bKash Merchant payment. Need urgent access.',
-    status: 'pending',
-    submittedAt: '2026-02-18T10:30:00Z',
-    createdAt: '2026-02-18T10:30:00Z',
-  },
-  {
-    id: 'pay-002',
-    userId: DEMO_STUDENT.id,
-    userName: DEMO_STUDENT.name,
-    userPhone: DEMO_STUDENT.phone ?? '',
-    productId: 'plan-math',
-    productName: 'Premium Math Pass',
-    productTitle: 'Premium Math Pass',
-    amount: 2200,
-    paymentMethod: 'Nagad',
-    referenceNumber: 'NG77123908',
-    senderPhoneNumber: '+880 1712 345678',
-    notes: 'Approved during enrollment.',
-    status: 'verified',
-    submittedAt: '2026-01-05T14:20:00Z',
-    createdAt: '2026-01-05T14:20:00Z',
-    reviewedAt: '2026-01-05T15:00:00Z',
-    reviewedBy: 'Admin Supervisor',
-  },
-];
-
-// Initial mock practice attempts
-const INITIAL_PRACTICE_ATTEMPTS: PracticeAttempt[] = [
-  {
-    id: 'att-1',
-    userId: DEMO_STUDENT.id,
-    questionId: 'q-m-01',
-    questionCode: 'M-ALG-101',
-    selectedAnswer: 'B',
-    correctAnswer: 'B',
-    isCorrect: true,
-    timeSpentSeconds: 45,
-    attemptedAt: '2026-02-15T12:00:00Z',
-    timestamp: '2026-02-15T12:00:00Z',
-    domain: 'algebra',
-    subject: 'math',
-    difficulty: 'medium',
-  },
-  {
-    id: 'att-2',
-    userId: DEMO_STUDENT.id,
-    questionId: 'q-m-02',
-    questionCode: 'M-ADV-102',
-    selectedAnswer: 'A',
-    correctAnswer: 'A',
-    isCorrect: true,
-    timeSpentSeconds: 65,
-    attemptedAt: '2026-02-15T12:05:00Z',
-    timestamp: '2026-02-15T12:05:00Z',
-    domain: 'advanced_math',
-    subject: 'math',
-    difficulty: 'hard',
-  },
-  {
-    id: 'att-3',
-    userId: DEMO_STUDENT.id,
-    questionId: 'q-rw-01',
-    questionCode: 'RW-CRA-101',
-    selectedAnswer: 'C',
-    correctAnswer: 'C',
-    isCorrect: true,
-    timeSpentSeconds: 38,
-    attemptedAt: '2026-02-16T14:00:00Z',
-    timestamp: '2026-02-16T14:00:00Z',
-    domain: 'craft_structure',
-    subject: 'reading_writing',
-    difficulty: 'medium',
-  },
-  {
-    id: 'att-4',
-    userId: DEMO_STUDENT.id,
-    questionId: 'q-rw-02',
-    questionCode: 'RW-SEC-102',
-    selectedAnswer: 'A',
-    correctAnswer: 'B',
-    isCorrect: false,
-    timeSpentSeconds: 52,
-    attemptedAt: '2026-02-16T14:08:00Z',
-    timestamp: '2026-02-16T14:08:00Z',
-    domain: 'standard_english_conventions',
-    subject: 'reading_writing',
-    difficulty: 'hard',
-  },
-];
-
-// Initial mock test attempts
-const INITIAL_MOCK_ATTEMPTS: MockTestAttempt[] = [
-  {
-    id: 'm-att-seed-1',
-    userId: DEMO_STUDENT.id,
-    testId: 'mock-01-diagnostic',
-    testTitle: 'Digital SAT Official Diagnostic Mock #1',
-    status: 'completed',
-    currentModuleIndex: 3,
-    currentQuestionIndex: 1,
-    timeRemainingSeconds: 0,
-    interactions: {
-      'q-m-01': {
-        questionId: 'q-m-01',
-        selectedAnswer: 'B',
-        isSubmitted: true,
-        isMarkedForReview: false,
-        isBookmarked: false,
-        crossedOutChoices: [],
-        timeSpentSeconds: 45,
-      },
-      'q-m-02': {
-        questionId: 'q-m-02',
-        selectedAnswer: 'A',
-        isSubmitted: true,
-        isMarkedForReview: false,
-        isBookmarked: false,
-        crossedOutChoices: [],
-        timeSpentSeconds: 65,
-      },
-      'q-rw-01': {
-        questionId: 'q-rw-01',
-        selectedAnswer: 'C',
-        isSubmitted: true,
-        isMarkedForReview: false,
-        isBookmarked: false,
-        crossedOutChoices: [],
-        timeSpentSeconds: 40,
-      },
-      'q-rw-02': {
-        questionId: 'q-rw-02',
-        selectedAnswer: 'B',
-        isSubmitted: true,
-        isMarkedForReview: false,
-        isBookmarked: false,
-        crossedOutChoices: [],
-        timeSpentSeconds: 50,
-      },
-    },
-    startedAt: '2026-02-10T09:00:00Z',
-    completedAt: '2026-02-10T11:15:00Z',
-    scoreSummary: {
-      totalCorrect: 14,
-      totalQuestions: 16,
-      accuracyPercent: 88,
-      mathScoreEstimated: 760,
-      rwScoreEstimated: 720,
-      totalScoreEstimated: 1480,
-      mathCorrect: 7,
-      mathTotal: 8,
-      rwCorrect: 7,
-      rwTotal: 8,
-      timeSpentSeconds: 4200,
-      domainBreakdown: {
-        algebra: { correct: 2, total: 2 },
-        advanced_math: { correct: 2, total: 2 },
-        problem_solving_data_analysis: { correct: 2, total: 2 },
-        geometry_trigonometry: { correct: 1, total: 2 },
-        information_ideas: { correct: 2, total: 2 },
-        craft_structure: { correct: 2, total: 2 },
-        expression_ideas: { correct: 2, total: 2 },
-        standard_english_conventions: { correct: 1, total: 2 },
-      },
-    },
-  },
-];
-
 export function useAppStore() {
   // Theme
   const [theme, setThemeState] = useState<AppTheme>(() => loadFromStorage(STORAGE_KEYS.THEME, 'white'));
 
   // User
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() =>
-    loadFromStorage(STORAGE_KEYS.CURRENT_USER, DEMO_STUDENT)
+    loadFromStorage<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null)
   );
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() =>
-    loadFromStorage(STORAGE_KEYS.ALL_USERS, INITIAL_STUDENTS_LIST)
+    loadFromStorage<UserProfile[]>(STORAGE_KEYS.ALL_USERS, [])
   );
 
   // Questions
   const [questions, setQuestions] = useState<Question[]>(() =>
-    loadFromStorage(STORAGE_KEYS.QUESTIONS, INITIAL_QUESTIONS)
+    loadFromStorage<Question[]>(STORAGE_KEYS.QUESTIONS, [])
   );
 
   // Courses
   const [courses, setCourses] = useState<Course[]>(() =>
-    loadFromStorage(STORAGE_KEYS.COURSES, INITIAL_COURSES)
+    loadFromStorage<Course[]>(STORAGE_KEYS.COURSES, [])
   );
 
   // Resources
   const [resources, setResources] = useState<ResourceItem[]>(() =>
-    loadFromStorage(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES)
+    loadFromStorage<ResourceItem[]>(STORAGE_KEYS.RESOURCES, [])
   );
 
   // Mock Tests
   const [mockTests, setMockTests] = useState<MockTest[]>(() =>
-    loadFromStorage(STORAGE_KEYS.MOCK_TESTS, INITIAL_MOCK_TESTS)
+    loadFromStorage<MockTest[]>(STORAGE_KEYS.MOCK_TESTS, [])
   );
 
   // Attempts
   const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>(() =>
-    loadFromStorage(STORAGE_KEYS.PRACTICE_ATTEMPTS, INITIAL_PRACTICE_ATTEMPTS)
+    loadFromStorage<PracticeAttempt[]>(STORAGE_KEYS.PRACTICE_ATTEMPTS, [])
   );
 
   const [mockAttempts, setMockAttempts] = useState<MockTestAttempt[]>(() =>
-    loadFromStorage(STORAGE_KEYS.MOCK_ATTEMPTS, INITIAL_MOCK_ATTEMPTS)
+    loadFromStorage<MockTestAttempt[]>(STORAGE_KEYS.MOCK_ATTEMPTS, [])
   );
 
   // Payments
   const [payments, setPayments] = useState<PaymentSubmission[]>(() =>
-    loadFromStorage(STORAGE_KEYS.PAYMENTS, INITIAL_PAYMENTS)
+    loadFromStorage<PaymentSubmission[]>(STORAGE_KEYS.PAYMENTS, [])
   );
 
   // Course Progress
   const [courseProgress, setCourseProgress] = useState<Record<string, string[]>>(() =>
-    loadFromStorage(STORAGE_KEYS.COURSE_PROGRESS, {
-      'c-math-800': ['les-m-01'],
-      'c-rw-750': ['les-rw-01'],
-    })
+    loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.COURSE_PROGRESS, {})
   );
 
   // Plans
   const plans = INITIAL_PLANS;
+
+  /**
+   * True only once /api/auth/me has answered with a user. `currentUser` can be
+   * restored from the cache before that answer arrives, so it is not the thing
+   * that decides whether to ask the server for attempts, payments and the
+   * roster — that would fire requests for a session that may not exist.
+   */
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   // Persist changes
   useEffect(() => saveToStorage(STORAGE_KEYS.THEME, theme), [theme]);
@@ -365,21 +152,87 @@ export function useAppStore() {
   useEffect(() => saveToStorage(STORAGE_KEYS.PAYMENTS, payments), [payments]);
   useEffect(() => saveToStorage(STORAGE_KEYS.COURSE_PROGRESS, courseProgress), [courseProgress]);
 
-  // Adopt the signed-in user from the JWT cookie. Returning null leaves the
-  // localStorage demo profile in place, so the demo role switcher still works
-  // without a database.
+  // Who the cookie says we are. This is the only thing that establishes a
+  // session; a cached `currentUser` without it is just a stale name on screen.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/auth/me')
       .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled && data?.user) setCurrentUser(data.user);
+      .then((data: { user: MeUser | null }) => {
+        if (cancelled || !data?.user) return;
+        setIsSignedIn(true);
+        setCurrentUser(data.user);
+        // Lesson progress is embedded in the user document, not its own key.
+        if (data.user.courseProgress) setCourseProgress(data.user.courseProgress);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
+
+  /** The roster is staff-only, so this asks for it only when the viewer may have it. */
+  const canSeeRoster = (user: UserProfile | null) =>
+    can(user, 'canManageStudents') || can(user, 'canManageSubAdmins');
+
+  const refreshUsers = async () => {
+    if (!canSeeRoster(currentUser)) return;
+    const { items } = await api.get<{ items: UserProfile[] }>('/users');
+    setAllUsers(items);
+  };
+
+  /**
+   * The localStorage copies above are only a cache, so the first paint is not
+   * blank; this is what actually fills the app. It re-runs when the signed-in
+   * user changes, because who is asking decides what comes back: a locked
+   * question arrives with its text stripped, and drafts arrive for staff only.
+   */
+  const sessionUserId = currentUser?.id ?? null;
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const [q, c, r, m] = await Promise.all([
+        api.get<{ items: Question[] }>('/questions'),
+        api.get<{ items: Course[] }>('/courses'),
+        api.get<{ items: ResourceItem[] }>('/resources'),
+        api.get<{ items: MockTest[] }>('/mock-tests'),
+      ]);
+      if (cancelled) return;
+      setQuestions(q.items);
+      setCourses(c.items);
+      setResources(r.items);
+      setMockTests(m.items);
+
+      // The roster is part of the same load, inline rather than through
+      // refreshUsers() so every setState in this effect sits behind an await.
+      if (isSignedIn && canSeeRoster(currentUser)) {
+        const roster = await api.get<{ items: UserProfile[] }>('/users');
+        if (cancelled) return;
+        setAllUsers(roster.items);
+      }
+
+      if (!isSignedIn) return;
+      const [history, pays] = await Promise.all([
+        api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts'),
+        api.get<{ items: PaymentSubmission[] }>('/payments'),
+      ]);
+      if (cancelled) return;
+      setPracticeAttempts(history.practice);
+      setMockAttempts(history.mock);
+      setPayments(pays.items);
+    };
+
+    // ponytail: every route tree calls useAppStore(), so this refetches on each
+    // navigation. Cheap at this size and always fresh; move the reads into
+    // server components (or add SWR) when the payload starts to hurt.
+    load().catch((err) => console.error('Could not load from the API', err));
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionUserId, isSignedIn]);
 
   // Apply Theme CSS class to <body> whenever theme changes, including on
   // initial mount (previously this only ran when the user manually toggled
@@ -413,6 +266,9 @@ export function useAppStore() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: data.error ?? 'Unable to sign in.' };
+    // Flips the load effect from "content only" to "content and this person's
+    // attempts, payments and roster".
+    setIsSignedIn(true);
     setCurrentUser(data.user);
     return { ok: true, user: data.user };
   };
@@ -431,6 +287,7 @@ export function useAppStore() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: data.error ?? 'Unable to create the account.' };
+    setIsSignedIn(true);
     setCurrentUser(data.user);
     return { ok: true, user: data.user };
   };
@@ -450,446 +307,296 @@ export function useAppStore() {
 
   const logoutUser = async () => {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    setIsSignedIn(false);
     setCurrentUser(null);
+    // None of this is the next visitor's to see. Content goes too: an admin's
+    // cache holds draft questions and unredacted premium text.
+    setQuestions([]);
+    setCourses([]);
+    setResources([]);
+    setMockTests([]);
+    setPracticeAttempts([]);
+    setMockAttempts([]);
+    setPayments([]);
+    setAllUsers([]);
+    setCourseProgress({});
   };
 
-  const switchUser = (role: 'student' | 'admin') => {
-    if (role === 'admin') {
-      setCurrentUser(DEMO_ADMIN);
-    } else {
-      setCurrentUser(DEMO_STUDENT);
-    }
+  // --- WRITING THROUGH THE API ---
+  /**
+   * Every write goes to the server and the local copy is updated from the
+   * response — never optimistically. A write that fails therefore leaves the UI
+   * showing what the database actually holds, instead of a change that silently
+   * did not happen. The three helpers are what keep each mutation below to one
+   * line.
+   */
+  const createIn = async <T extends { id: string }>(
+    path: string,
+    setList: Dispatch<SetStateAction<T[]>>,
+    body: unknown,
+  ): Promise<T> => {
+    const { item } = await api.post<{ item: T }>(path, body);
+    setList((prev) => [item, ...prev]);
+    return item;
+  };
+
+  const patchIn = async <T extends { id: string }>(
+    path: string,
+    id: string,
+    setList: Dispatch<SetStateAction<T[]>>,
+    body: unknown,
+  ): Promise<T> => {
+    const { item } = await api.patch<{ item: T }>(`${path}/${id}`, body);
+    setList((prev) => prev.map((row) => (row.id === id ? item : row)));
+    return item;
+  };
+
+  const deleteIn = async <T extends { id: string }>(
+    path: string,
+    id: string,
+    setList: Dispatch<SetStateAction<T[]>>,
+  ): Promise<void> => {
+    await api.del(`${path}/${id}`);
+    setList((prev) => prev.filter((row) => row.id !== id));
   };
 
   // --- PRACTICE ATTEMPT LOGGING ---
-  const logPracticeAttempt = (
+  /**
+   * The answer goes up, the verdict comes back: the route looks the correct
+   * answer up itself, so `isCorrect` is never something the browser decides.
+   */
+  const logPracticeAttempt = async (
     question: Question,
     selectedAnswer: 'A' | 'B' | 'C' | 'D',
-    timeSpentSeconds: number
+    timeSpentSeconds: number,
   ) => {
-    const isCorrect = selectedAnswer === question.correct_answer;
-    const newAttempt: PracticeAttempt = {
-      id: `att-${Date.now()}`,
-      userId: currentUser?.id || 'guest',
+    const { item } = await api.post<{ item: PracticeAttempt }>('/attempts/practice', {
       questionId: question.id,
-      questionCode: question.code,
       selectedAnswer,
-      correctAnswer: question.correct_answer,
-      isCorrect,
       timeSpentSeconds,
-      attemptedAt: new Date().toISOString(),
-      timestamp: new Date().toISOString(),
-      domain: question.domain,
-      subject: question.subject,
-      difficulty: question.difficulty,
-    };
-
-    setPracticeAttempts((prev) => [newAttempt, ...prev]);
+    });
+    setPracticeAttempts((prev) => [item, ...prev]);
   };
 
   // --- MOCK TEST ENGINE & ATTEMPTS ---
+  /**
+   * MockTestsHub calls saveMockTestAttempt once a second from the countdown, so
+   * the local copy updates every time while the server gets a checkpoint at most
+   * every 15 seconds. The first save for an attempt always goes through, so
+   * there is something to resume from if the tab closes straight away.
+   */
+  const lastAttemptSave = useRef<{ id: string; at: number } | null>(null);
+
   const saveMockTestAttempt = (attempt: MockTestAttempt) => {
     setMockAttempts((prev) => {
       const idx = prev.findIndex((a) => a.id === attempt.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = attempt;
-        return updated;
-      }
-      return [attempt, ...prev];
+      if (idx < 0) return [attempt, ...prev];
+      const updated = [...prev];
+      updated[idx] = attempt;
+      return updated;
     });
+
+    const now = Date.now();
+    const last = lastAttemptSave.current;
+    if (last?.id === attempt.id && now - last.at < ATTEMPT_CHECKPOINT_MS) return;
+    lastAttemptSave.current = { id: attempt.id, at: now };
+    api
+      .put(`/attempts/mock/${attempt.id}`, attempt)
+      .catch((err) => console.error('Could not save the mock test attempt', err));
   };
 
-  const finalizeMockTest = (attemptId: string) => {
-    setMockAttempts((prev) => {
-      const target = prev.find((a) => a.id === attemptId);
-      const test = target && mockTests.find((t) => t.id === target.testId);
-      if (!target || !test) return prev;
-
-      // scoreAttempt is the same function the server runs on submit, so an
-      // offline finalize and a server finalize cannot disagree.
-      const completed: MockTestAttempt = {
-        ...target,
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        scoreSummary: scoreAttempt(test, target.interactions),
-      };
-      return prev.map((a) => (a.id === attemptId ? completed : a));
+  /** The server scores it. Returns the scored attempt so the results screen can show it. */
+  const finalizeMockTest = async (attemptId: string): Promise<MockTestAttempt | undefined> => {
+    const attempt = mockAttempts.find((a) => a.id === attemptId);
+    if (!attempt) return undefined;
+    const { item } = await api.put<{ item: MockTestAttempt }>(`/attempts/mock/${attemptId}`, {
+      ...attempt,
+      status: 'completed',
     });
+    lastAttemptSave.current = null;
+    setMockAttempts((prev) => prev.map((a) => (a.id === attemptId ? item : a)));
+    return item;
   };
 
   // --- COURSE LESSON COMPLETION ---
-  const toggleLessonComplete = (courseId: string, lessonId: string) => {
-    setCourseProgress((prev) => {
-      const current = prev[courseId] || [];
-      const updated = current.includes(lessonId)
-        ? current.filter((id) => id !== lessonId)
-        : [...current, lessonId];
-      return { ...prev, [courseId]: updated };
+  /** courseProgress is embedded in the user document, so this is a PATCH of /api/me. */
+  const toggleLessonComplete = async (courseId: string, lessonId: string) => {
+    const { user } = await api.patch<{ user: MeUser | null }>('/me', {
+      lessonToggle: { courseId, lessonId },
     });
+    if (user?.courseProgress) setCourseProgress(user.courseProgress);
   };
 
   // --- PAYMENTS & MANUAL VERIFICATION ---
+  /**
+   * `amount` is accepted for the existing call signature and then ignored: the
+   * route charges the catalog price for productId, and the payer comes from the
+   * session cookie. Neither is something a browser gets to choose.
+   */
   const submitPayment = (
     productId: string,
-    amount: number,
+    _amount: number,
     paymentMethod: PaymentSubmission['paymentMethod'],
     referenceNumber: string,
     senderPhoneNumber: string,
-    notes?: string
-  ): PaymentSubmission => {
-    const plan = plans.find((p) => p.id === productId);
-    const newSubmission: PaymentSubmission = {
-      id: `pay-${Date.now()}`,
-      userId: currentUser?.id || 'guest',
-      userName: currentUser?.name || 'Anonymous Student',
-      userPhone: currentUser?.phone || senderPhoneNumber,
-      userEmail: currentUser?.email,
+    notes?: string,
+  ): Promise<PaymentSubmission> =>
+    createIn<PaymentSubmission>('/payments', setPayments, {
       productId,
-      productName: plan ? plan.name : 'SAT Course / Practice Access',
-      productTitle: plan ? plan.name : 'SAT Course / Practice Access',
-      amount,
       paymentMethod,
       referenceNumber,
       senderPhoneNumber,
       notes,
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+    });
 
-    setPayments((prev) => [newSubmission, ...prev]);
-    return newSubmission;
+  const verifyPayment = async (paymentId: string, approve: boolean = true) => {
+    await patchIn<PaymentSubmission>('/payments', paymentId, setPayments, {
+      status: approve ? 'verified' : 'rejected',
+    });
+    // Verifying expands the plan onto the buyer server-side, so the roster the
+    // console is showing is now a version behind.
+    if (approve) await refreshUsers();
   };
 
-  const verifyPayment = (paymentId: string, approve: boolean = true, reviewerName: string = 'Admin Supervisor') => {
-    setPayments((prev) =>
-      prev.map((p) => {
-        if (p.id !== paymentId) return p;
-        return {
-          ...p,
-          status: approve ? 'verified' : 'rejected',
-          reviewedAt: new Date().toISOString(),
-          reviewedBy: reviewerName,
-        };
-      })
-    );
+  const rejectPayment = (paymentId: string) => verifyPayment(paymentId, false);
 
-    if (approve) {
-      const targetPay = payments.find((p) => p.id === paymentId);
-      if (targetPay) {
-        const plan = plans.find((pl) => pl.id === targetPay.productId);
-        if (plan) {
-          grantStudentAccess(targetPay.userId, plan);
-        }
-      }
-    }
+  // --- PEOPLE: ACCESS, ROLES & STAFF ---
+  /** One PATCH covers role, permissions, access and suspension; the guards live server-side. */
+  const patchUser = async (userId: string, body: object): Promise<UserProfile> => {
+    const { item } = await api.patch<{ item: UserProfile }>(`/users/${userId}`, body);
+    setAllUsers((prev) => prev.map((u) => (u.id === userId ? item : u)));
+    setCurrentUser((prev) => (prev && prev.id === userId ? item : prev));
+    return item;
   };
 
-  const rejectPayment = (paymentId: string) => {
-    verifyPayment(paymentId, false, 'Admin Supervisor');
-  };
+  const accessOf = (userId: string): UserProfile['access'] =>
+    allUsers.find((u) => u.id === userId)?.access ?? { ...BLANK_ACCESS };
 
-  // --- ADMIN MANUAL ACCESS GRANTS ---
   const grantStudentAccess = (
     userId: string,
-    grantsOrPlan: Partial<UserProfile['access']> | ProductPlan
+    grantsOrPlan: Partial<UserProfile['access']> | ProductPlan,
   ) => {
-    setAllUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== userId) return u;
-
-        let nextAccess = { ...u.access };
-
-        if ('grants' in grantsOrPlan) {
-          nextAccess = applyPlanGrants(nextAccess, grantsOrPlan, courses.map((c) => c.id));
-        } else {
-          nextAccess = { ...nextAccess, ...grantsOrPlan };
-        }
-
-        const updatedUser = { ...u, access: nextAccess };
-        if (currentUser && currentUser.id === userId) {
-          setCurrentUser(updatedUser);
-        }
-        return updatedUser;
-      })
-    );
+    const current = accessOf(userId);
+    const access =
+      'grants' in grantsOrPlan
+        ? applyPlanGrants(current, grantsOrPlan, courses.map((c) => c.id))
+        : { ...current, ...grantsOrPlan };
+    return patchUser(userId, { access });
   };
 
-  /** Patch one user in the roster, keeping currentUser in sync if it is them. */
-  const patchUser = (userId: string, patch: (u: UserProfile) => UserProfile) => {
-    setAllUsers((prev) => prev.map((u) => (u.id === userId ? patch(u) : u)));
-    setCurrentUser((prev) => (prev && prev.id === userId ? patch(prev) : prev));
-  };
-
-  // --- COURSE ENROLLMENT ---
   const toggleCourseEnrollment = (userId: string, courseId: string) => {
-    patchUser(userId, (u) => {
-      const enrolled = u.access.enrolledCourseIds.includes(courseId);
-      return {
-        ...u,
-        access: {
-          ...u.access,
-          enrolledCourseIds: enrolled
-            ? u.access.enrolledCourseIds.filter((id) => id !== courseId)
-            : [...u.access.enrolledCourseIds, courseId],
-        },
-      };
+    const current = accessOf(userId);
+    const enrolled = current.enrolledCourseIds.includes(courseId);
+    return patchUser(userId, {
+      access: {
+        ...current,
+        enrolledCourseIds: enrolled
+          ? current.enrolledCourseIds.filter((id) => id !== courseId)
+          : [...current.enrolledCourseIds, courseId],
+      },
     });
   };
 
-  // --- STAFF ROLES & PERMISSIONS ---
-  const setUserRole = (userId: string, role: UserProfile['role']) => {
-    patchUser(userId, (u) => ({
-      ...u,
-      role,
-      // A new staff member starts with nothing granted; permissions are then chosen
-      // explicitly rather than inherited from whatever the account had before.
-      permissions: role === 'sub_admin' ? u.permissions ?? BLANK_PERMISSIONS : u.permissions,
-    }));
+  const setUserRole = (userId: string, role: UserProfile['role']) => patchUser(userId, { role });
+
+  const setUserPermissions = (userId: string, updates: Partial<AdminPermission>) =>
+    patchUser(userId, { permissions: updates });
+
+  const toggleStudentSuspension = (userId: string) => {
+    const target = allUsers.find((u) => u.id === userId);
+    return patchUser(userId, { isSuspended: !target?.isSuspended });
   };
 
-  const setUserPermissions = (userId: string, updates: Partial<AdminPermission>) => {
-    patchUser(userId, (u) => ({
-      ...u,
-      permissions: { ...BLANK_PERMISSIONS, ...(u.permissions ?? {}), ...updates },
-    }));
-  };
-
+  /** No password is set: the new staff member signs in through the reset-password flow. */
   const createStaffUser = (
     name: string,
     phone: string,
     email?: string,
-    permissions: Partial<AdminPermission> = {}
-  ): UserProfile => {
-    const staff: UserProfile = {
-      id: `user-staff-${Date.now()}`,
-      name,
-      phone,
-      email,
-      role: 'sub_admin',
-      targetScore: 1600,
-      createdAt: new Date().toISOString().split('T')[0],
-      status: 'active',
-      access: {
-        premiumMath: true,
-        premiumReadingWriting: true,
-        redbookPractice: true,
-        enrolledCourseIds: [],
-        fullPremium: true,
-      },
-      permissions: { ...BLANK_PERMISSIONS, ...permissions },
-    };
-    setAllUsers((prev) => [...prev, staff]);
-    return staff;
-  };
-
-  const toggleStudentSuspension = (userId: string) => {
-    setAllUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== userId) return u;
-        const nextSuspended = !u.isSuspended;
-        const updated: UserProfile = {
-          ...u,
-          isSuspended: nextSuspended,
-          status: nextSuspended ? 'suspended' : 'active',
-        };
-        if (currentUser?.id === userId) {
-          setCurrentUser(updated);
-        }
-        return updated;
-      })
-    );
-  };
+    permissions: Partial<AdminPermission> = {},
+  ): Promise<UserProfile> =>
+    createIn<UserProfile>('/users', setAllUsers, { name, phone, email, permissions });
 
   // --- QUESTION MANAGEMENT CRUD ---
-  const addQuestion = (newQ: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => {
-    const fullQuestion: Question = {
-      ...newQ,
-      id: `q-${Date.now()}`,
-      choices: newQ.choices || newQ.answer_choices || [],
-      answer_choices: newQ.answer_choices || newQ.choices || [],
-      created_at: new Date().toISOString().split('T')[0],
-      updated_at: new Date().toISOString().split('T')[0],
-    };
-    setQuestions((prev) => [fullQuestion, ...prev]);
-    return fullQuestion;
+  const addQuestion = (newQ: Omit<Question, 'id' | 'created_at' | 'updated_at'>) =>
+    createIn<Question>('/questions', setQuestions, newQ);
+
+  const updateQuestion = (id: string, updates: Partial<Question>) =>
+    patchIn<Question>('/questions', id, setQuestions, updates);
+
+  const deleteQuestion = (id: string) => deleteIn<Question>('/questions', id, setQuestions);
+
+  /** A JSON import posts the whole array in one request — that is what POST accepts a list for. */
+  const addQuestions = async (rows: Omit<Question, 'id' | 'created_at' | 'updated_at'>[]) => {
+    if (!rows.length) return [];
+    const { items } = await api.post<{ items: Question[] }>('/questions', rows);
+    setQuestions((prev) => [...items, ...prev]);
+    return items;
   };
 
-  const updateQuestion = (id: string, updates: Partial<Question>) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, ...updates, updated_at: new Date().toISOString().split('T')[0] } : q))
-    );
-  };
-
-  /**
-   * Apply a batch of topic edits from the Topics view in one pass, so a rename or
-   * merge across 40 questions is a single state update rather than 40.
-   */
-  const applyTopicUpdates = (updates: { questionId: string; topic: string }[]) => {
-    if (updates.length === 0) return;
-    const byId = new Map(updates.map((u) => [u.questionId, u.topic]));
+  /** One request for the whole merge, mirroring the single state update it used to be. */
+  const applyTopicUpdates = async (updates: { questionId: string; topic: string }[]) => {
+    if (!updates.length) return;
+    await api.patch('/questions', updates.map((u) => ({ id: u.questionId, topic: u.topic })));
+    const topics = new Map(updates.map((u) => [u.questionId, u.topic]));
     const today = new Date().toISOString().split('T')[0];
     setQuestions((prev) =>
-      prev.map((q) => {
-        const topic = byId.get(q.id);
-        return topic === undefined ? q : { ...q, topic, updated_at: today };
-      })
+      prev.map((q) =>
+        topics.has(q.id) ? { ...q, topic: topics.get(q.id)!, updated_at: today } : q,
+      ),
     );
-  };
-
-  const deleteQuestion = (id: string) => {
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
   // --- COURSE MANAGEMENT CRUD ---
-  const addCourse = (newC: Partial<Course> & { title: string }) => {
-    const fullCourse: Course = {
-      id: newC.id || `c-${Date.now()}`,
-      slug: newC.slug || newC.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      title: newC.title,
-      subtitle: newC.subtitle || '',
-      description: newC.description || '',
-      subject: newC.subject || 'math',
-      difficulty: newC.difficulty || 'All Levels',
-      instructorName: newC.instructorName || 'Whiteboard SAT Expert',
-      instructorTitle: newC.instructorTitle || 'SAT Master Coach',
-      price: newC.price ?? 2900,
-      originalPrice: newC.originalPrice ?? 4500,
-      is_published: newC.is_published ?? true,
-      features: newC.features || ['Full Video Lessons', 'Practice Quizzes'],
-      lessonsCount: newC.lessons ? newC.lessons.length : 0,
-      totalHours: newC.totalHours ?? 10,
-      lessons: newC.lessons || [],
-      level: newC.level || 'All Levels',
-      badge: newC.badge || 'New Course',
-    };
-    setCourses((prev) => [fullCourse, ...prev]);
-    return fullCourse;
+  const addCourse = (newC: Partial<Course> & { title: string }) =>
+    createIn<Course>('/courses', setCourses, newC);
+
+  const updateCourse = (id: string, updates: Partial<Course>) =>
+    patchIn<Course>('/courses', id, setCourses, updates);
+
+  const deleteCourse = (id: string) => deleteIn<Course>('/courses', id, setCourses);
+
+  /**
+   * Lessons are embedded in the course document, so all three lesson operations
+   * are one PATCH of its `lessons` array — there is no lesson endpoint to call.
+   * The server assigns ids and recomputes lessonsCount and totalHours.
+   */
+  const patchLessons = async (courseId: string, next: (lessons: Lesson[]) => Lesson[]) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) return undefined;
+    return patchIn<Course>('/courses', courseId, setCourses, { lessons: next(course.lessons) });
   };
 
-  const updateCourse = (id: string, updates: Partial<Course>) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        const updatedLessons = updates.lessons || c.lessons;
-        return {
-          ...c,
-          ...updates,
-          lessons: updatedLessons,
-          lessonsCount: updatedLessons.length,
-        };
-      })
+  const addLessonToCourse = async (courseId: string, lesson: Omit<Lesson, 'id' | 'courseId'>) => {
+    const course = await patchLessons(courseId, (lessons) => [...lessons, lesson as Lesson]);
+    return course?.lessons[course.lessons.length - 1];
+  };
+
+  const updateLessonInCourse = (courseId: string, lessonId: string, updates: Partial<Lesson>) =>
+    patchLessons(courseId, (lessons) =>
+      lessons.map((l) => (l.id === lessonId ? { ...l, ...updates } : l)),
     );
-  };
 
-  const deleteCourse = (id: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-  };
-
-  const addLessonToCourse = (courseId: string, lesson: Omit<Lesson, 'id' | 'courseId'>) => {
-    const newLesson: Lesson = {
-      ...lesson,
-      id: `les-${Date.now()}`,
-      courseId,
-    };
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id !== courseId) return c;
-        const lessons = [...c.lessons, newLesson];
-        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
-        return {
-          ...c,
-          lessons,
-          lessonsCount: lessons.length,
-          totalHours: Math.round((totalMins / 60) * 10) / 10,
-        };
-      })
-    );
-    return newLesson;
-  };
-
-  const updateLessonInCourse = (courseId: string, lessonId: string, updates: Partial<Lesson>) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id !== courseId) return c;
-        const lessons = c.lessons.map((l) => (l.id === lessonId ? { ...l, ...updates } : l));
-        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
-        return {
-          ...c,
-          lessons,
-          lessonsCount: lessons.length,
-          totalHours: Math.round((totalMins / 60) * 10) / 10,
-        };
-      })
-    );
-  };
-
-  const deleteLessonFromCourse = (courseId: string, lessonId: string) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id !== courseId) return c;
-        const lessons = c.lessons.filter((l) => l.id !== lessonId);
-        const totalMins = lessons.reduce((acc, l) => acc + l.durationMinutes, 0);
-        return {
-          ...c,
-          lessons,
-          lessonsCount: lessons.length,
-          totalHours: Math.round((totalMins / 60) * 10) / 10,
-        };
-      })
-    );
-  };
+  const deleteLessonFromCourse = (courseId: string, lessonId: string) =>
+    patchLessons(courseId, (lessons) => lessons.filter((l) => l.id !== lessonId));
 
   // --- RESOURCE MANAGEMENT CRUD ---
-  const addResource = (newR: Partial<ResourceItem> & { title: string }) => {
-    const fullResource: ResourceItem = {
-      id: newR.id || `res-${Date.now()}`,
-      title: newR.title,
-      description: newR.description || '',
-      category: newR.category || 'formula_sheet',
-      subject: newR.subject || 'general',
-      is_free: newR.is_free ?? true,
-      downloadUrl: newR.downloadUrl || '#',
-      externalUrl: newR.externalUrl || '#',
-      readTime: newR.readTime || '10 min read',
-      dateAdded: newR.dateAdded || new Date().toISOString().split('T')[0],
-    };
-    setResources((prev) => [fullResource, ...prev]);
-    return fullResource;
-  };
+  const addResource = (newR: Partial<ResourceItem> & { title: string }) =>
+    createIn<ResourceItem>('/resources', setResources, newR);
 
-  const updateResource = (id: string, updates: Partial<ResourceItem>) => {
-    setResources((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
-  };
+  const updateResource = (id: string, updates: Partial<ResourceItem>) =>
+    patchIn<ResourceItem>('/resources', id, setResources, updates);
 
-  const deleteResource = (id: string) => {
-    setResources((prev) => prev.filter((r) => r.id !== id));
-  };
+  const deleteResource = (id: string) => deleteIn<ResourceItem>('/resources', id, setResources);
 
   // --- MOCK TEST MANAGEMENT CRUD ---
-  const addMockTest = (newT: Partial<MockTest> & { title: string }) => {
-    const fullTest: MockTest = {
-      id: newT.id || `mock-${Date.now()}`,
-      title: newT.title,
-      description: newT.description || '',
-      is_free: newT.is_free ?? false,
-      difficulty: newT.difficulty || 'medium',
-      totalQuestions: newT.totalQuestions || 98,
-      totalTimeMinutes: newT.totalTimeMinutes || 134,
-      modules: newT.modules || [],
-    };
-    setMockTests((prev) => [fullTest, ...prev]);
-    return fullTest;
-  };
+  const addMockTest = (newT: Partial<MockTest> & { title: string }) =>
+    createIn<MockTest>('/mock-tests', setMockTests, newT);
 
-  const updateMockTest = (id: string, updates: Partial<MockTest>) => {
-    setMockTests((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
-  };
+  const updateMockTest = (id: string, updates: Partial<MockTest>) =>
+    patchIn<MockTest>('/mock-tests', id, setMockTests, updates);
 
-  const deleteMockTest = (id: string) => {
-    setMockTests((prev) => prev.filter((t) => t.id !== id));
-  };
+  const deleteMockTest = (id: string) => deleteIn<MockTest>('/mock-tests', id, setMockTests);
+
 
   // --- STATS COMPUTATION FOR STUDENT DASHBOARD ---
   const userAttempts = practiceAttempts.filter((a) => a.userId === currentUser?.id);
@@ -937,8 +644,6 @@ export function useAppStore() {
     resendVerificationEmail,
     logoutUser,
     logout: logoutUser,
-    switchUser,
-    switchDemoRole: switchUser,
     // Operations
     logPracticeAttempt,
     saveMockTestAttempt,
@@ -954,6 +659,7 @@ export function useAppStore() {
     toggleStudentSuspension,
     toggleUserStatus: toggleStudentSuspension,
     addQuestion,
+    addQuestions,
     updateQuestion,
     deleteQuestion,
     applyTopicUpdates,

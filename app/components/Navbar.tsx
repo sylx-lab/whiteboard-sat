@@ -40,7 +40,6 @@ interface NavbarProps {
   onSetTheme: (theme: AppTheme) => void;
   onOpenAuth: () => void;
   onLogout: () => void;
-  onSwitchRole: (role: 'student' | 'admin') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -51,7 +50,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSetTheme,
   onOpenAuth,
   onLogout,
-  onSwitchRole,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -283,28 +281,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Zone 3: RIGHT Action Controls */}
           <div className="flex items-center gap-3">
-            {/* Subtle Segmented Role Toggle */}
-            <div className="hidden md:flex items-center rounded-[10px] p-1 text-[11.5px] font-medium border border-white/15 bg-black/10 text-white/80">
-              <button
-                onClick={() => onSwitchRole('student')}
-                className={`px-2.5 py-1 rounded-[8px] transition-all cursor-pointer ${currentUser?.role === 'student'
-                    ? 'bg-white text-[#087C76] font-semibold shadow-xs'
-                    : 'text-white/80 hover:text-white'
-                  }`}
-              >
-                Student
-              </button>
-              <button
-                onClick={() => onSwitchRole('admin')}
-                className={`px-2.5 py-1 rounded-[8px] transition-all cursor-pointer ${currentUser?.role === 'admin'
-                    ? 'bg-white text-[#087C76] font-semibold shadow-xs'
-                    : 'text-white/80 hover:text-white'
-                  }`}
-              >
-                Admin
-              </button>
-            </div>
-
             {/* Theme Toggle Button */}
             <div className="relative">
               <button

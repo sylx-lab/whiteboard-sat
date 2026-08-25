@@ -47,7 +47,7 @@ interface MockTestVisualEditorProps {
   allQuestions: Question[];
   onSave: (testData: Record<string, unknown>) => void;
   /** Adds a question to the bank and returns it, so the picker can author one inline. */
-  onCreateQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
+  onCreateQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Promise<Question>;
 }
 
 interface FormState {
@@ -518,7 +518,7 @@ export const MockTestVisualEditor: React.FC<MockTestVisualEditorProps> = ({
 const ModuleQuestionScreen: React.FC<{
   module: MockTestModule;
   allQuestions: Question[];
-  onCreateQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Question;
+  onCreateQuestion: (question: Omit<Question, 'id' | 'created_at' | 'updated_at'>) => Promise<Question>;
   onBack: () => void;
   onConfirm: (questions: Question[]) => void;
 }> = ({ module: mod, allQuestions, onCreateQuestion, onBack, onConfirm }) => {
@@ -559,9 +559,11 @@ const ModuleQuestionScreen: React.FC<{
       return next;
     });
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created = onCreateQuestion(
+    // The question is written to the bank server-side, so its id and code come
+    // back rather than being invented here.
+    const created = await onCreateQuestion(
       createCtl.buildPayload() as unknown as Omit<Question, 'id' | 'created_at' | 'updated_at'>
     );
     // Select it and hand back a blank form in the same category, so several

@@ -30,9 +30,16 @@ export default function NewStaffPage() {
 
   const grantedCount = PERMISSION_KEYS.filter((k) => permissions[k]).length;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const staff = store.createStaffUser(name.trim(), phone.trim(), email.trim() || undefined, permissions);
+    // Await it: the server mints the id this navigates to, and a failure here
+    // (a phone already in use) must not look like a successful create.
+    const staff = await store.createStaffUser(
+      name.trim(),
+      phone.trim(),
+      email.trim() || undefined,
+      permissions,
+    );
     setIsDirty(false);
     router.push(`/admin/people/${staff.id}?from=staff`);
   };
