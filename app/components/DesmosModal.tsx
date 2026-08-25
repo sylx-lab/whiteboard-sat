@@ -101,30 +101,30 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between gap-3">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#0D918A] flex items-center justify-center text-white shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white shrink-0">
               <Calculator className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-[#071126] text-[14px] truncate">Desmos calculator</h3>
-              <p className="text-[12px] text-[#58708A] truncate">
+              <h3 className="font-bold text-[var(--foreground)] text-[14px] truncate">Desmos calculator</h3>
+              <p className="text-[12px] text-[var(--foreground-secondary)] truncate">
                 The same one the Digital SAT provides
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex rounded-[10px] bg-slate-100 p-0.5 text-[12px] font-semibold">
+            <div className="flex rounded-[10px] bg-[var(--surface-soft)] p-0.5 text-[12px] font-semibold">
               {(Object.keys(CALCULATORS) as CalculatorKind[]).map((key) => (
                 <button
                   key={key}
                   onClick={() => setKind(key)}
                   className={`px-3 h-8 rounded-lg transition-colors cursor-pointer ${
                     kind === key
-                      ? 'bg-white text-[#087C76] shadow-xs'
-                      : 'text-[#58708A] hover:text-[#071126]'
+                      ? 'bg-[var(--surface)] text-[var(--brand-text)] shadow-xs'
+                      : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
                   }`}
                 >
                   {CALCULATORS[key].label}
@@ -136,14 +136,14 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
               target="_blank"
               rel="noopener noreferrer"
               title="Open in a new tab"
-              className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
             <button
               onClick={onClose}
               aria-label="Close the calculator"
-              className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -163,7 +163,7 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
               {/* keyed so switching kind gets a clean node for the new calculator */}
               <div key={kind} ref={mountRef} className="absolute inset-0" />
               {status !== 'ready' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white text-[12px] text-[#58708A]">
+                <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface)] text-[12px] text-[var(--foreground-secondary)]">
                   {status === 'loading' ? (
                     'Loading the calculator…'
                   ) : (
@@ -173,7 +173,7 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
                         href={active.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#0D918A] font-semibold underline"
+                        className="text-[var(--brand-text)] font-semibold underline"
                       >
                         Open it on desmos.com
                       </a>

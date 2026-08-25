@@ -37,13 +37,13 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-[#E2E8F0] bg-[#F1F8F7]">
-          <span className="text-[11px] font-bold text-[#0D918A] uppercase tracking-wider">
+      <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-[var(--border)] bg-[var(--brand-soft)]">
+          <span className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">
             Account recovery
           </span>
-          <h1 className="text-lg font-bold text-[#071126]">Choose a new password</h1>
-          <p className="text-[12px] text-[#58708A] mt-1">
+          <h1 className="text-lg font-bold text-[var(--foreground)]">Choose a new password</h1>
+          <p className="text-[12px] text-[var(--foreground-secondary)] mt-1">
             Setting a new password signs you out on every other device.
           </p>
         </div>
@@ -65,11 +65,11 @@ function ResetPasswordForm() {
             { label: 'Confirm new password', value: confirm, set: setConfirm, autoComplete: 'new-password' },
           ].map((field) => (
             <div key={field.label}>
-              <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                 {field.label}
               </label>
               <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5" />
+                <Lock className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3.5" />
                 <input
                   type="password"
                   required
@@ -78,7 +78,7 @@ function ResetPasswordForm() {
                   value={field.value}
                   onChange={(e) => field.set(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="w-full h-10 pl-9 pr-3 border border-[#E2E8F0] rounded-[10px] text-[12px] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full h-10 pl-9 pr-3 border border-[var(--border)] rounded-[10px] text-[12px] focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>
             </div>
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={isSubmitting || !token}
-            className="w-full h-10 bg-[#087C76] hover:bg-[#066F6A] disabled:opacity-60 text-white font-medium text-[12px] rounded-[10px] transition-colors cursor-pointer"
+            className="w-full h-10 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] disabled:opacity-60 text-white font-medium text-[12px] rounded-[10px] transition-colors cursor-pointer"
           >
             {isSubmitting ? 'Saving…' : 'Save new password'}
           </button>

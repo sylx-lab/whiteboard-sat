@@ -250,22 +250,22 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     const timeSecs = activeAttempt.timeRemainingSeconds % 60;
 
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden select-none">
+      <div className="fixed inset-0 z-50 bg-[var(--surface)] flex flex-col overflow-hidden select-none">
         {/* Exam Top Header */}
-        <header className="bg-[#080D21] text-white px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
+        <header className="bg-[var(--navy-section)] text-white px-6 py-3.5 flex items-center justify-between border-b border-[var(--border-strong)]">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-md bg-[#087C76] flex items-center justify-center font-bold text-[11px]">
+            <div className="w-7 h-7 rounded-md bg-[var(--brand-cta)] flex items-center justify-center font-bold text-[11px]">
               WB
             </div>
             <div>
               <div className="font-semibold text-[13px] text-white leading-tight">{activeTest.title}</div>
-              <div className="text-[11px] text-[#0A8F88] font-medium">{currentModule.title}</div>
+              <div className="text-[11px] text-[var(--brand-text)] font-medium">{currentModule.title}</div>
             </div>
           </div>
 
           {/* Module Timer */}
-          <div className="flex items-center gap-2 px-3.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 font-mono text-[13px] font-semibold">
-            <Clock className="w-3.5 h-3.5 text-[#0A8F88]" />
+          <div className="flex items-center gap-2 px-3.5 py-1 rounded-lg bg-slate-900/80 border border-[var(--border-strong)] font-mono text-[13px] font-semibold">
+            <Clock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
             <span className={activeAttempt.timeRemainingSeconds < 120 ? 'text-rose-400 animate-pulse' : 'text-white'}>
               {timeMins}:{timeSecs.toString().padStart(2, '0')}
             </span>
@@ -277,16 +277,16 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               <>
                 <button
                   onClick={() => setIsDesmosOpen(true)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
+                  className="px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors"
                 >
-                  <Calculator className="w-3 h-3 text-[#0A8F88]" />
+                  <Calculator className="w-3 h-3 text-[var(--brand-text)]" />
                   <span className="hidden sm:inline">Desmos</span>
                 </button>
                 <button
                   onClick={() => setIsFormulasOpen(true)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
+                  className="px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors"
                 >
-                  <BookOpen className="w-3 h-3 text-slate-400" />
+                  <BookOpen className="w-3 h-3 text-[var(--foreground-muted)]" />
                   <span className="hidden sm:inline">Formulas</span>
                 </button>
               </>
@@ -297,7 +297,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 setActiveAttempt(null);
                 setActiveTest(null);
               }}
-              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium rounded-lg border border-slate-700 transition-colors"
+              className="px-3 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-muted)] text-[11px] font-medium rounded-lg border border-[var(--border-strong)] transition-colors"
             >
               Pause & Exit
             </button>
@@ -322,7 +322,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             />
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-[#E8ECF2]">
+            <div className="flex items-center justify-between p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
               <button
                 disabled={activeAttempt.currentQuestionIndex === 0}
                 onClick={() =>
@@ -331,15 +331,15 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   )
                 }
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${activeAttempt.currentQuestionIndex === 0
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 border border-[#E8ECF2]'
+                    ? 'text-[var(--foreground-muted)] cursor-not-allowed'
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] border border-[var(--border)]'
                   }`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
               </button>
 
-              <span className="text-[12px] text-[#64748B] font-mono">
+              <span className="text-[12px] text-[var(--foreground-muted)] font-mono">
                 {activeAttempt.currentQuestionIndex + 1} / {moduleQuestionIds.length}
               </span>
 
@@ -355,7 +355,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                         : null
                     )
                   }
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-medium bg-[#0B1020] hover:bg-slate-800 text-white shadow-xs transition-colors"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-medium bg-[var(--navy-section)] hover:bg-[var(--navy-section)] text-white shadow-xs transition-colors"
                 >
                   <span>Next Question</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -389,21 +389,21 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               title={`${currentModule.title} Palette`}
             />
 
-            <div className="p-4 bg-white rounded-xl border border-[#E8ECF2] text-[12px] space-y-3">
-              <div className="font-semibold text-[#0B1020]">Module Status</div>
-              <div className="flex justify-between text-[#64748B]">
+            <div className="p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)] text-[12px] space-y-3">
+              <div className="font-semibold text-[var(--navy-section)]">Module Status</div>
+              <div className="flex justify-between text-[var(--foreground-muted)]">
                 <span>Questions:</span>
-                <strong className="font-mono text-[#0B1020]">{moduleQuestionIds.length}</strong>
+                <strong className="font-mono text-[var(--navy-section)]">{moduleQuestionIds.length}</strong>
               </div>
-              <div className="flex justify-between text-[#58708A]">
+              <div className="flex justify-between text-[var(--foreground-secondary)]">
                 <span>Answered:</span>
-                <strong className="font-mono text-[#087C76]">
+                <strong className="font-mono text-[var(--brand-text)]">
                   {moduleQuestionIds.filter((id) => activeAttempt.interactions[id]?.selectedAnswer).length} / {moduleQuestionIds.length}
                 </strong>
               </div>
               <button
                 onClick={handleSubmitModule}
-                className="w-full py-2.5 bg-[#0B1020] hover:bg-slate-800 text-white font-medium rounded-lg transition-colors text-[12px]"
+                className="w-full py-2.5 bg-[var(--navy-section)] hover:bg-[var(--navy-section)] text-white font-medium rounded-lg transition-colors text-[12px]"
               >
                 {activeAttempt.currentModuleIndex < activeTest.modules.length - 1
                   ? 'Proceed to Next Module'
@@ -423,11 +423,11 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   return (
     <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
       {/* Editorial Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E2E8F0]">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#0D918A]">Standardized Testing</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#071126]">Digital SAT Mock Simulator</h1>
-          <p className="text-[13px] text-[#58708A] leading-[1.5] max-w-xl">
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--brand-text)]">Standardized Testing</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">Digital SAT Mock Simulator</h1>
+          <p className="text-[13px] text-[var(--foreground-secondary)] leading-[1.5] max-w-xl">
             Simulate the Digital SAT with timed modules, realistic difficulty, and detailed performance analysis.
           </p>
         </div>
@@ -447,14 +447,14 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
           return (
             <div
               key={test.id}
-              className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 flex flex-col justify-between h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_24px_-6px_rgba(15,23,42,0.08)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.03)]"
+              className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-6 flex flex-col justify-between h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_24px_-6px_rgba(15,23,42,0.08)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_10px_15px_-3px_rgba(0,0,0,0.03)]"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span
                     className={`px-2.5 py-0.5 rounded-full font-semibold text-[11px] border ${test.is_free
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : 'bg-[#F1F8F7] text-[#087C76] border-teal-100'
+                        : 'bg-[var(--brand-soft)] text-[var(--brand-text)] border-teal-100'
                       }`}
                   >
                     {test.is_free ? 'FREE DIAGNOSTIC' : 'PREMIUM FULL TEST'}
@@ -465,7 +465,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                         ? 'bg-emerald-50 text-emerald-800'
                         : status === 'in_progress'
                           ? 'bg-amber-50 text-amber-800'
-                          : 'bg-slate-100 text-[#58708A]'
+                          : 'bg-[var(--surface-soft)] text-[var(--foreground-secondary)]'
                       }`}
                   >
                     {status === 'completed'
@@ -477,33 +477,33 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="font-bold text-[#071126] text-base leading-snug">{test.title}</h3>
-                  <p className="text-[12px] text-[#58708A] leading-[1.5] min-h-[48px]">{test.description}</p>
+                  <h3 className="font-bold text-[var(--foreground)] text-base leading-snug">{test.title}</h3>
+                  <p className="text-[12px] text-[var(--foreground-secondary)] leading-[1.5] min-h-[48px]">{test.description}</p>
                 </div>
 
-                <div className="p-3 bg-[#FAFBFD] rounded-xl border border-[#E2E8F0] space-y-1 text-[12px] text-[#58708A]">
+                <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)] space-y-1 text-[12px] text-[var(--foreground-secondary)]">
                   <div className="flex justify-between">
                     <span>Total Structure:</span>
-                    <strong className="text-[#071126]">4 Modules (2 RW + 2 Math)</strong>
+                    <strong className="text-[var(--foreground)]">4 Modules (2 RW + 2 Math)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Duration:</span>
-                    <strong className="text-[#071126]">{test.totalTimeMinutes} Minutes</strong>
+                    <strong className="text-[var(--foreground)]">{test.totalTimeMinutes} Minutes</strong>
                   </div>
                 </div>
 
                 {/* Completed Score Badge */}
                 {attempt?.scoreSummary && (
-                  <div className="p-3 bg-[#F1F8F7] rounded-xl border border-teal-100 flex items-center justify-between text-[12px]">
+                  <div className="p-3 bg-[var(--brand-soft)] rounded-xl border border-teal-100 flex items-center justify-between text-[12px]">
                     <div>
-                      <span className="text-[#58708A] block text-[10px]">Estimated Score</span>
-                      <strong className="text-[15px] font-bold text-[#087C76] font-mono">
+                      <span className="text-[var(--foreground-secondary)] block text-[10px]">Estimated Score</span>
+                      <strong className="text-[15px] font-bold text-[var(--brand-text)] font-mono">
                         {attempt.scoreSummary.totalScoreEstimated} / 1600
                       </strong>
                     </div>
                     <button
                       onClick={() => setSelectedResultAttempt(attempt)}
-                      className="px-2.5 py-1 bg-white text-[#087C76] font-semibold rounded-lg border border-teal-200 text-[11px] hover:bg-[#F1F8F7] transition-colors cursor-pointer active:scale-[0.98]"
+                      className="px-2.5 py-1 bg-[var(--surface)] text-[var(--brand-text)] font-semibold rounded-lg border border-teal-200 text-[11px] hover:bg-[var(--brand-soft)] transition-colors cursor-pointer active:scale-[0.98]"
                     >
                       View Report
                     </button>
@@ -512,7 +512,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-[#E2E8F0] mt-auto">
+              <div className="pt-4 border-t border-[var(--border)] mt-auto">
                 {hasAccess ? (
                   status === 'in_progress' ? (
                     <button
@@ -527,7 +527,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                       onClick={() => handleStartTest(test)}
                       disabled={!playable}
                       title={playable ? undefined : 'This test is still being prepared'}
-                      className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] disabled:bg-slate-200 disabled:text-[#58708A] disabled:cursor-not-allowed disabled:hover:bg-slate-200 text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer group/btn active:scale-[0.98] disabled:active:scale-100"
+                      className="w-full py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] disabled:bg-[var(--border)] disabled:text-[var(--foreground-secondary)] disabled:cursor-not-allowed disabled:hover:bg-[var(--border)] text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer group/btn active:scale-[0.98] disabled:active:scale-100"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                       <span>
@@ -542,9 +542,9 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 ) : (
                   <button
                     onClick={onOpenPricing}
-                    className="w-full py-2.5 bg-[#F1F8F7] hover:bg-teal-100/60 text-[#087C76] font-semibold text-[12px] rounded-[10px] border border-teal-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    className="w-full py-2.5 bg-[var(--brand-soft)] hover:bg-teal-100/60 text-[var(--brand-text)] font-semibold text-[12px] rounded-[10px] border border-teal-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                   >
-                    <Lock className="w-3.5 h-3.5 text-[#087C76]" />
+                    <Lock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
                     <span>Unlock with Pass</span>
                   </button>
                 )}
@@ -557,18 +557,18 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       {/* --- 3. DIAGNOSTIC SCORE REPORT MODAL --- */}
       {selectedResultAttempt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-xl border border-[#E8ECF2] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[#E8ECF2] flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-[#087C76] uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">
                   Diagnostic Performance Report
                 </span>
-                <h3 className="text-lg font-bold text-[#071126]">{selectedResultAttempt.testTitle}</h3>
+                <h3 className="text-lg font-bold text-[var(--foreground)]">{selectedResultAttempt.testTitle}</h3>
               </div>
               <button
                 onClick={() => setSelectedResultAttempt(null)}
-                className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -578,30 +578,30 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Score Headline Matrix */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-5 rounded-xl bg-[#F1F8F7] border border-teal-100 text-center space-y-1">
-                  <div className="text-[11px] font-bold text-[#087C76] uppercase tracking-wider">Estimated Total</div>
-                  <div className="text-3xl font-extrabold text-[#071126] font-mono">
+                <div className="p-5 rounded-xl bg-[var(--brand-soft)] border border-teal-100 text-center space-y-1">
+                  <div className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">Estimated Total</div>
+                  <div className="text-3xl font-extrabold text-[var(--foreground)] font-mono">
                     {selectedResultAttempt.scoreSummary?.totalScoreEstimated ?? '—'}
                   </div>
-                  <div className="text-[11px] text-[#087C76]">Scale: 400 – 1600</div>
+                  <div className="text-[11px] text-[var(--brand-text)]">Scale: 400 – 1600</div>
                 </div>
 
-                <div className="p-5 rounded-xl bg-[#FAFAFA] border border-[#E8ECF2] text-center space-y-1">
-                  <div className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">Mathematics</div>
-                  <div className="text-2xl font-bold text-[#071126] font-mono">
+                <div className="p-5 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)] text-center space-y-1">
+                  <div className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">Mathematics</div>
+                  <div className="text-2xl font-bold text-[var(--foreground)] font-mono">
                     {selectedResultAttempt.scoreSummary?.mathScoreEstimated ?? 0}
                   </div>
-                  <div className="text-[11px] text-[#58708A]">
+                  <div className="text-[11px] text-[var(--foreground-secondary)]">
                     {selectedResultAttempt.scoreSummary?.mathCorrect ?? 0} / {selectedResultAttempt.scoreSummary?.mathTotal ?? 0} correct
                   </div>
                 </div>
 
-                <div className="p-5 rounded-xl bg-[#FAFAFA] border border-[#E8ECF2] text-center space-y-1">
-                  <div className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">Reading & Writing</div>
-                  <div className="text-2xl font-bold text-[#071126] font-mono">
+                <div className="p-5 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)] text-center space-y-1">
+                  <div className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">Reading & Writing</div>
+                  <div className="text-2xl font-bold text-[var(--foreground)] font-mono">
                     {selectedResultAttempt.scoreSummary?.rwScoreEstimated ?? 0}
                   </div>
-                  <div className="text-[11px] text-[#58708A]">
+                  <div className="text-[11px] text-[var(--foreground-secondary)]">
                     {selectedResultAttempt.scoreSummary?.rwCorrect ?? 0} / {selectedResultAttempt.scoreSummary?.rwTotal ?? 0} correct
                   </div>
                 </div>
@@ -609,34 +609,34 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
 
               {/* Accuracy Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-[12px]">
-                <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
-                  <span className="text-[#58708A] block text-[11px]">Accuracy</span>
-                  <strong className="text-sm text-[#071126] font-mono">
+                <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--foreground-secondary)] block text-[11px]">Accuracy</span>
+                  <strong className="text-sm text-[var(--foreground)] font-mono">
                     {selectedResultAttempt.scoreSummary?.accuracyPercent ?? 0}%
                   </strong>
                 </div>
-                <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
-                  <span className="text-[#58708A] block text-[11px]">Correct</span>
+                <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--foreground-secondary)] block text-[11px]">Correct</span>
                   <strong className="text-sm text-emerald-600 font-mono">
                     {selectedResultAttempt.scoreSummary?.totalCorrect ?? 0}
                   </strong>
                 </div>
-                <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
-                  <span className="text-[#58708A] block text-[11px]">Incorrect</span>
+                <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--foreground-secondary)] block text-[11px]">Incorrect</span>
                   <strong className="text-sm text-rose-600 font-mono">
                     {(selectedResultAttempt.scoreSummary?.totalQuestions ?? 0) -
                       (selectedResultAttempt.scoreSummary?.totalCorrect ?? 0)}
                   </strong>
                 </div>
-                <div className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8ECF2]">
-                  <span className="text-[#58708A] block text-[11px]">National Percentile</span>
-                  <strong className="text-sm text-[#087C76] font-mono">97th</strong>
+                <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--foreground-secondary)] block text-[11px]">National Percentile</span>
+                  <strong className="text-sm text-[var(--brand-text)] font-mono">97th</strong>
                 </div>
               </div>
 
               {/* Domain Performance Breakdown */}
               <div className="space-y-3">
-                <h4 className="text-[12px] font-bold text-[#0B1020] uppercase tracking-wider">
+                <h4 className="text-[12px] font-bold text-[var(--navy-section)] uppercase tracking-wider">
                   Domain Performance Breakdown
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[12px]">
@@ -645,14 +645,14 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                       ([domKey, stat]: [string, { correct: number; total: number }]) => {
                         const acc = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
                         return (
-                          <div key={domKey} className="p-3 bg-white rounded-xl border border-[#E8ECF2] space-y-1.5">
-                            <div className="flex justify-between font-medium text-[#0B1020]">
+                          <div key={domKey} className="p-3 bg-[var(--surface)] rounded-xl border border-[var(--border)] space-y-1.5">
+                            <div className="flex justify-between font-medium text-[var(--navy-section)]">
                               <span>{formatDomainName(domKey as Domain)}</span>
-                              <span className="font-mono text-[#64748B]">
+                              <span className="font-mono text-[var(--foreground-muted)]">
                                 {stat.correct}/{stat.total} ({acc}%)
                               </span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div className="w-full h-1.5 rounded-full bg-[var(--surface-soft)] overflow-hidden">
                               <div
                                 className={`h-full rounded-full ${acc >= 75 ? 'bg-emerald-500' : acc >= 50 ? 'bg-amber-500' : 'bg-rose-500'
                                   }`}
@@ -668,10 +668,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3.5 bg-[#FAFAFA] border-t border-[#E8ECF2] flex justify-end">
+            <div className="px-6 py-3.5 bg-[var(--surface-soft)] border-t border-[var(--border)] flex justify-end">
               <button
                 onClick={() => setSelectedResultAttempt(null)}
-                className="px-5 py-2 bg-[#0B1020] hover:bg-slate-800 text-white font-medium text-[12px] rounded-lg transition-colors"
+                className="px-5 py-2 bg-[var(--navy-section)] hover:bg-[var(--navy-section)] text-white font-medium text-[12px] rounded-lg transition-colors"
               >
                 Close Report
               </button>

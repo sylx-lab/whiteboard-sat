@@ -41,35 +41,35 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
   };
 
   return (
-    <div className="bg-[#FFFFFF] min-h-[calc(100vh-70px)] py-16 px-4 sm:px-6 lg:px-8 space-y-14 animate-in fade-in duration-200">
+    <div className="bg-[var(--surface)] min-h-[calc(100vh-70px)] py-16 px-4 sm:px-6 lg:px-8 space-y-14 animate-in fade-in duration-200">
       {/* Editorial Header */}
       <div className="max-w-[1240px] mx-auto space-y-4">
         <div className="space-y-3">
-          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#0D918A] font-mono">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--brand-text)] font-mono">
             VIDEO MASTERCLASSES
           </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-[48px] font-extrabold tracking-[-0.03em] text-[#071126] leading-[1.12]">
+          <h1 className="text-3xl sm:text-4xl lg:text-[48px] font-extrabold tracking-[-0.03em] text-[var(--foreground)] leading-[1.12]">
             Digital SAT Courses
           </h1>
-          <p className="text-[16px] sm:text-[17px] text-[#58708A] leading-[1.6] max-w-[700px]">
+          <p className="text-[16px] sm:text-[17px] text-[var(--foreground-secondary)] leading-[1.6] max-w-[700px]">
             Structured lessons, proven strategies, and focused instruction for every major Digital SAT skill.
           </p>
         </div>
 
         {/* Small metadata row */}
-        <div className="flex items-center gap-4 text-[12.5px] font-medium text-[#58708A] pt-2">
+        <div className="flex items-center gap-4 text-[12.5px] font-medium text-[var(--foreground-secondary)] pt-2">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#0D918A]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--brand)]" />
             <span>3 Programs</span>
           </div>
-          <span className="text-slate-300">•</span>
+          <span className="text-[var(--foreground-muted)]">•</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#0D918A]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--brand)]" />
             <span>100+ Lessons</span>
           </div>
-          <span className="text-slate-300">•</span>
+          <span className="text-[var(--foreground-muted)]">•</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#0D918A]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--brand)]" />
             <span>Math + Reading & Writing</span>
           </div>
         </div>
@@ -91,17 +91,17 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
             <div
               key={course.id}
               className={`relative rounded-2xl p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 group overflow-hidden ${isFlagship
-                  ? 'bg-[#F1F8F7] border border-[#0D918A]/50 shadow-xs'
-                  : 'bg-white border border-[#E2E8F0] shadow-xs hover:border-[#0D918A]/60'
+                  ? 'bg-[var(--brand-soft)] border border-[var(--brand)]/50 shadow-xs'
+                  : 'bg-[var(--surface)] border border-[var(--border)] shadow-xs hover:border-[var(--brand)]/60'
                 }`}
             >
               {/* Subtle Editorial Corner Number Index */}
-              <div className="absolute -top-3 right-3 pointer-events-none select-none text-[84px] font-extrabold font-mono text-[#071126]/[0.03] group-hover:text-[#0D918A]/[0.06] transition-colors duration-200 leading-none">
+              <div className="absolute -top-3 right-3 pointer-events-none select-none text-[84px] font-extrabold font-mono text-[var(--foreground)]/[0.03] group-hover:text-[var(--brand-text)]/[0.06] transition-colors duration-200 leading-none">
                 {cardIndexStr}
               </div>
 
               {isFlagship && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#0D918A] rounded-t-2xl" />
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--brand)] rounded-t-2xl" />
               )}
 
               <div className="space-y-5 relative z-10">
@@ -109,56 +109,56 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 <div className="flex items-center justify-between">
                   <span
                     className={`px-3 py-1 rounded-md text-[11.5px] font-semibold tracking-wide uppercase ${isFlagship
-                        ? 'bg-[#087C76] text-white'
+                        ? 'bg-[var(--brand-cta)] text-white'
                         : course.badge === 'Bestseller'
-                          ? 'bg-[#F1F8F7] text-[#087C76] border border-teal-200'
-                          : 'bg-slate-100 text-[#071126]'
+                          ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] border border-teal-200'
+                          : 'bg-[var(--surface-soft)] text-[var(--foreground)]'
                       }`}
                   >
                     {isFlagship ? 'BEST VALUE' : course.badge || course.level}
                   </span>
 
-                  <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#58708A]">
-                    <Clock className="w-3.5 h-3.5 text-[#0D918A] stroke-[1.75]" />
+                  <div className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--foreground-secondary)]">
+                    <Clock className="w-3.5 h-3.5 text-[var(--brand-text)] stroke-[1.75]" />
                     <span>{course.totalHours} Hours</span>
                   </div>
                 </div>
 
                 {/* Title & Description */}
                 <div className="space-y-2">
-                  <h3 className="font-bold text-[#071126] text-[20px] leading-[1.25]">
+                  <h3 className="font-bold text-[var(--foreground)] text-[20px] leading-[1.25]">
                     {course.title}
                   </h3>
-                  <p className="text-[14.5px] text-[#58708A] leading-[1.55] line-clamp-3">
+                  <p className="text-[14.5px] text-[var(--foreground-secondary)] leading-[1.55] line-clamp-3">
                     {course.description}
                   </p>
                 </div>
 
                 {/* Instructor */}
                 <div className="flex items-center gap-3 pt-1">
-                  <div className="w-9 h-9 rounded-full bg-[#F1F8F7] text-[#087C76] flex items-center justify-center font-bold text-[13.5px] border border-teal-200 shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[var(--brand-soft)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[13.5px] border border-teal-200 shrink-0">
                     {course.instructorName.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-semibold text-[#071126] text-[14px] leading-tight">
+                    <div className="font-semibold text-[var(--foreground)] text-[14px] leading-tight">
                       {course.instructorName}
                     </div>
-                    <div className="text-[12.5px] text-[#58708A]">{course.instructorTitle}</div>
+                    <div className="text-[12.5px] text-[var(--foreground-secondary)]">{course.instructorTitle}</div>
                   </div>
                 </div>
 
                 {/* Enrolled Progress State */}
                 {isEnrolled && course.lessons.length > 0 && (
-                  <div className="p-3.5 bg-white rounded-xl border border-[#E2E8F0] space-y-2 shadow-2xs">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-[#071126] uppercase tracking-wider">
+                  <div className="p-3.5 bg-[var(--surface)] rounded-xl border border-[var(--border)] space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[var(--foreground)] uppercase tracking-wider">
                       <span>Continue Learning</span>
-                      <span className="font-mono text-[#087C76]">
+                      <span className="font-mono text-[var(--brand-text)]">
                         Lesson {completedLessonIds.length + 1} of {course.lessons.length} ({progressPercent}%)
                       </span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-[var(--surface-soft)] overflow-hidden">
                       <div
-                        className="h-full bg-[#087C76] rounded-full transition-all duration-500"
+                        className="h-full bg-[var(--brand-cta)] rounded-full transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
@@ -168,8 +168,8 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 {/* Key Benefits (max 3) */}
                 <div className="space-y-3 pt-1">
                   {course.features.slice(0, 3).map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-[14.5px] text-[#58708A] leading-[1.45]">
-                      <div className="w-4.5 h-4.5 rounded-full bg-[#0D918A] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                    <div key={idx} className="flex items-start gap-2.5 text-[14.5px] text-[var(--foreground-secondary)] leading-[1.45]">
+                      <div className="w-4.5 h-4.5 rounded-full bg-[var(--brand)] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                         <Check className="w-3 h-3 stroke-[2.5]" />
                       </div>
                       <span>{feat}</span>
@@ -179,17 +179,17 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
               </div>
 
               {/* Single Divider before Pricing & CTA */}
-              <div className="pt-5 mt-5 border-t border-[#E2E8F0] flex items-center justify-between relative z-10">
+              <div className="pt-5 mt-5 border-t border-[var(--border)] flex items-center justify-between relative z-10">
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[28px] font-extrabold text-[#071126] tracking-tight font-mono">
+                    <span className="text-[28px] font-extrabold text-[var(--foreground)] tracking-tight font-mono">
                       ৳{course.price.toLocaleString()}
                     </span>
-                    <span className="text-[13px] text-[#58708A] line-through font-mono">
+                    <span className="text-[13px] text-[var(--foreground-secondary)] line-through font-mono">
                       ৳{course.originalPrice.toLocaleString()}
                     </span>
                   </div>
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#0D918A]">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--brand-text)]">
                     ONE-TIME ACCESS
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 {isEnrolled ? (
                   <button
                     onClick={() => handleOpenCourse(course)}
-                    className="px-5 py-3 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[13.5px] rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-xs group/btn"
+                    className="px-5 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13.5px] rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-xs group/btn"
                   >
                     <Play className="w-3.5 h-3.5 fill-white" />
                     <span>Classroom</span>
@@ -205,7 +205,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 ) : isFlagship ? (
                   <button
                     onClick={() => handleOpenCourse(course)}
-                    className="px-5 py-3 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[13.5px] rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs group/btn"
+                    className="px-5 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13.5px] rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs group/btn"
                   >
                     <span>Get Full Access</span>
                     <span className="transition-transform duration-200 group-hover/btn:translate-x-1.5">→</span>
@@ -213,7 +213,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 ) : (
                   <button
                     onClick={() => handleOpenCourse(course)}
-                    className="px-5 py-3 bg-white hover:bg-[#F1F8F7] text-[#071126] font-semibold text-[13.5px] rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer flex items-center gap-1.5 group/btn shadow-xs"
+                    className="px-5 py-3 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--foreground)] font-semibold text-[13.5px] rounded-xl border border-[var(--border)] transition-colors cursor-pointer flex items-center gap-1.5 group/btn shadow-xs"
                   >
                     <span>View Syllabus</span>
                     <span className="transition-transform duration-200 group-hover/btn:translate-x-1.5">→</span>
@@ -228,21 +228,21 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
       {/* --- COURSE DETAIL & LESSON VIEWER MODAL --- */}
       {selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-xl border border-[#E2E8F0] w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
             {/* Top Bar */}
-            <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-md bg-[#087C76] text-white flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-md bg-[var(--brand-cta)] text-white flex items-center justify-center font-bold text-xs">
                   <GraduationCap className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[14px] text-[#071126] leading-tight">{selectedCourse.title}</h3>
-                  <p className="text-[11px] text-[#58708A]">{selectedCourse.instructorName} • {selectedCourse.lessonsCount} Modules</p>
+                  <h3 className="font-bold text-[14px] text-[var(--foreground)] leading-tight">{selectedCourse.title}</h3>
+                  <p className="text-[11px] text-[var(--foreground-secondary)]">{selectedCourse.instructorName} • {selectedCourse.lessonsCount} Modules</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedCourse(null)}
-                className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -251,24 +251,24 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
             {/* Course Classroom Workspace */}
             <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
               {/* Left Main Player / Content View */}
-              <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 border-r border-[#E2E8F0]">
+              <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 border-r border-[var(--border)]">
                 {activeLesson ? (
                   <div className="space-y-4">
                     {/* Simulated Video Player */}
-                    <div className="w-full aspect-video bg-[#080D21] rounded-xl overflow-hidden relative flex items-center justify-center">
+                    <div className="w-full aspect-video bg-[var(--navy-section)] rounded-xl overflow-hidden relative flex items-center justify-center">
                       <div className="text-center space-y-2 p-6 text-white">
-                        <div className="w-12 h-12 rounded-full bg-[#087C76] hover:bg-[#066F6A] text-white flex items-center justify-center mx-auto shadow-md hover:scale-105 transition-transform cursor-pointer">
+                        <div className="w-12 h-12 rounded-full bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white flex items-center justify-center mx-auto shadow-md hover:scale-105 transition-transform cursor-pointer">
                           <Play className="w-5 h-5 fill-white ml-0.5" />
                         </div>
                         <div className="font-bold text-[13px]">{activeLesson.title}</div>
-                        <div className="text-[11px] text-[#58708A] font-mono">Duration: {activeLesson.durationMinutes} Minutes • HD 1080p</div>
+                        <div className="text-[11px] text-[var(--foreground-secondary)] font-mono">Duration: {activeLesson.durationMinutes} Minutes • HD 1080p</div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
                       <div>
-                        <h4 className="font-bold text-[#071126] text-base">{activeLesson.title}</h4>
-                        <p className="text-[12px] text-[#58708A] mt-0.5">{activeLesson.description}</p>
+                        <h4 className="font-bold text-[var(--foreground)] text-base">{activeLesson.title}</h4>
+                        <p className="text-[12px] text-[var(--foreground-secondary)] mt-0.5">{activeLesson.description}</p>
                       </div>
 
                       {hasAccessToCourse(selectedCourse.id) && (
@@ -276,7 +276,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                           onClick={() => onToggleLessonComplete(selectedCourse.id, activeLesson.id)}
                           className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1.5 cursor-pointer ${(courseProgress[selectedCourse.id] || []).includes(activeLesson.id)
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-white text-[#071126] border-[#E2E8F0] hover:bg-slate-50'
+                              : 'bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
                             }`}
                         >
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -291,8 +291,8 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
 
                     {/* Lesson Downloadable Resources */}
                     {activeLesson.resources && activeLesson.resources.length > 0 && (
-                      <div className="p-4 bg-[#F1F8F7] rounded-xl border border-[#E2E8F0] space-y-2">
-                        <div className="text-[11px] font-bold text-[#071126] uppercase tracking-wider">
+                      <div className="p-4 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] space-y-2">
+                        <div className="text-[11px] font-bold text-[var(--foreground)] uppercase tracking-wider">
                           Attached Module Cheatsheets & Guides
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -301,9 +301,9 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                               key={rIdx}
                               href="#"
                               onClick={(e) => e.preventDefault()}
-                              className="px-3 py-1 bg-white hover:bg-slate-50 border border-[#E2E8F0] rounded-lg text-[11px] font-medium text-[#087C76] flex items-center gap-1.5 transition-colors"
+                              className="px-3 py-1 bg-[var(--surface)] hover:bg-[var(--surface-soft)] border border-[var(--border)] rounded-lg text-[11px] font-medium text-[var(--brand-text)] flex items-center gap-1.5 transition-colors"
                             >
-                              <FileText className="w-3 h-3 text-[#0D918A]" />
+                              <FileText className="w-3 h-3 text-[var(--brand-text)]" />
                               <span>{res.name}</span>
                             </a>
                           ))}
@@ -312,17 +312,17 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-16 space-y-2 text-[#58708A]">
-                    <Video className="w-8 h-8 mx-auto text-slate-300" />
+                  <div className="text-center py-16 space-y-2 text-[var(--foreground-secondary)]">
+                    <Video className="w-8 h-8 mx-auto text-[var(--foreground-muted)]" />
                     <p className="text-[12px]">Select a lesson from the syllabus to start watching.</p>
                   </div>
                 )}
               </div>
 
               {/* Right Syllabus Lesson List */}
-              <div className="lg:col-span-4 bg-[#F1F8F7] p-5 overflow-y-auto space-y-4">
+              <div className="lg:col-span-4 bg-[var(--brand-soft)] p-5 overflow-y-auto space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#071126] uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-[var(--foreground)] uppercase tracking-wider">
                     Syllabus ({selectedCourse.lessons.length} Lessons)
                   </span>
                   {!hasAccessToCourse(selectedCourse.id) && (
@@ -343,16 +343,16 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                         key={lesson.id}
                         onClick={() => isUnlocked && setActiveLesson(lesson)}
                         className={`p-3 rounded-xl border text-[12px] transition-all ${isCurrent
-                            ? 'bg-white border-[#0D918A] shadow-xs'
+                            ? 'bg-[var(--surface)] border-[var(--brand)] shadow-xs'
                             : isUnlocked
-                              ? 'bg-white border-[#E2E8F0] hover:border-slate-300 cursor-pointer'
-                              : 'bg-slate-100/70 border-[#E2E8F0] text-slate-400 cursor-not-allowed opacity-75'
+                              ? 'bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-strong)] cursor-pointer'
+                              : 'bg-[var(--surface-soft)]/70 border-[var(--border)] text-[var(--foreground-muted)] cursor-not-allowed opacity-75'
                           }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-0.5">
-                            <div className="font-semibold text-[#071126] leading-snug">{lesson.title}</div>
-                            <div className="text-[11px] text-[#58708A] flex items-center gap-2 font-mono">
+                            <div className="font-semibold text-[var(--foreground)] leading-snug">{lesson.title}</div>
+                            <div className="text-[11px] text-[var(--foreground-secondary)] flex items-center gap-2 font-mono">
                               <span>{lesson.durationMinutes} mins</span>
                               {lesson.isFreePreview && !hasAccessToCourse(selectedCourse.id) && (
                                 <span className="text-emerald-600 font-semibold font-sans">Free Preview</span>
@@ -364,9 +364,9 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                             {isDone ? (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             ) : isUnlocked ? (
-                              <Play className={`w-3 h-3 ${isCurrent ? 'fill-[#087C76] text-[#087C76]' : 'text-[#58708A]'}`} />
+                              <Play className={`w-3 h-3 ${isCurrent ? 'fill-[var(--brand-text)] text-[var(--brand-text)]' : 'text-[var(--foreground-secondary)]'}`} />
                             ) : (
-                              <Lock className="w-3 h-3 text-slate-400" />
+                              <Lock className="w-3 h-3 text-[var(--foreground-muted)]" />
                             )}
                           </div>
                         </div>
@@ -376,9 +376,9 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 </div>
 
                 {!hasAccessToCourse(selectedCourse.id) && (
-                  <div className="p-4 bg-white rounded-xl border border-teal-200 shadow-xs space-y-2 mt-4">
-                    <div className="text-[12px] font-bold text-[#071126]">Unlock Complete Masterclass</div>
-                    <p className="text-[11px] text-[#58708A] leading-relaxed">
+                  <div className="p-4 bg-[var(--surface)] rounded-xl border border-teal-200 shadow-xs space-y-2 mt-4">
+                    <div className="text-[12px] font-bold text-[var(--foreground)]">Unlock Complete Masterclass</div>
+                    <p className="text-[11px] text-[var(--foreground-secondary)] leading-relaxed">
                       Enroll now to access all {selectedCourse.lessonsCount} video lessons and cheatsheets.
                     </p>
                     <button
@@ -386,7 +386,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                         setSelectedCourse(null);
                         onOpenPricing();
                       }}
-                      className="w-full py-2 bg-[#087C76] hover:bg-[#066F6A] text-white font-medium text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-medium text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       <span>Enroll in Course (৳{selectedCourse.price.toLocaleString()})</span>

@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[#0D918A] border-b border-[rgba(255,255,255,0.15)] ${isScrolled ? 'shadow-md bg-[#087C76]' : 'shadow-xs'}`}>
+    <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[var(--brand)] border-b border-[rgba(255,255,255,0.15)] ${isScrolled ? 'shadow-md bg-[var(--brand-cta)]' : 'shadow-xs'}`}>
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[70px]">
           {/* Zone 1: LEFT Brand Wordmark */}
@@ -89,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate(currentUser ? 'dashboard' : 'home')}
           >
             {/* Minimal Geometric WB Mark */}
-            <div className="w-8 h-8 rounded-[8px] bg-white text-[#0D918A] flex items-center justify-center font-bold text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
+            <div className="w-8 h-8 rounded-[8px] bg-[var(--surface)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
               WB
             </div>
 
@@ -99,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-bold text-[14.5px] tracking-tight text-white leading-none">
                   WHITE BOARD
                 </span>
-                <span className="text-[10px] font-bold text-[#0D918A] bg-white px-1.5 py-0.5 rounded-[4px] leading-none">
+                <span className="text-[10px] font-bold text-[var(--brand-text)] bg-[var(--surface)] px-1.5 py-0.5 rounded-[4px] leading-none">
                   SAT
                 </span>
               </div>
@@ -121,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Home</span>
                   {isLinkActive('home') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Practice</span>
                   {isLinkActive('practice') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -143,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Mock Tests</span>
                   {isLinkActive('mock-tests') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -154,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Courses</span>
                   {isLinkActive('courses') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Leaderboard</span>
                   {isLinkActive('leaderboard') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -176,7 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Pricing</span>
                   {isLinkActive('pricing') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -190,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Overview</span>
                   {currentView === 'admin-dashboard' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -200,7 +200,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Students</span>
                   {currentView === 'admin-students' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -210,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Verifications</span>
                   {currentView === 'admin-purchases' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -220,7 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Question Bank</span>
                   {currentView === 'admin-questions' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -234,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Dashboard</span>
                   {isLinkActive('dashboard') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -244,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Practice</span>
                   {isLinkActive('practice') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -254,7 +254,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Mock Tests</span>
                   {isLinkActive('mock-tests') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -264,7 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Courses</span>
                   {isLinkActive('courses') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -274,7 +274,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Analytics</span>
                   {isLinkActive('progress') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -284,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Passes</span>
                   {isLinkActive('pricing') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -311,7 +311,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {themeDropdownOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[#E7EBF0] p-1 z-50 text-[12px] font-medium animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-44 bg-[var(--surface)] rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[var(--border)] p-1 z-50 text-[12px] font-medium animate-in fade-in zoom-in-95 duration-100"
                   onMouseLeave={() => setThemeDropdownOpen(false)}
                 >
                   <button
@@ -319,7 +319,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('white');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'white' ? 'bg-slate-50 text-[#071126] font-semibold' : 'text-[#58708A] hover:bg-slate-50'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'white' ? 'bg-[var(--surface-soft)] text-[var(--foreground)] font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     <Sun className="w-3.5 h-3.5 text-amber-500" />
@@ -330,7 +330,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('warm');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'warm' ? 'bg-amber-50/60 text-amber-900 font-semibold' : 'text-[#58708A] hover:bg-slate-50'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'warm' ? 'bg-amber-50/60 text-amber-900 font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     <Eye className="w-3.5 h-3.5 text-amber-700" />
@@ -341,7 +341,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('dark');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'dark' ? 'bg-slate-900 text-white font-semibold' : 'text-[#58708A] hover:bg-slate-50'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'dark' ? 'bg-[var(--navy-section)] text-white font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     <Moon className="w-3.5 h-3.5 text-indigo-400" />
@@ -358,7 +358,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-[10px] border border-white/18 transition-colors cursor-pointer text-white"
                 >
-                  <div className="w-5 h-5 rounded-[6px] bg-white text-[#0D918A] flex items-center justify-center font-bold text-[10px]">
+                  <div className="w-5 h-5 rounded-[6px] bg-[var(--surface)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[10px]">
                     {currentUser.name.charAt(0)}
                   </div>
                   <div className="hidden sm:flex flex-col text-left">
@@ -374,12 +374,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {userDropdownOpen && (
                   <div
-                    className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[#E7EBF0] p-1.5 z-50 text-[12px] font-medium space-y-1 animate-in fade-in zoom-in-95 duration-100"
+                    className="absolute right-0 mt-2 w-52 bg-[var(--surface)] rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[var(--border)] p-1.5 z-50 text-[12px] font-medium space-y-1 animate-in fade-in zoom-in-95 duration-100"
                     onMouseLeave={() => setUserDropdownOpen(false)}
                   >
-                    <div className="px-3 py-2 border-b border-[#E7EBF0]">
-                      <div className="font-bold text-[#071126]">{currentUser.name}</div>
-                      <div className="text-[#58708A] text-[11px] truncate">{currentUser.phone}</div>
+                    <div className="px-3 py-2 border-b border-[var(--border)]">
+                      <div className="font-bold text-[var(--foreground)]">{currentUser.name}</div>
+                      <div className="text-[var(--foreground-secondary)] text-[11px] truncate">{currentUser.phone}</div>
                     </div>
 
                     <button
@@ -387,9 +387,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onNavigate('account');
                         setUserDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[#58708A] hover:text-[#071126] hover:bg-slate-50 rounded-lg text-left transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg text-left transition-colors cursor-pointer"
                     >
-                      <User className="w-3.5 h-3.5 text-[#58708A]" />
+                      <User className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
                       Profile & Access
                     </button>
 
@@ -398,9 +398,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onNavigate('pricing');
                         setUserDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[#087C76] bg-[#F1F8F7] hover:bg-teal-50 rounded-lg text-left transition-colors cursor-pointer font-semibold"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-[var(--brand-text)] bg-[var(--brand-soft)] hover:bg-teal-50 rounded-lg text-left transition-colors cursor-pointer font-semibold"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[#087C76]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[var(--brand-text)]" />
                       Upgrade Pass
                     </button>
 
@@ -410,14 +410,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           onNavigate('admin-dashboard');
                           setUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-[#071126] hover:bg-slate-50 rounded-lg text-left font-semibold transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg text-left font-semibold transition-colors cursor-pointer"
                       >
-                        <Shield className="w-3.5 h-3.5 text-[#087C76]" />
+                        <Shield className="w-3.5 h-3.5 text-[var(--brand-text)]" />
                         Admin Control
                       </button>
                     )}
 
-                    <div className="border-t border-[#E7EBF0] pt-1">
+                    <div className="border-t border-[var(--border)] pt-1">
                       <button
                         onClick={() => {
                           onLogout();
@@ -442,10 +442,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
                 <button
                   onClick={onOpenAuth}
-                  className="px-4.5 py-2.5 bg-white hover:bg-[#F1F8F7] text-[#087C76] font-semibold text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
+                  className="px-4.5 py-2.5 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
                 >
                   <span>Get Started</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#087C76] transition-transform duration-150 group-hover:translate-x-0.5" />
+                  <ArrowRight className="w-3.5 h-3.5 text-[var(--brand-text)] transition-transform duration-150 group-hover:translate-x-0.5" />
                 </button>
               </div>
             )}
@@ -463,14 +463,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-[#E7EBF0] px-4 py-4 space-y-3 animate-in slide-in-from-top-2 duration-150">
+        <div className="lg:hidden bg-[var(--surface)] border-b border-[var(--border)] px-4 py-4 space-y-3 animate-in slide-in-from-top-2 duration-150">
           <nav className="flex flex-col space-y-1 text-sm font-medium">
             <button
               onClick={() => {
                 onNavigate(currentUser ? 'dashboard' : 'home');
                 setMobileMenuOpen(false);
               }}
-              className="px-3 py-2 text-left text-[#0B1020] hover:bg-slate-50 rounded-lg font-semibold"
+              className="px-3 py-2 text-left text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg font-semibold"
             >
               {currentUser ? 'Dashboard' : 'Home'}
             </button>
@@ -479,7 +479,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('practice');
                 setMobileMenuOpen(false);
               }}
-              className="px-3 py-2 text-left text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 rounded-lg"
+              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
             >
               Practice Question Bank
             </button>
@@ -488,7 +488,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('mock-tests');
                 setMobileMenuOpen(false);
               }}
-              className="px-3 py-2 text-left text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 rounded-lg"
+              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
             >
               Full Mock Tests
             </button>
@@ -497,7 +497,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('courses');
                 setMobileMenuOpen(false);
               }}
-              className="px-3 py-2 text-left text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 rounded-lg"
+              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
             >
               Masterclass Courses
             </button>
@@ -506,7 +506,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('pricing');
                 setMobileMenuOpen(false);
               }}
-              className="px-3 py-2 text-left text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 rounded-lg"
+              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
             >
               Pricing & Passes
             </button>
@@ -516,7 +516,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('progress');
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-2 text-left text-[#64748B] hover:text-[#0B1020] hover:bg-slate-50 rounded-lg"
+                className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
               >
                 Performance Analytics
               </button>

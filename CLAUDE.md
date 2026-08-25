@@ -342,17 +342,39 @@ Question and choice text carries LaTeX inline as `$...$` / `$$...$$`. `app/compo
 
 ### Theming and the shared visual scale
 
-Three modes, applied as `body.mode-white | mode-warm | mode-dark` by an effect in the store; each class overrides CSS custom properties defined in `@layer base` in `app/globals.css` (`--background`, `--surface`, `--foreground`, `--border`, `--brand`, …). There is no Tailwind `dark:` variant in use. New surfaces should consume the tokens (`bg-[var(--surface)]`) — most existing components hardcode literal hexes, so theme switching currently only affects token-based surfaces. The admin console is deliberately light-only.
+Three modes — `body.mode-white | mode-warm | mode-dark` — and **the student app is fully
+tokenised**: every colour outside the admin console comes from a CSS custom property in
+`@layer base` in `app/globals.css`, so switching modes actually repaints the app. There is no
+Tailwind `dark:` variant in use and there should not be; a new surface consumes a token
+(`bg-[var(--surface)]`, `text-[var(--foreground)]`) or it will not follow the theme.
 
-Both halves of the app share one literal palette and control scale, and matching it is what keeps
-them looking like one product:
+Rules the setup depends on:
+
+- **Every mode redefines the whole token set.** A token defined only on `:root` is a light-mode
+  colour surviving into dark — which is how this used to end up with white cards on a dark page.
+  `theme.test.ts` fails if warm or dark omits one.
+- **`--brand` and `--brand-text` are different roles.** `--brand` is a fill and stays dark enough
+  for a white label in every mode; `--brand-text` is brand-as-text and brightens in dark, where a
+  mid-teal goes muddy. Map `bg-`/`border-` to the first and `text-`/`fill-` to the second.
+- **Three literals stay literal, deliberately**: `text-white` and `bg-white/10` (overlays on brand
+  and navy fills), `bg-slate-900/40` (scrims), and the admin branch of `AppShell` — the console is
+  light-only. `theme.test.ts` allows exactly these and fails on any other hardcoded colour.
+- **`app/layout.tsx` applies the mode before first paint** with an inline script. The store also
+  sets the class, but from an effect, which runs after the browser has painted white. Remove the
+  script and dark mode flashes white on every load. It also resolves a first-time visitor's OS
+  preference and persists it, so the store reads the same answer a moment later.
+- `theme.test.ts` computes real WCAG ratios from the stylesheet: every text pair clears 4.5:1 in all
+  three modes (white 4.7–18.8, warm 5.8–15.1, dark 5.9–16.3). Changing a token re-runs that check.
+
+Both halves of the app share one control scale, and matching it is what keeps them looking like one
+product. The admin console uses these as literals; the student app uses the token that carries each:
 
 | Role | Value |
 | --- | --- |
-| Ink / muted text | `#071126` / `#58708A` |
-| Border | `#E2E8F0` |
-| Soft fills | `#F1F8F7` (brand tint), `#F8FBFB` (neutral) |
-| Brand / hover / dark button | `#0D918A` / `#087C76` / `#080D21` |
+| Ink / muted text | `#071126` / `#58708A` — `--foreground` / `--foreground-secondary` |
+| Border | `#E2E8F0` — `--border` |
+| Soft fills | `#F1F8F7` (brand tint) — `--brand-soft`, `#F8FBFB` (neutral) — `--surface-soft` |
+| Brand / hover / dark button | `#0D918A` / `#087C76` / `#080D21` — `--brand` / `--brand-cta` / `--navy-section` |
 
 Controls are `h-10` with `rounded-[10px]`; cards are `rounded-xl`/`rounded-2xl`; body copy is
 `text-[12px]`/`text-[13px]`; headings are `font-bold` (not `font-black`), sentence case, never

@@ -327,28 +327,28 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     return (
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
         {/* Session Top Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSessionActive(false)}
-              className="flex items-center gap-1 text-[12px] font-medium text-[#58708A] hover:text-[#071126] px-3 py-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F1F8F7] transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-[12px] font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--brand-soft)] transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>Exit Practice</span>
             </button>
 
-            <div className="text-[13px] font-bold text-[#071126]">
+            <div className="text-[13px] font-bold text-[var(--foreground)]">
               {selectedSubject === 'math' ? 'Mathematics Drill' : 'Reading & Writing Drill'}
             </div>
-            <span className="text-slate-300">•</span>
-            <span className="text-[12px] text-[#58708A] font-mono">
+            <span className="text-[var(--foreground-muted)]">•</span>
+            <span className="text-[12px] text-[var(--foreground-secondary)] font-mono">
               Item {currentIndex + 1} of {sessionQuestionIds.length}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-[#F1F8F7] border border-[#E2E8F0] rounded-lg text-[12px] font-mono text-[#071126]">
-              <Clock className="w-3.5 h-3.5 text-[#0D918A]" />
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--brand-soft)] border border-[var(--border)] rounded-lg text-[12px] font-mono text-[var(--foreground)]">
+              <Clock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
               <span>
                 {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}
               </span>
@@ -357,7 +357,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {selectedSubject === 'math' && (
               <button
                 onClick={() => setIsDesmosOpen(true)}
-                className="px-3 py-1 bg-white hover:bg-[#F1F8F7] text-[12px] font-medium text-[#071126] border border-[#E2E8F0] rounded-lg transition-colors cursor-pointer"
+                className="px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer"
               >
                 Desmos Calculator
               </button>
@@ -365,7 +365,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
             <button
               onClick={() => setIsFormulasOpen(true)}
-              className="px-3 py-1 bg-white hover:bg-[#F1F8F7] text-[12px] font-medium text-[#071126] border border-[#E2E8F0] rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer"
             >
               Formulas
             </button>
@@ -395,20 +395,20 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             />
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-[#E2E8F0]">
+            <div className="flex items-center justify-between p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
               <button
                 disabled={currentIndex === 0}
                 onClick={() => setCurrentIndex((idx) => Math.max(0, idx - 1))}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${currentIndex === 0
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-[#58708A] hover:text-[#071126] hover:bg-[#F1F8F7] border border-[#E2E8F0] cursor-pointer'
+                    ? 'text-[var(--foreground-muted)] cursor-not-allowed'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] border border-[var(--border)] cursor-pointer'
                   }`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
               </button>
 
-              <span className="text-[12px] text-[#58708A] font-mono">
+              <span className="text-[12px] text-[var(--foreground-secondary)] font-mono">
                 {currentIndex + 1} / {sessionQuestionIds.length}
               </span>
 
@@ -416,8 +416,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 disabled={currentIndex === sessionQuestionIds.length - 1}
                 onClick={() => setCurrentIndex((idx) => Math.min(sessionQuestionIds.length - 1, idx + 1))}
                 className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-semibold transition-colors ${currentIndex === sessionQuestionIds.length - 1
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'bg-[#087C76] hover:bg-[#066F6A] text-white shadow-xs cursor-pointer'
+                    ? 'text-[var(--foreground-muted)] cursor-not-allowed'
+                    : 'bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white shadow-xs cursor-pointer'
                   }`}
               >
                 <span>Next Question</span>
@@ -452,32 +452,32 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* ============================================================ */}
       {/* 1. PRACTICE HEADER & INTRO */}
       {/* ============================================================ */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#E2E8F0]">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[var(--border)]">
         <div className="space-y-2">
-          <div className="text-[11px] font-bold tracking-wider text-[#0D918A] uppercase font-mono">
+          <div className="text-[11px] font-bold tracking-wider text-[var(--brand-text)] uppercase font-mono">
             PRACTICE LIBRARY
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#071126]">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
             Precision Question Bank
           </h1>
-          <p className="text-[14px] text-[#58708A] max-w-xl leading-relaxed">
+          <p className="text-[14px] text-[var(--foreground-secondary)] max-w-xl leading-relaxed">
             Practice the skills that matter most, with calibrated difficulty and step-by-step solutions.
           </p>
 
           {/* Small subtle statistics */}
           <div className="flex items-center gap-3 pt-1 text-[12px] font-mono">
-            <span className="font-bold text-[#071126]">{subjectTotal} Questions</span>
-            <span className="text-slate-300">•</span>
-            <span className="text-[#087C76] font-semibold">{subjectFree} Free</span>
-            <span className="text-slate-300">•</span>
-            <span className="text-[#58708A]">{subjectDomains} Domains</span>
+            <span className="font-bold text-[var(--foreground)]">{subjectTotal} Questions</span>
+            <span className="text-[var(--foreground-muted)]">•</span>
+            <span className="text-[var(--brand-text)] font-semibold">{subjectFree} Free</span>
+            <span className="text-[var(--foreground-muted)]">•</span>
+            <span className="text-[var(--foreground-secondary)]">{subjectDomains} Domains</span>
           </div>
         </div>
 
         <button
           onClick={() => handleStartSession()}
           disabled={filteredQuestions.length === 0}
-          className="btn-action px-6 py-3 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[13px] rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer shrink-0 group"
+          className="btn-action px-6 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer shrink-0 group"
         >
           <span>Start Practice · {filteredQuestions.length} Questions</span>
           <ArrowRight className="w-4 h-4" />
@@ -488,7 +488,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* 2. HIGH-LEVEL SUBJECT SWITCHER */}
       {/* ============================================================ */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/60 shadow-2xs">
+        <div className="inline-flex p-1 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)]/60 shadow-2xs">
           <button
             onClick={() => {
               setSelectedSubject('math');
@@ -496,8 +496,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               setSelectedTopic('all');
             }}
             className={`px-5 py-2 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${selectedSubject === 'math'
-                ? 'bg-white shadow-xs font-semibold text-[#071126]'
-                : 'text-[#58708A] hover:text-[#071126]'
+                ? 'bg-[var(--surface)] shadow-xs font-semibold text-[var(--foreground)]'
+                : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
               }`}
           >
             MATHEMATICS
@@ -509,8 +509,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               setSelectedTopic('all');
             }}
             className={`px-5 py-2 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${selectedSubject === 'reading_writing'
-                ? 'bg-white shadow-xs font-semibold text-[#071126]'
-                : 'text-[#58708A] hover:text-[#071126]'
+                ? 'bg-[var(--surface)] shadow-xs font-semibold text-[var(--foreground)]'
+                : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
               }`}
           >
             READING & WRITING
@@ -520,7 +520,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         {activeFiltersCount > 0 && (
           <button
             onClick={resetAllFilters}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#0D918A] hover:text-[#087C76] hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--brand-text)] hover:text-[var(--brand-text)] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''}</span>
@@ -543,19 +543,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setAccessDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedDomain !== 'all'
-                  ? 'bg-teal-50 border-[#0D918A] text-[#087C76] font-semibold'
-                  : 'bg-white border-[#E2E8F0] hover:bg-[#F1F8F7] text-[#071126]'
+                  ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
+                  : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
                 }`}
             >
               <span>
                 {selectedDomain === 'all' ? 'Domain' : formatDomainName(selectedDomain)}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#58708A]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
             </button>
 
             {domainDropdownOpen && (
               <div
-                className="absolute left-0 mt-1.5 w-72 bg-white rounded-xl shadow-lg border border-[#E2E8F0] p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
+                className="absolute left-0 mt-1.5 w-72 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
                 onMouseLeave={() => setDomainDropdownOpen(false)}
               >
                 <button
@@ -563,14 +563,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     setSelectedDomain('all');
                     setDomainDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === 'all' ? 'bg-teal-50 text-[#087C76] font-semibold' : 'text-[#071126] hover:bg-[#F1F8F7]'
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === 'all' ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
                     }`}
                 >
                   <span>All Domains</span>
-                  {selectedDomain === 'all' && <Check className="w-3.5 h-3.5 text-[#0D918A]" />}
+                  {selectedDomain === 'all' && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
                 </button>
 
-                <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-[#58708A] uppercase tracking-wider">
+                <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">
                   {selectedSubject === 'math' ? 'Mathematics Domains' : 'Reading & Writing Domains'}
                 </div>
 
@@ -581,11 +581,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedDomain(dom);
                       setDomainDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === dom ? 'bg-teal-50 text-[#087C76] font-semibold' : 'text-[#071126] hover:bg-[#F1F8F7]'
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === dom ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
                       }`}
                   >
                     <span>{formatDomainName(dom)}</span>
-                    {selectedDomain === dom && <Check className="w-3.5 h-3.5 text-[#0D918A]" />}
+                    {selectedDomain === dom && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
                   </button>
                 ))}
               </div>
@@ -601,19 +601,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setAccessDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedDifficulty !== 'all'
-                  ? 'bg-teal-50 border-[#0D918A] text-[#087C76] font-semibold'
-                  : 'bg-white border-[#E2E8F0] hover:bg-[#F1F8F7] text-[#071126]'
+                  ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
+                  : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
                 }`}
             >
               <span className="capitalize">
                 {selectedDifficulty === 'all' ? 'Difficulty' : selectedDifficulty}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#58708A]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
             </button>
 
             {difficultyDropdownOpen && (
               <div
-                className="absolute left-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-[#E2E8F0] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
+                className="absolute left-0 mt-1.5 w-44 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
                 onMouseLeave={() => setDifficultyDropdownOpen(false)}
               >
                 {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
@@ -623,11 +623,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedDifficulty(diff);
                       setDifficultyDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${selectedDifficulty === diff ? 'bg-teal-50 text-[#087C76] font-semibold' : 'text-[#071126] hover:bg-[#F1F8F7]'
+                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${selectedDifficulty === diff ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
                       }`}
                   >
                     <span>{diff === 'all' ? 'All Difficulties' : diff}</span>
-                    {selectedDifficulty === diff && <Check className="w-3.5 h-3.5 text-[#0D918A]" />}
+                    {selectedDifficulty === diff && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
                   </button>
                 ))}
               </div>
@@ -643,19 +643,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setDifficultyDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedAccess !== 'all'
-                  ? 'bg-teal-50 border-[#0D918A] text-[#087C76] font-semibold'
-                  : 'bg-white border-[#E2E8F0] hover:bg-[#F1F8F7] text-[#071126]'
+                  ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
+                  : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
                 }`}
             >
               <span>
                 {selectedAccess === 'all' ? 'Access' : selectedAccess === 'free' ? 'Free Only' : 'Premium Only'}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#58708A]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
             </button>
 
             {accessDropdownOpen && (
               <div
-                className="absolute left-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-[#E2E8F0] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
+                className="absolute left-0 mt-1.5 w-44 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
                 onMouseLeave={() => setAccessDropdownOpen(false)}
               >
                 {(['all', 'free', 'premium'] as const).map((acc) => (
@@ -665,11 +665,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedAccess(acc);
                       setAccessDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedAccess === acc ? 'bg-teal-50 text-[#087C76] font-semibold' : 'text-[#071126] hover:bg-[#F1F8F7]'
+                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedAccess === acc ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
                       }`}
                   >
                     <span>{acc === 'all' ? 'All Access' : acc === 'free' ? 'Free Only' : 'Premium Only'}</span>
-                    {selectedAccess === acc && <Check className="w-3.5 h-3.5 text-[#0D918A]" />}
+                    {selectedAccess === acc && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
                   </button>
                 ))}
               </div>
@@ -680,27 +680,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => setMoreFiltersOpen(true)}
             className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${selectedTopic !== 'all' || selectedSource !== 'all'
-                ? 'bg-teal-50 border-[#0D918A] text-[#087C76] font-semibold'
-                : 'bg-white border-[#E2E8F0] hover:bg-[#F1F8F7] text-[#071126]'
+                ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
+                : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
               }`}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#58708A]" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
             <span>More Filters</span>
           </button>
         </div>
 
         {/* Right Search Input with ⌘K */}
         <div className="lg:col-span-4 relative">
-          <Search className="w-4 h-4 text-[#58708A] absolute left-3 top-3 pointer-events-none" />
+          <Search className="w-4 h-4 text-[var(--foreground-secondary)] absolute left-3 top-3 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search questions, topics or question ID..."
-            className="w-full h-10 pl-9 pr-14 border border-[#E2E8F0] rounded-[10px] text-[12px] focus:outline-none focus:border-[#0D918A] bg-white transition-colors shadow-none text-[#071126]"
+            className="w-full h-10 pl-9 pr-14 border border-[var(--border)] rounded-[10px] text-[12px] focus:outline-none focus:border-[var(--brand)] bg-[var(--surface)] transition-colors shadow-none text-[var(--foreground)]"
           />
-          <div className="absolute right-2.5 top-2.5 pointer-events-none px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-mono text-[#58708A] border border-slate-200">
+          <div className="absolute right-2.5 top-2.5 pointer-events-none px-1.5 py-0.5 rounded bg-[var(--surface-soft)] text-[10px] font-mono text-[var(--foreground-secondary)] border border-[var(--border)]">
             ⌘K
           </div>
         </div>
@@ -709,8 +709,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* ============================================================ */}
       {/* 4. RESULTS HEADER */}
       {/* ============================================================ */}
-      <div className="flex items-center justify-between text-[13px] text-[#58708A] pt-2">
-        <div className="font-medium text-[#071126]">
+      <div className="flex items-center justify-between text-[13px] text-[var(--foreground-secondary)] pt-2">
+        <div className="font-medium text-[var(--foreground)]">
           {filteredQuestions.length} questions found
         </div>
 
@@ -718,16 +718,16 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         <div className="relative">
           <button
             onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#071126] hover:text-[#0D918A] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--foreground)] hover:text-[var(--brand-text)] transition-colors cursor-pointer"
           >
-            <span className="text-[#58708A]">Sort:</span>
+            <span className="text-[var(--foreground-secondary)]">Sort:</span>
             <span className="font-semibold capitalize">{sortBy}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#58708A]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
           </button>
 
           {sortDropdownOpen && (
             <div
-              className="absolute right-0 mt-1.5 w-40 bg-white rounded-xl shadow-lg border border-[#E2E8F0] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 mt-1.5 w-40 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
               onMouseLeave={() => setSortDropdownOpen(false)}
             >
               {(['recommended', 'difficulty', 'newest'] as const).map((opt) => (
@@ -737,11 +737,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     setSortBy(opt);
                     setSortDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${sortBy === opt ? 'bg-teal-50 text-[#087C76] font-semibold' : 'text-[#071126] hover:bg-[#F1F8F7]'
+                  className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${sortBy === opt ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
                     }`}
                 >
                   <span>{opt}</span>
-                  {sortBy === opt && <Check className="w-3.5 h-3.5 text-[#0D918A]" />}
+                  {sortBy === opt && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
                 </button>
               ))}
             </div>
@@ -753,19 +753,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* 5. QUESTION LIST */}
       {/* ============================================================ */}
       {filteredQuestions.length === 0 ? (
-        <div className="p-16 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-[#F1F8F7] text-[#58708A] flex items-center justify-center mx-auto border border-[#E2E8F0]">
+        <div className="p-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)] text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-[var(--brand-soft)] text-[var(--foreground-secondary)] flex items-center justify-center mx-auto border border-[var(--border)]">
             <Search className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-bold text-[#071126] text-base">No questions found</h3>
-            <p className="text-[13px] text-[#58708A] max-w-sm mx-auto">
+            <h3 className="font-bold text-[var(--foreground)] text-base">No questions found</h3>
+            <p className="text-[13px] text-[var(--foreground-secondary)] max-w-sm mx-auto">
               No items match your active filters. Clear or adjust your parameters to browse available problems.
             </p>
           </div>
           <button
             onClick={resetAllFilters}
-            className="px-4 py-2 bg-[#080D21] hover:bg-[#087C76] text-white text-[12px] font-medium rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white text-[12px] font-medium rounded-lg transition-colors cursor-pointer"
           >
             Reset All Filters
           </button>
@@ -778,18 +778,18 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             return (
               <div
                 key={q.id}
-                className="group p-5 bg-white rounded-[14px] border border-[#E2E8F0] hover:border-[#0D918A]/50 hover:-translate-y-[1px] hover:shadow-xs transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-5"
+                className="group p-5 bg-[var(--surface)] rounded-[14px] border border-[var(--border)] hover:border-[var(--brand)]/50 hover:-translate-y-[1px] hover:shadow-xs transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-5"
               >
                 {/* Left: ID & Metadata */}
                 <div className="space-y-2 flex-1">
                   <div className="flex flex-wrap items-center gap-2.5 text-[11px]">
-                    <span className="font-mono font-bold text-[#071126] bg-[#F1F8F7] px-2 py-0.5 rounded border border-[#E2E8F0]">
+                    <span className="font-mono font-bold text-[var(--foreground)] bg-[var(--brand-soft)] px-2 py-0.5 rounded border border-[var(--border)]">
                       {q.code}
                     </span>
-                    <span className="font-semibold text-[#071126]">{formatDomainName(q.domain)}</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-[#58708A]">{q.topic}</span>
-                    <span className="text-slate-300">•</span>
+                    <span className="font-semibold text-[var(--foreground)]">{formatDomainName(q.domain)}</span>
+                    <span className="text-[var(--foreground-muted)]">•</span>
+                    <span className="text-[var(--foreground-secondary)]">{q.topic}</span>
+                    <span className="text-[var(--foreground-muted)]">•</span>
 
                     {/* Semantic Difficulty */}
                     <span
@@ -809,15 +809,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                         Free
                       </span>
                     ) : (
-                      <span className="text-[#087C76] font-semibold text-[11px] bg-teal-50 px-2 py-0.5 rounded border border-teal-100 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-[#0D918A]" />
+                      <span className="text-[var(--brand-text)] font-semibold text-[11px] bg-teal-50 px-2 py-0.5 rounded border border-teal-100 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-[var(--brand-text)]" />
                         Premium
                       </span>
                     )}
                   </div>
 
                   {/* Question Preview Text */}
-                  <div className="text-[13.5px] text-[#071126] font-normal leading-relaxed line-clamp-2">
+                  <div className="text-[13.5px] text-[var(--foreground)] font-normal leading-relaxed line-clamp-2">
                     <MathRenderer content={q.question_text} />
                   </div>
                 </div>
@@ -827,7 +827,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   {hasAccess ? (
                     <button
                       onClick={() => handleStartSession(filteredQuestions, idx)}
-                      className="px-5 py-2.5 bg-[#080D21] hover:bg-[#087C76] text-white font-medium text-[12px] rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer group/btn"
+                      className="px-5 py-2.5 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white font-medium text-[12px] rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer group/btn"
                     >
                       <span>Practice</span>
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
@@ -835,9 +835,9 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   ) : (
                     <button
                       onClick={onOpenPricing}
-                      className="px-4 py-2.5 bg-white hover:bg-[#F1F8F7] text-[#087C76] font-semibold text-[12px] rounded-lg border border-[#E2E8F0] transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2.5 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold text-[12px] rounded-lg border border-[var(--border)] transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Lock className="w-3.5 h-3.5 text-[#0D918A]" />
+                      <Lock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
                       <span>Unlock Premium</span>
                     </button>
                   )}
@@ -853,16 +853,16 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* ============================================================ */}
       {moreFiltersOpen && (
         <div className="fixed inset-0 z-50 bg-black/25 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white h-full p-6 space-y-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200">
+          <div className="w-full max-w-md bg-[var(--surface)] h-full p-6 space-y-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200">
             <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-[#0D918A]" />
-                  <h3 className="font-bold text-[#071126] text-base">Advanced Filters</h3>
+                  <SlidersHorizontal className="w-4 h-4 text-[var(--brand-text)]" />
+                  <h3 className="font-bold text-[var(--foreground)] text-base">Advanced Filters</h3>
                 </div>
                 <button
                   onClick={() => setMoreFiltersOpen(false)}
-                  className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-slate-100 cursor-pointer"
+                  className="p-1.5 rounded-lg text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -870,13 +870,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
               {/* Topic Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">
                   Specific Topic
                 </label>
                 <select
                   value={selectedTopic}
                   onChange={(e) => setSelectedTopic(e.target.value)}
-                  className="w-full p-2.5 border border-[#E2E8F0] rounded-lg text-[12px] bg-white text-[#071126] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full p-2.5 border border-[var(--border)] rounded-lg text-[12px] bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:border-[var(--brand)]"
                 >
                   <option value="all">All Topics</option>
                   {availableTopics.map((top) => (
@@ -889,13 +889,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
               {/* Source Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">
                   Question Source
                 </label>
                 <select
                   value={selectedSource}
                   onChange={(e) => setSelectedSource(e.target.value)}
-                  className="w-full p-2.5 border border-[#E2E8F0] rounded-lg text-[12px] bg-white text-[#071126] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full p-2.5 border border-[var(--border)] rounded-lg text-[12px] bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:border-[var(--brand)]"
                 >
                   <option value="all">All Sources</option>
                   {availableSources.map((src) => (
@@ -908,7 +908,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
               {/* Difficulty Quick Filter */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">
                   Difficulty Level
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -919,8 +919,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                         setSelectedDifficulty(selectedDifficulty === diff ? 'all' : diff)
                       }
                       className={`py-2 rounded-lg text-[12px] font-medium border capitalize transition-colors cursor-pointer ${selectedDifficulty === diff
-                          ? 'bg-[#087C76] text-white border-[#087C76] font-bold'
-                          : 'bg-[#F1F8F7] text-[#071126] border-[#E2E8F0] hover:bg-slate-100'
+                          ? 'bg-[var(--brand-cta)] text-white border-[var(--brand-cta)] font-bold'
+                          : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
                         }`}
                     >
                       {diff}
@@ -931,7 +931,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
               {/* Access Quick Filter */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#58708A] uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider">
                   Access Model
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -941,7 +941,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     }
                     className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer ${selectedAccess === 'free'
                         ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-[#F1F8F7] text-[#071126] border-[#E2E8F0] hover:bg-slate-100'
+                        : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     Free Only
@@ -951,8 +951,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedAccess(selectedAccess === 'premium' ? 'all' : 'premium')
                     }
                     className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer ${selectedAccess === 'premium'
-                        ? 'bg-[#087C76] text-white border-[#087C76] font-bold'
-                        : 'bg-[#F1F8F7] text-[#071126] border-[#E2E8F0] hover:bg-slate-100'
+                        ? 'bg-[var(--brand-cta)] text-white border-[var(--brand-cta)] font-bold'
+                        : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     Premium Only
@@ -962,7 +962,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-[#E2E8F0] flex items-center gap-3">
+            <div className="pt-4 border-t border-[var(--border)] flex items-center gap-3">
               <button
                 onClick={() => {
                   setSelectedTopic('all');
@@ -970,13 +970,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   setSelectedDifficulty('all');
                   setSelectedAccess('all');
                 }}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#071126] text-[13px] font-medium rounded-lg transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-[var(--surface-soft)] hover:bg-[var(--border)] text-[var(--foreground)] text-[13px] font-medium rounded-lg transition-colors cursor-pointer"
               >
                 Clear Filters
               </button>
               <button
                 onClick={() => setMoreFiltersOpen(false)}
-                className="flex-1 py-2.5 bg-[#087C76] hover:bg-[#066F6A] text-white text-[13px] font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
+                className="flex-1 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white text-[13px] font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
               >
                 Apply Filters
               </button>

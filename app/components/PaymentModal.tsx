@@ -69,18 +69,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-xl border border-[#E2E8F0] w-full max-w-lg overflow-hidden">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-lg overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-bold text-[#0D918A] uppercase tracking-wider">
+            <div className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">
               Manual Verification
             </div>
-            <h3 className="text-base font-bold text-[#071126]">{plan.name}</h3>
+            <h3 className="text-base font-bold text-[var(--foreground)]">{plan.name}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -92,19 +92,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <Clock className="w-6 h-6 animate-pulse" />
             </div>
             <div className="space-y-2">
-              <h4 className="text-lg font-bold text-[#071126]">Payment Verification Pending</h4>
-              <p className="text-[12px] text-[#58708A] max-w-sm mx-auto leading-relaxed">
-                Your reference code <strong className="font-mono text-[#071126]">{referenceNumber}</strong> has been submitted to the White Board SAT admin supervisor.
+              <h4 className="text-lg font-bold text-[var(--foreground)]">Payment Verification Pending</h4>
+              <p className="text-[12px] text-[var(--foreground-secondary)] max-w-sm mx-auto leading-relaxed">
+                Your reference code <strong className="font-mono text-[var(--foreground)]">{referenceNumber}</strong> has been submitted to the White Board SAT admin supervisor.
               </p>
-              <div className="p-4 bg-[#F1F8F7] rounded-xl border border-[#E2E8F0] text-[12px] text-[#58708A] text-left space-y-1.5 mt-4">
-                <div className="font-semibold text-[#071126]">Next Steps:</div>
+              <div className="p-4 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] text-[12px] text-[var(--foreground-secondary)] text-left space-y-1.5 mt-4">
+                <div className="font-semibold text-[var(--foreground)]">Next Steps:</div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Admin verifies transaction in billing queue.</span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Access is activated on your phone: <strong className="text-[#071126]">{senderPhone}</strong></span>
+                  <span>Access is activated on your phone: <strong className="text-[var(--foreground)]">{senderPhone}</strong></span>
                 </div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 setIsSubmittedSuccess(false);
                 onClose();
               }}
-              className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[12px] rounded-lg transition-colors cursor-pointer shadow-xs"
+              className="w-full py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[12px] rounded-lg transition-colors cursor-pointer shadow-xs"
             >
               Done & Return
             </button>
@@ -122,16 +122,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         ) : (
           <div className="p-6 overflow-y-auto max-h-[80vh] space-y-5">
             {/* Price & Summary */}
-            <div className="p-4 bg-[#F1F8F7] rounded-xl border border-[#E2E8F0] flex items-center justify-between">
+            <div className="p-4 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] flex items-center justify-between">
               <div>
-                <span className="text-[11px] text-[#58708A] block">Total Payable</span>
-                <span className="text-xl font-bold font-mono text-[#071126]">
+                <span className="text-[11px] text-[var(--foreground-secondary)] block">Total Payable</span>
+                <span className="text-xl font-bold font-mono text-[var(--foreground)]">
                   {plan.price === 0 ? 'Free' : `৳${plan.price.toLocaleString()}`}
                 </span>
-                <span className="text-[11px] text-[#58708A] ml-1.5 font-normal">({plan.period})</span>
+                <span className="text-[11px] text-[var(--foreground-secondary)] ml-1.5 font-normal">({plan.period})</span>
               </div>
               <div className="text-right">
-                <span className="px-2.5 py-1 rounded bg-teal-50 text-[#087C76] font-semibold text-[10px] border border-teal-200">
+                <span className="px-2.5 py-1 rounded bg-teal-50 text-[var(--brand-text)] font-semibold text-[10px] border border-teal-200">
                   Instant Verification
                 </span>
               </div>
@@ -139,7 +139,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Payment Method Selector */}
             <div>
-              <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-2">
                 Select Payment Method
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -149,8 +149,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     type="button"
                     onClick={() => setPaymentMethod(method)}
                     className={`py-2 px-3 rounded-lg border text-[12px] font-medium transition-all text-center cursor-pointer ${paymentMethod === method
-                        ? 'border-[#087C76] bg-[#F1F8F7] text-[#087C76] font-semibold ring-1 ring-[#087C76]/30'
-                        : 'border-[#E2E8F0] bg-white text-[#58708A] hover:bg-slate-50'
+                        ? 'border-[var(--brand-cta)] bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold ring-1 ring-[var(--brand-cta)]/30'
+                        : 'border-[var(--border)] bg-[var(--surface)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
                       }`}
                   >
                     {method}
@@ -160,19 +160,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
 
             {/* Payment Instructions Box */}
-            <div className="p-3.5 bg-[#F1F8F7] rounded-xl border border-[#E2E8F0] space-y-1.5">
-              <div className="text-[11px] font-bold text-[#071126]">Send Payment Instructions:</div>
-              <p className="text-[11px] text-[#58708A] leading-relaxed">
-                Please transfer exactly <strong className="text-[#071126]">৳{plan.price.toLocaleString()}</strong> to the official account:
+            <div className="p-3.5 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] space-y-1.5">
+              <div className="text-[11px] font-bold text-[var(--foreground)]">Send Payment Instructions:</div>
+              <p className="text-[11px] text-[var(--foreground-secondary)] leading-relaxed">
+                Please transfer exactly <strong className="text-[var(--foreground)]">৳{plan.price.toLocaleString()}</strong> to the official account:
               </p>
-              <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-[#E2E8F0] font-mono text-[11px]">
-                <span className="text-[#071126] font-medium truncate max-w-[240px]">
+              <div className="flex items-center justify-between p-2 bg-[var(--surface)] rounded-lg border border-[var(--border)] font-mono text-[11px]">
+                <span className="text-[var(--foreground)] font-medium truncate max-w-[240px]">
                   {paymentAccounts[paymentMethod]}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyAccount}
-                  className="p-1 text-[#58708A] hover:text-[#0D918A] hover:bg-[#F1F8F7] rounded cursor-pointer transition-colors"
+                  className="p-1 text-[var(--foreground-secondary)] hover:text-[var(--brand-text)] hover:bg-[var(--brand-soft)] rounded cursor-pointer transition-colors"
                   title="Copy number"
                 >
                   <Copy className="w-3.5 h-3.5" />
@@ -186,7 +186,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Form Fields */}
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Transaction / Reference ID <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -195,12 +195,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   value={referenceNumber}
                   onChange={(e) => setReferenceNumber(e.target.value)}
                   placeholder="e.g. BK9X872631 or TrxID"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] font-mono focus:outline-none focus:border-[#0D918A]"
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[12px] font-mono focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Sender Phone Number <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -209,12 +209,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   value={senderPhone}
                   onChange={(e) => setSenderPhone(e.target.value)}
                   placeholder="+880 1712 345678"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Optional Remarks / Note
                 </label>
                 <input
@@ -222,7 +222,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Paid via bKash personal account"
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>
 
@@ -245,7 +245,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[12px] rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                className="w-full py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[12px] rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <span>Submit Reference for Manual Verification</span>
                 <ArrowRight className="w-3.5 h-3.5" />

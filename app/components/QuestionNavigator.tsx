@@ -24,10 +24,10 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   const questionMap = new Map(questions.map((q) => [q.id, q]));
 
   return (
-    <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 space-y-4 shadow-xs">
-      <div className="flex items-center justify-between pb-1 border-b border-[#E2E8F0]">
-        <h4 className="font-bold text-[#071126] text-[12px] uppercase tracking-[0.06em]">{title}</h4>
-        <span className="text-[12px] text-[#58708A] font-mono">
+    <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-5 space-y-4 shadow-xs">
+      <div className="flex items-center justify-between pb-1 border-b border-[var(--border)]">
+        <h4 className="font-bold text-[var(--foreground)] text-[12px] uppercase tracking-[0.06em]">{title}</h4>
+        <span className="text-[12px] text-[var(--foreground-secondary)] font-mono">
           {currentIndex + 1} / {totalQuestions}
         </span>
       </div>
@@ -45,16 +45,16 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
           const isAnswered = !!selectedAns;
           const isMarked = !!interaction?.isMarkedForReview;
 
-          let btnClass = 'bg-[#F1F8F7] border-[#E2E8F0] text-[#071126] hover:bg-slate-100';
+          let btnClass = 'bg-[var(--brand-soft)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface-soft)]';
 
           if (isCurrent) {
-            btnClass = 'bg-[#087C76] border-[#087C76] text-white font-bold ring-2 ring-teal-200 shadow-xs';
+            btnClass = 'bg-[var(--brand-cta)] border-[var(--brand-cta)] text-white font-bold ring-2 ring-teal-200 shadow-xs';
           } else if (isCorrect) {
             btnClass = 'bg-emerald-600 border-emerald-600 text-white font-bold shadow-xs';
           } else if (isIncorrect) {
             btnClass = 'bg-rose-500 border-rose-500 text-white font-bold shadow-xs';
           } else if (isAnswered) {
-            btnClass = 'bg-teal-50 border-teal-200 text-[#087C76] font-semibold';
+            btnClass = 'bg-teal-50 border-teal-200 text-[var(--brand-text)] font-semibold';
           }
 
           return (
@@ -75,7 +75,7 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
               {/* Answered dot indicator if not current and not submitted */}
               {!isCurrent && isAnswered && !isSubmitted && !isMarked && (
                 <div className="absolute bottom-1 right-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#087C76]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cta)]" />
                 </div>
               )}
             </button>
@@ -84,9 +84,9 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="pt-3 border-t border-[#E2E8F0] grid grid-cols-2 gap-2 text-[11px] text-[#58708A]">
+      <div className="pt-3 border-t border-[var(--border)] grid grid-cols-2 gap-2 text-[11px] text-[var(--foreground-secondary)]">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-[4px] bg-[#087C76]" />
+          <div className="w-3 h-3 rounded-[4px] bg-[var(--brand-cta)]" />
           <span>Current</span>
         </div>
         <div className="flex items-center gap-1.5">

@@ -72,11 +72,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const passwordField = (
     <div>
-      <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+      <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
         Password
       </label>
       <div className="relative">
-        <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+        <Lock className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
         <input
           type="password"
           required
@@ -85,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={isRegister ? 'At least 8 characters' : 'Your password'}
-          className="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+          className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
         />
       </div>
     </div>
@@ -93,14 +93,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl shadow-xl border border-[#E2E8F0] w-full max-w-md overflow-hidden relative">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-md overflow-hidden relative">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[#E2E8F0] flex items-center justify-between">
+        <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-[#0D918A] uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">
               {mode === 'register' ? 'Account Registration' : mode === 'forgot' ? 'Account Recovery' : 'Student Authentication'}
             </span>
-            <h3 className="text-lg font-bold text-[#071126]">
+            <h3 className="text-lg font-bold text-[var(--foreground)]">
               {mode === 'register'
                 ? 'Create Your SAT Account'
                 : mode === 'forgot'
@@ -110,7 +110,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -127,63 +127,63 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {isRegister ? (
             <>
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                  <User className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Abdullah Al Mubin"
-                    className="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                    className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Phone Number (Primary Account Key)
                 </label>
                 <div className="relative">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                  <Phone className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+880 1712 345678"
-                    className="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                    className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Email Address (Optional)
                 </label>
                 <div className="relative">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                  <Mail className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="student@example.com"
-                    className="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                    className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                   Target SAT Score
                 </label>
                 <select
                   value={targetScore}
                   onChange={(e) => setTargetScore(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] font-mono focus:outline-none focus:border-[#0D918A] bg-white"
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[12px] font-mono focus:outline-none focus:border-[var(--brand)] bg-[var(--surface)]"
                 >
                   <option value="1600">1600 (Perfect Score)</option>
                   <option value="1550">1550+ (Ivy League Tier)</option>
@@ -196,22 +196,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </>
           ) : (
             <div>
-              <label className="block text-[11px] font-bold text-[#58708A] uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
                 Phone Number or Email
               </label>
               <div className="relative">
-                <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                <Phone className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                 <input
                   type="text"
                   required
                   value={phoneOrEmail}
                   onChange={(e) => setPhoneOrEmail(e.target.value)}
                   placeholder="e.g. +880 1712 345678 or student@whiteboard.edu"
-                  className="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-[12px] focus:outline-none focus:border-[#0D918A]"
+                  className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>
               {mode === 'forgot' && (
-                <p className="text-[11px] text-[#58708A] mt-1">
+                <p className="text-[11px] text-[var(--foreground-secondary)] mt-1">
                   We will email a reset link to the address on this account.
                 </p>
               )}
@@ -228,7 +228,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setErrorMsg('');
                   setResetSent(false);
                 }}
-                className="text-[11px] font-semibold text-[#0D918A] hover:underline cursor-pointer"
+                className="text-[11px] font-semibold text-[var(--brand-text)] hover:underline cursor-pointer"
               >
                 Forgot your password?
               </button>
@@ -236,7 +236,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {resetSent && (
-            <div className="p-3 rounded-lg bg-[#F1F8F7] border border-[#E2E8F0] text-[12px] text-[#071126]">
+            <div className="p-3 rounded-lg bg-[var(--brand-soft)] border border-[var(--border)] text-[12px] text-[var(--foreground)]">
               If that account exists, a reset link is on its way. The link expires in one hour.
             </div>
           )}
@@ -244,7 +244,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 bg-[#087C76] hover:bg-[#066F6A] disabled:opacity-60 text-white font-medium text-[12px] rounded-lg transition-colors shadow-xs cursor-pointer"
+            className="w-full py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] disabled:opacity-60 text-white font-medium text-[12px] rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             {isSubmitting
               ? 'Please wait…'
@@ -256,9 +256,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-[#E2E8F0]" />
-            <span className="text-[11px] text-[#58708A]">or</span>
-            <span className="h-px flex-1 bg-[#E2E8F0]" />
+            <span className="h-px flex-1 bg-[var(--border)]" />
+            <span className="text-[11px] text-[var(--foreground-secondary)]">or</span>
+            <span className="h-px flex-1 bg-[var(--border)]" />
           </div>
 
           {/* Deliberately a plain <a>, not <Link> or router.push: the OAuth
@@ -267,7 +267,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/api/auth/google"
-            className="w-full py-2.5 flex items-center justify-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 rounded-lg text-[12px] font-medium text-[#071126] transition-colors cursor-pointer"
+            className="w-full py-2.5 flex items-center justify-center gap-2 border border-[var(--border)] hover:bg-[var(--surface-soft)] rounded-lg text-[12px] font-medium text-[var(--foreground)] transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.2-2.2H12v4h6.6c-.1 1.1-.9 2.8-2.5 3.9l-.02.15 3.6 2.8.25.02c2.3-2.1 3.6-5.2 3.6-8.7Z" />
@@ -278,7 +278,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             Continue with Google
           </a>
 
-          <div className="pt-2 text-center text-[12px] text-[#58708A]">
+          <div className="pt-2 text-center text-[12px] text-[var(--foreground-secondary)]">
             {mode === 'forgot' ? (
               <button
                 type="button"
@@ -286,7 +286,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setMode('login');
                   setErrorMsg('');
                 }}
-                className="text-[#0D918A] font-semibold hover:underline cursor-pointer"
+                className="text-[var(--brand-text)] font-semibold hover:underline cursor-pointer"
               >
                 Back to sign in
               </button>
@@ -299,7 +299,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setMode('login');
                     setErrorMsg('');
                   }}
-                  className="text-[#0D918A] font-semibold hover:underline cursor-pointer"
+                  className="text-[var(--brand-text)] font-semibold hover:underline cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -313,7 +313,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setMode('register');
                     setErrorMsg('');
                   }}
-                  className="text-[#0D918A] font-semibold hover:underline cursor-pointer"
+                  className="text-[var(--brand-text)] font-semibold hover:underline cursor-pointer"
                 >
                   Create Account
                 </button>

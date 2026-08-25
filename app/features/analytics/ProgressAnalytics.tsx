@@ -71,25 +71,25 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
   const weakestDomain = [...domainStats].sort((a, b) => a.accuracy - b.accuracy)[0];
 
   const getStatusInfo = (accuracy: number, total: number) => {
-    if (total === 0) return { label: 'Not Started', color: 'text-slate-500 bg-slate-100 border-slate-200', bar: 'bg-slate-300' };
-    if (accuracy >= 90) return { label: 'Mastered', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', bar: 'bg-[#08A86A]' };
-    if (accuracy >= 70) return { label: 'Strong', color: 'text-[#087C76] bg-[#F1F8F7] border-teal-200', bar: 'bg-[#087C76]' };
-    if (accuracy >= 50) return { label: 'Proficient', color: 'text-[#0D918A] bg-[#F1F8F7]/70 border-teal-100', bar: 'bg-[#0D918A]' };
+    if (total === 0) return { label: 'Not Started', color: 'text-[var(--foreground-muted)] bg-[var(--surface-soft)] border-[var(--border)]', bar: 'bg-[var(--border-strong)]' };
+    if (accuracy >= 90) return { label: 'Mastered', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', bar: 'bg-[var(--success)]' };
+    if (accuracy >= 70) return { label: 'Strong', color: 'text-[var(--brand-text)] bg-[var(--brand-soft)] border-teal-200', bar: 'bg-[var(--brand-cta)]' };
+    if (accuracy >= 50) return { label: 'Proficient', color: 'text-[var(--brand-text)] bg-[var(--brand-soft)]/70 border-teal-100', bar: 'bg-[var(--brand)]' };
     return { label: 'Needs Practice', color: 'text-amber-700 bg-amber-50 border-amber-200', bar: 'bg-amber-500' };
   };
 
   return (
     <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 animate-in fade-in duration-300">
       {/* 1. Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E3E8F0]">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#0D918A] font-mono">
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--brand-text)] font-mono">
             Analytics & Intelligence
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#071126]">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
             Progress & Mastery
           </h1>
-          <p className="text-[14px] text-[#58708A] max-w-2xl leading-[1.6]">
+          <p className="text-[14px] text-[var(--foreground-secondary)] max-w-2xl leading-[1.6]">
             Domain accuracy breakdown, drill timings, and projected Digital SAT score calibration.
           </p>
         </div>
@@ -97,9 +97,9 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.print()}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-[#E3E8F0] text-[#071126] font-semibold text-[13px] rounded-[10px] transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+            className="px-4 py-2.5 bg-[var(--surface)] hover:bg-[var(--surface-soft)] border border-[var(--border)] text-[var(--foreground)] font-semibold text-[13px] rounded-[10px] transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <Download className="w-4 h-4 text-[#58708A]" />
+            <Download className="w-4 h-4 text-[var(--foreground-secondary)]" />
             <span>Export Score Report</span>
           </button>
         </div>
@@ -108,13 +108,13 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       {/* 2. Hero Performance Area (Dominant Score Panel + 3 Metrics) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Dominant Score Panel */}
-        <div className="lg:col-span-5 p-7 sm:p-8 rounded-[16px] bg-[#080D21] text-white flex flex-col justify-between space-y-6 shadow-[0_10px_30px_rgba(8,13,33,0.18)] relative overflow-hidden">
+        <div className="lg:col-span-5 p-7 sm:p-8 rounded-[16px] bg-[var(--navy-section)] text-white flex flex-col justify-between space-y-6 shadow-[0_10px_30px_rgba(8,13,33,0.18)] relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#0A8F88] uppercase tracking-widest font-mono">
+            <span className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-widest font-mono">
               Projected SAT Score
             </span>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-white/10 text-white text-[11px] font-mono font-semibold border border-white/20">
-              <Sparkles className="w-3 h-3 text-[#0A8F88]" />
+              <Sparkles className="w-3 h-3 text-[var(--brand-text)]" />
               <span>SAT Scale</span>
             </div>
           </div>
@@ -124,74 +124,74 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <span className="text-5xl sm:text-6xl font-extrabold font-mono tracking-tight text-white">
                 {estimatedTotal}
               </span>
-              <span className="text-lg font-mono text-slate-400">/ 1600</span>
+              <span className="text-lg font-mono text-[var(--foreground-muted)]">/ 1600</span>
             </div>
-            <div className="text-[12px] text-slate-300 flex items-center gap-2 pt-1">
+            <div className="text-[12px] text-[var(--foreground-muted)] flex items-center gap-2 pt-1">
               <span>Target Score:</span>
               <strong className="text-white font-mono bg-white/10 px-2 py-0.5 rounded-[4px]">{targetScore}</strong>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-800/80 grid grid-cols-2 gap-4 text-[12px]">
-            <div className="bg-slate-900/60 p-3 rounded-[10px] border border-slate-800">
-              <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Mathematics</span>
-              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedMath} <span className="text-xs text-slate-500 font-normal">/800</span></div>
+          <div className="pt-4 border-t border-[var(--border-strong)]/80 grid grid-cols-2 gap-4 text-[12px]">
+            <div className="bg-slate-900/60 p-3 rounded-[10px] border border-[var(--border-strong)]">
+              <span className="text-[var(--foreground-muted)] block text-[10px] font-semibold uppercase tracking-wider">Mathematics</span>
+              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedMath} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
             </div>
-            <div className="bg-slate-900/60 p-3 rounded-[10px] border border-slate-800">
-              <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Reading & Writing</span>
-              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedRW} <span className="text-xs text-slate-500 font-normal">/800</span></div>
+            <div className="bg-slate-900/60 p-3 rounded-[10px] border border-[var(--border-strong)]">
+              <span className="text-[var(--foreground-muted)] block text-[10px] font-semibold uppercase tracking-wider">Reading & Writing</span>
+              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedRW} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
             </div>
           </div>
         </div>
 
         {/* 3 Compact Metrics */}
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-5 items-stretch">
-          <div className="p-6 rounded-[16px] bg-white border border-[#E3E8F0] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
+          <div className="p-6 rounded-[16px] bg-[var(--surface)] border border-[var(--border)] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-[#58708A]">Overall Accuracy</span>
-              <div className="w-9 h-9 rounded-[10px] bg-[#F1F8F7] text-[#087C76] flex items-center justify-center border border-teal-100">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">Overall Accuracy</span>
+              <div className="w-9 h-9 rounded-[10px] bg-[var(--brand-soft)] text-[var(--brand-text)] flex items-center justify-center border border-teal-100">
                 <Target className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#071126] font-mono">{overallAccuracy}%</div>
-              <div className="text-[12px] text-[#58708A] mt-1">Across all practice questions</div>
+              <div className="text-3xl font-extrabold text-[var(--foreground)] font-mono">{overallAccuracy}%</div>
+              <div className="text-[12px] text-[var(--foreground-secondary)] mt-1">Across all practice questions</div>
             </div>
-            <div className="pt-2 border-t border-[#F1F5F9] text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+            <div className="pt-2 border-t border-[var(--surface-soft)] text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>Calibrated from active logs</span>
             </div>
           </div>
 
-          <div className="p-6 rounded-[16px] bg-white border border-[#E3E8F0] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
+          <div className="p-6 rounded-[16px] bg-[var(--surface)] border border-[var(--border)] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-[#58708A]">Drills Completed</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">Drills Completed</span>
               <div className="w-9 h-9 rounded-[10px] bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100">
                 <Award className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#071126] font-mono">{practiceAttempts.length}</div>
-              <div className="text-[12px] text-[#58708A] mt-1">Recorded responses</div>
+              <div className="text-3xl font-extrabold text-[var(--foreground)] font-mono">{practiceAttempts.length}</div>
+              <div className="text-[12px] text-[var(--foreground-secondary)] mt-1">Recorded responses</div>
             </div>
-            <div className="pt-2 border-t border-[#F1F5F9] text-[11px] text-[#087C76] font-semibold flex items-center gap-1">
+            <div className="pt-2 border-t border-[var(--surface-soft)] text-[11px] text-[var(--brand-text)] font-semibold flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
               <span>Active problem solving</span>
             </div>
           </div>
 
-          <div className="p-6 rounded-[16px] bg-white border border-[#E3E8F0] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
+          <div className="p-6 rounded-[16px] bg-[var(--surface)] border border-[var(--border)] shadow-[0_4px_18px_rgba(15,23,42,0.03)] flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-[#58708A]">Mock Tests</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">Mock Tests</span>
               <div className="w-9 h-9 rounded-[10px] bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-100">
                 <BarChart2 className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#071126] font-mono">{mockAttempts.length}</div>
-              <div className="text-[12px] text-[#58708A] mt-1">Full test sessions</div>
+              <div className="text-3xl font-extrabold text-[var(--foreground)] font-mono">{mockAttempts.length}</div>
+              <div className="text-[12px] text-[var(--foreground-secondary)] mt-1">Full test sessions</div>
             </div>
-            <div className="pt-2 border-t border-[#F1F5F9] text-[11px] text-[#58708A] font-semibold flex items-center gap-1">
+            <div className="pt-2 border-t border-[var(--surface-soft)] text-[11px] text-[var(--foreground-secondary)] font-semibold flex items-center gap-1">
               <span>Simulated exam environment</span>
             </div>
           </div>
@@ -199,33 +199,33 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       </div>
 
       {/* 3. Score Progress Visual */}
-      <div className="p-7 sm:p-8 rounded-[16px] bg-white border border-[#E3E8F0] shadow-[0_4px_18px_rgba(15,23,42,0.03)] space-y-6">
+      <div className="p-7 sm:p-8 rounded-[16px] bg-[var(--surface)] border border-[var(--border)] shadow-[0_4px_18px_rgba(15,23,42,0.03)] space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-[15px] font-bold text-[#071126] uppercase tracking-wider">Score Progression to Target</h3>
-            <p className="text-[13px] text-[#58708A] mt-0.5">Tracking your pathway from current calibration to target benchmark.</p>
+            <h3 className="text-[15px] font-bold text-[var(--foreground)] uppercase tracking-wider">Score Progression to Target</h3>
+            <p className="text-[13px] text-[var(--foreground-secondary)] mt-0.5">Tracking your pathway from current calibration to target benchmark.</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-[10px] bg-[#F1F8F7] text-[#087C76] font-mono text-[13px] font-bold border border-teal-100">
+            <div className="px-3.5 py-1.5 rounded-[10px] bg-[var(--brand-soft)] text-[var(--brand-text)] font-mono text-[13px] font-bold border border-teal-100">
               +{pointsToTarget} points to target
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <div className="flex justify-between text-[13px] font-semibold text-[#071126] font-mono">
+          <div className="flex justify-between text-[13px] font-semibold text-[var(--foreground)] font-mono">
             <span>Current: {estimatedTotal}</span>
             <span>Target: {targetScore}</span>
           </div>
 
-          <div className="relative w-full h-3 rounded-full bg-[#E2E8F0] overflow-hidden">
+          <div className="relative w-full h-3 rounded-full bg-[var(--border)] overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full rounded-full bg-[#087C76] transition-all duration-600"
+              className="absolute top-0 left-0 h-full rounded-full bg-[var(--brand-cta)] transition-all duration-600"
               style={{ width: `${Math.min(100, Math.max(5, ((estimatedTotal - 400) / (targetScore - 400)) * 100))}%` }}
             />
           </div>
 
-          <div className="flex justify-between text-[11px] text-[#58708A] font-mono">
+          <div className="flex justify-between text-[11px] text-[var(--foreground-secondary)] font-mono">
             <span>400 (Baseline)</span>
             <span>1600 (Max)</span>
           </div>
@@ -235,10 +235,10 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       {/* 4. Domain Mastery & Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Domain Mastery Matrix (8 domains) */}
-        <div className="lg:col-span-8 bg-white rounded-[16px] border border-[#E3E8F0] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+        <div className="lg:col-span-8 bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
           <div>
-            <h3 className="text-[17px] font-bold text-[#071126]">Domain Mastery</h3>
-            <p className="text-[13px] text-[#58708A] mt-0.5">
+            <h3 className="text-[17px] font-bold text-[var(--foreground)]">Domain Mastery</h3>
+            <p className="text-[13px] text-[var(--foreground-secondary)] mt-0.5">
               Your strongest and weakest areas across all 8 Digital SAT domains based on practice performance.
             </p>
           </div>
@@ -249,14 +249,14 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               return (
                 <div
                   key={dom.domain}
-                  className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E3E8F0] hover:border-teal-200 transition-colors space-y-2.5"
+                  className="p-4 rounded-[12px] bg-[var(--surface-soft)] border border-[var(--border)] hover:border-teal-200 transition-colors space-y-2.5"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] font-mono font-bold text-[#58708A] w-6">
+                      <span className="text-[11px] font-mono font-bold text-[var(--foreground-secondary)] w-6">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <span className="font-semibold text-[#071126] text-[14px]">
+                      <span className="font-semibold text-[var(--foreground)] text-[14px]">
                         {formatDomainName(dom.domain)}
                       </span>
                     </div>
@@ -265,20 +265,20 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                       <span className={`px-2.5 py-0.5 rounded-[6px] text-[11px] font-bold border ${status.color}`}>
                         {status.label}
                       </span>
-                      <span className="font-mono font-bold text-[#071126] text-[13px] w-12 text-right">
+                      <span className="font-mono font-bold text-[var(--foreground)] text-[13px] w-12 text-right">
                         {dom.total > 0 ? `${dom.accuracy}%` : '0%'}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="flex-1 h-2 rounded-full bg-[var(--border)] overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${status.bar}`}
                         style={{ width: `${Math.max(4, dom.accuracy)}%` }}
                       />
                     </div>
-                    <span className="text-[11px] text-[#58708A] font-mono shrink-0">
+                    <span className="text-[11px] text-[var(--foreground-secondary)] font-mono shrink-0">
                       {dom.correct} / {dom.total} correct
                     </span>
                   </div>
@@ -290,10 +290,10 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
 
         {/* Strongest & Weakest Insights Side Panel */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-[16px] border border-[#E3E8F0] p-6 space-y-5 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
-            <h4 className="text-[13px] font-bold uppercase tracking-wider text-[#071126]">Strongest Areas</h4>
+          <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-6 space-y-5 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+            <h4 className="text-[13px] font-bold uppercase tracking-wider text-[var(--foreground)]">Strongest Areas</h4>
             {strongestDomains.length === 0 ? (
-              <p className="text-[12px] text-[#58708A]">Complete more practice drills to identify strong domains.</p>
+              <p className="text-[12px] text-[var(--foreground-secondary)]">Complete more practice drills to identify strong domains.</p>
             ) : (
               <div className="space-y-3">
                 {strongestDomains.map((dom) => (
@@ -311,10 +311,10 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             )}
           </div>
 
-          <div className="bg-white rounded-[16px] border border-[#E3E8F0] p-6 space-y-5 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
-            <h4 className="text-[13px] font-bold uppercase tracking-wider text-[#071126]">Needs Attention</h4>
+          <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-6 space-y-5 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+            <h4 className="text-[13px] font-bold uppercase tracking-wider text-[var(--foreground)]">Needs Attention</h4>
             {weakestDomains.length === 0 ? (
-              <p className="text-[12px] text-[#58708A]">No critical weaknesses detected yet.</p>
+              <p className="text-[12px] text-[var(--foreground-secondary)]">No critical weaknesses detected yet.</p>
             ) : (
               <div className="space-y-3">
                 {weakestDomains.map((dom) => (
@@ -335,22 +335,22 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       </div>
 
       {/* 5. Actionable Recommendation (Next Best Action) */}
-      <div className="p-7 sm:p-8 rounded-[16px] bg-[#F1F8F7] border border-teal-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="p-7 sm:p-8 rounded-[16px] bg-[var(--brand-soft)] border border-teal-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[6px] bg-[#087C76] text-white text-[11px] font-bold uppercase tracking-wider font-mono">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[6px] bg-[var(--brand-cta)] text-white text-[11px] font-bold uppercase tracking-wider font-mono">
             Next Best Action
           </div>
-          <h3 className="text-xl font-bold text-[#071126]">
+          <h3 className="text-xl font-bold text-[var(--foreground)]">
             Focus on {weakestDomain ? formatDomainName(weakestDomain.domain) : 'Core SAT Domains'}
           </h3>
-          <p className="text-[14px] text-[#58708A] leading-[1.6]">
+          <p className="text-[14px] text-[var(--foreground-secondary)] leading-[1.6]">
             Your current performance indicates this domain needs more targeted practice before your next full digital mock simulation.
           </p>
         </div>
 
         <button
           onClick={() => onNavigate && onNavigate('practice')}
-          className="px-6 py-3 bg-[#087C76] hover:bg-[#066F6A] text-white font-semibold text-[13.5px] rounded-[10px] transition-colors shadow-xs cursor-pointer flex items-center gap-2 shrink-0"
+          className="px-6 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13.5px] rounded-[10px] transition-colors shadow-xs cursor-pointer flex items-center gap-2 shrink-0"
         >
           <span>Practice This Domain</span>
           <ArrowRight className="w-4 h-4" />
@@ -358,31 +358,31 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       </div>
 
       {/* 6. Recent Practice History */}
-      <div className="bg-white rounded-[16px] border border-[#E3E8F0] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+      <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-[17px] font-bold text-[#071126]">Recent Practice History</h3>
-            <p className="text-[13px] text-[#58708A] mt-0.5">Detailed drill logs and response timings.</p>
+            <h3 className="text-[17px] font-bold text-[var(--foreground)]">Recent Practice History</h3>
+            <p className="text-[13px] text-[var(--foreground-secondary)] mt-0.5">Detailed drill logs and response timings.</p>
           </div>
 
-          <div className="flex rounded-[10px] bg-[#F8FAFC] p-1 text-[12px] font-medium border border-[#E3E8F0]">
+          <div className="flex rounded-[10px] bg-[var(--surface-soft)] p-1 text-[12px] font-medium border border-[var(--border)]">
             <button
               onClick={() => setHistoryFilter('all')}
-              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'all' ? 'bg-white text-[#071126] font-semibold shadow-2xs' : 'text-[#58708A]'
+              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'all' ? 'bg-[var(--surface)] text-[var(--foreground)] font-semibold shadow-2xs' : 'text-[var(--foreground-secondary)]'
                 }`}
             >
               All ({practiceAttempts.length})
             </button>
             <button
               onClick={() => setHistoryFilter('correct')}
-              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'correct' ? 'bg-white text-emerald-700 font-semibold shadow-2xs' : 'text-[#58708A]'
+              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'correct' ? 'bg-[var(--surface)] text-emerald-700 font-semibold shadow-2xs' : 'text-[var(--foreground-secondary)]'
                 }`}
             >
               Correct
             </button>
             <button
               onClick={() => setHistoryFilter('incorrect')}
-              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'incorrect' ? 'bg-white text-rose-700 font-semibold shadow-2xs' : 'text-[#58708A]'
+              className={`px-3.5 py-1.5 rounded-[8px] transition-all cursor-pointer ${historyFilter === 'incorrect' ? 'bg-[var(--surface)] text-rose-700 font-semibold shadow-2xs' : 'text-[var(--foreground-secondary)]'
                 }`}
             >
               Incorrect
@@ -391,12 +391,12 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
         </div>
 
         {filteredHistory.length === 0 ? (
-          <div className="p-12 text-center text-[13px] text-[#58708A] bg-[#F8FAFC] rounded-[12px] border border-dashed border-[#E3E8F0]">
+          <div className="p-12 text-center text-[13px] text-[var(--foreground-secondary)] bg-[var(--surface-soft)] rounded-[12px] border border-dashed border-[var(--border)]">
             No practice logs recorded for this filter. Start solving practice questions to build your analytics profile.
           </div>
         ) : (
-          <div className="divide-y divide-[#E3E8F0] overflow-x-auto">
-            <div className="py-2.5 grid grid-cols-6 text-[11px] font-bold uppercase tracking-wider text-[#58708A] px-3 font-mono">
+          <div className="divide-y divide-[var(--border)] overflow-x-auto">
+            <div className="py-2.5 grid grid-cols-6 text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)] px-3 font-mono">
               <span className="col-span-2">Activity / Question</span>
               <span>Result</span>
               <span>Selected Option</span>
@@ -404,23 +404,23 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <span className="text-right">Date</span>
             </div>
             {filteredHistory.slice(0, 15).map((att) => (
-              <div key={att.id} className="py-3.5 grid grid-cols-6 items-center px-3 text-[13px] hover:bg-[#F8FAFC] transition-colors rounded-[8px]">
+              <div key={att.id} className="py-3.5 grid grid-cols-6 items-center px-3 text-[13px] hover:bg-[var(--surface-soft)] transition-colors rounded-[8px]">
                 <div className="col-span-2 flex items-center gap-3">
                   {att.isCorrect ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   ) : (
                     <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   )}
-                  <span className="font-semibold text-[#071126] font-mono">Question #{att.questionId}</span>
+                  <span className="font-semibold text-[var(--foreground)] font-mono">Question #{att.questionId}</span>
                 </div>
                 <div>
                   <span className={`inline-flex px-2 py-0.5 rounded-[6px] text-[11px] font-semibold ${att.isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                     {att.isCorrect ? 'Correct' : 'Incorrect'}
                   </span>
                 </div>
-                <div className="font-mono text-[#071126] font-medium">Option {att.selectedAnswer}</div>
-                <div className="font-mono text-[#58708A]">{att.timeSpentSeconds}s</div>
-                <div className="font-mono text-[#58708A] text-right">{new Date(att.timestamp).toLocaleDateString()}</div>
+                <div className="font-mono text-[var(--foreground)] font-medium">Option {att.selectedAnswer}</div>
+                <div className="font-mono text-[var(--foreground-secondary)]">{att.timeSpentSeconds}s</div>
+                <div className="font-mono text-[var(--foreground-secondary)] text-right">{new Date(att.timestamp).toLocaleDateString()}</div>
               </div>
             ))}
           </div>
@@ -428,33 +428,33 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
       </div>
 
       {/* 7. Mock Test Performance */}
-      <div className="bg-white rounded-[16px] border border-[#E3E8F0] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+      <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-7 sm:p-8 space-y-6 shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
         <div>
-          <h3 className="text-[17px] font-bold text-[#071126]">Mock Test Performance History</h3>
-          <p className="text-[13px] text-[#58708A] mt-0.5">Full-length Digital SAT simulated exam results.</p>
+          <h3 className="text-[17px] font-bold text-[var(--foreground)]">Mock Test Performance History</h3>
+          <p className="text-[13px] text-[var(--foreground-secondary)] mt-0.5">Full-length Digital SAT simulated exam results.</p>
         </div>
 
         {mockAttempts.length === 0 ? (
-          <div className="p-12 text-center text-[13px] text-[#58708A] bg-[#F8FAFC] rounded-[12px] border border-dashed border-[#E3E8F0]">
+          <div className="p-12 text-center text-[13px] text-[var(--foreground-secondary)] bg-[var(--surface-soft)] rounded-[12px] border border-dashed border-[var(--border)]">
             No mock test attempts recorded yet. Take a full-length mock simulation to see your progress graph.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {mockAttempts.map((mock, idx) => (
-              <div key={mock.id} className="p-5 rounded-[12px] bg-[#F8FAFC] border border-[#E3E8F0] space-y-3">
+              <div key={mock.id} className="p-5 rounded-[12px] bg-[var(--surface-soft)] border border-[var(--border)] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#087C76]">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--brand-text)]">
                     Test #{idx + 1}
                   </span>
-                  <span className="text-[11px] font-mono text-[#58708A]">
+                  <span className="text-[11px] font-mono text-[var(--foreground-secondary)]">
                     {new Date(mock.startedAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div>
-                  <div className="text-3xl font-extrabold text-[#071126] font-mono">
+                  <div className="text-3xl font-extrabold text-[var(--foreground)] font-mono">
                     {mock.scoreSummary?.totalScoreEstimated || 1150}
                   </div>
-                  <div className="text-[12px] text-[#58708A] mt-1">Status: <strong className="text-[#071126] uppercase">{mock.status}</strong></div>
+                  <div className="text-[12px] text-[var(--foreground-secondary)] mt-1">Status: <strong className="text-[var(--foreground)] uppercase">{mock.status}</strong></div>
                 </div>
               </div>
             ))}
