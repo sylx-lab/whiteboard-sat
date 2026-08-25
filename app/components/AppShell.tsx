@@ -25,6 +25,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     if (pathname === '/') return 'home';
     if (pathname.startsWith('/practice')) return 'practice';
     if (pathname.startsWith('/mock-tests')) return 'mock-tests';
+    if (pathname.startsWith('/leaderboard')) return 'leaderboard';
     if (pathname.startsWith('/courses')) return 'courses';
     if (pathname.startsWith('/resources')) return 'resources';
     if (pathname.startsWith('/dashboard')) return 'dashboard';
@@ -45,6 +46,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         break;
       case 'mock-tests':
         router.push('/mock-tests');
+        break;
+      case 'leaderboard':
+        router.push('/leaderboard');
         break;
       case 'courses':
       case 'my-courses':

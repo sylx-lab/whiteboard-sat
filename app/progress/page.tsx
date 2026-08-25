@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '../services/store';
 import { ProgressAnalytics } from '../features/analytics/ProgressAnalytics';

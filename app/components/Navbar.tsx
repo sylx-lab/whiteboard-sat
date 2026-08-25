@@ -18,6 +18,7 @@ export type NavView =
   | 'home'
   | 'practice'
   | 'mock-tests'
+  | 'leaderboard'
   | 'courses'
   | 'course-detail'
   | 'resources'
@@ -153,6 +154,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Courses</span>
                   {isLinkActive('courses') && (
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => onNavigate('leaderboard')}
+                  className={`relative py-2 text-sm transition-colors duration-150 cursor-pointer ${isLinkActive('leaderboard') ? 'text-white font-semibold' : 'text-white/80 hover:text-white'
+                    }`}
+                >
+                  <span>Leaderboard</span>
+                  {isLinkActive('leaderboard') && (
                     <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[#066F6A] rounded-full shadow-xs" />
                   )}
                 </button>

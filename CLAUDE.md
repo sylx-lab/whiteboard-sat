@@ -169,6 +169,24 @@ inspection (payment receipt, student detail) and for picking (the mock test ques
 `AdminPanel` therefore only receives the props its *list* views need — the editors reach the store
 directly through their route page, so don't re-add create/update props to `AdminPanelProps`.
 
+### The leaderboard is the one server component
+
+`/leaderboard` is public, read-only and has no interaction, so `app/leaderboard/page.tsx` queries
+MongoDB directly and renders on the server — no store, no fetch, no loading state. It is the pattern
+the rest of the app's reads could move to; copy it before adding another client page that only
+displays data.
+
+`app/lib/leaderboard.ts` splits in two on purpose: `topSolvers()` is the aggregation, and
+`rankLeaders()` is the pure sort-and-rank that `leaderboard.test.ts` covers without a database.
+
+- **`solved` counts distinct questions**, via `$addToSet` of the correct answers' `questionId`.
+  Answering one easy question thirty times is one solve — verified against a live database, not
+  assumed. Without that the board would just rank whoever clicked most.
+- Ties are competition-style (1, 1, 3) and break toward accuracy, then toward fewer attempts.
+- Staff are excluded (`role !== 'student'` ids are filtered before grouping) and suspended accounts
+  drop off, since they author the bank rather than compete in it.
+- Mock test attempts never count: the board is for self-directed solving.
+
 ### Layout and navigation
 
 `app/layout.tsx` → `AppShell` wraps every route and owns the Navbar, Footer, `AuthModal`, and `PaymentModal`. `AppShell` branches on `pathname.startsWith('/admin')` to render a chrome-free admin layout.
