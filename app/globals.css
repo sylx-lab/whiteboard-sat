@@ -63,40 +63,42 @@
    * black ink instead of navy, kept above 7:1 so long reading sessions are
    * easier without going washed out.
    */
+  html.mode-warm,
   body.mode-warm {
     color-scheme: light;
 
-    --background: #F7F0E3;
-    --surface: #FFFBF3;
-    --surface-soft: #F3EBDC;
+    --background: #EBE2D0;
+    --surface: #F3EBDC;
+    --surface-soft: #E4DAC6;
 
-    --foreground: #2A2318;
-    --foreground-secondary: #5A4F3E;
-    --foreground-muted: #6E6252;
+    --foreground: #30271C;
+    --foreground-secondary: #5E513F;
+    --foreground-muted: #736553;
 
-    --border: #E3D7C2;
-    --border-strong: #CDBCA2;
+    --border: #D5C7AF;
+    --border-strong: #BEAF95;
 
-    --brand: #0C7F76;
-    --brand-text: #0A655E;
-    --brand-cta: #0A6E66;
-    --brand-hover: #085B54;
-    --brand-accent: #0A6E66;
-    --brand-secondary: #0C7F76;
-    --brand-soft: #E9F1EC;
-    --brand-soft-strong: #BCD6CF;
-    --navy-section: #241D12;
+    --brand: #0B726B;
+    --brand-text: #085852;
+    --brand-cta: #09625C;
+    --brand-hover: #07514C;
+    --brand-accent: #085852;
+    --brand-secondary: #0B726B;
+    --brand-soft: #DEE8E1;
+    --brand-soft-strong: #B0CAC3;
+    --navy-section: #221A10;
 
-    --success: #04724D;
-    --warning: #B45309;
-    --error: #B91C1C;
-    --neutral: #6E6252;
+    --success: #046B48;
+    --warning: #A84E08;
+    --error: #B01B1B;
+    --neutral: #736553;
 
     --shadow-subtle: 0 1px 2px 0 rgba(60, 45, 20, 0.05);
     --shadow-card: 0 4px 20px -4px rgba(60, 45, 20, 0.08);
     --shadow-modal: 0 12px 32px -4px rgba(60, 45, 20, 0.14);
   }
 
+  html.mode-dark,
   body.mode-dark {
     color-scheme: dark;
 

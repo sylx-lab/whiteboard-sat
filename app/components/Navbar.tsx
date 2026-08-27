@@ -521,6 +521,57 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Performance Analytics
               </button>
             )}
+
+            {/* Mobile Theme Selector */}
+            <div className="pt-3 border-t border-[var(--border)]">
+              <span className="px-3 text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-wider block mb-2">
+                Color Theme
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 px-1">
+                <button
+                  onClick={() => {
+                    onSetTheme('white');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
+                    theme === 'white'
+                      ? 'bg-[var(--surface-soft)] border-[var(--brand)] text-[var(--foreground)] font-semibold'
+                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                  }`}
+                >
+                  <Sun className="w-4 h-4 text-amber-500 mb-1" />
+                  <span>Light</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onSetTheme('warm');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
+                    theme === 'warm'
+                      ? 'bg-amber-50/70 border-amber-600 text-amber-950 font-semibold'
+                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                  }`}
+                >
+                  <Eye className="w-4 h-4 text-amber-700 mb-1" />
+                  <span>Comfort</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onSetTheme('dark');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-[var(--navy-section)] border-[var(--brand)] text-white font-semibold'
+                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                  }`}
+                >
+                  <Moon className="w-4 h-4 text-indigo-400 mb-1" />
+                  <span>Dark</span>
+                </button>
+              </div>
+            </div>
           </nav>
         </div>
       )}

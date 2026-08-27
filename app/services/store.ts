@@ -234,12 +234,13 @@ export function useAppStore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionUserId, isSignedIn]);
 
-  // Apply Theme CSS class to <body> whenever theme changes, including on
-  // initial mount (previously this only ran when the user manually toggled
-  // the theme, so a saved warm/dark preference never applied after reload).
+  // Apply Theme CSS class to <body> and <html> whenever theme changes, including on
+  // initial mount.
   useEffect(() => {
     document.body.classList.remove('mode-white', 'mode-warm', 'mode-dark');
     document.body.classList.add(`mode-${theme}`);
+    document.documentElement.classList.remove('mode-white', 'mode-warm', 'mode-dark');
+    document.documentElement.classList.add(`mode-${theme}`);
   }, [theme]);
 
   const setTheme = (newTheme: AppTheme) => {

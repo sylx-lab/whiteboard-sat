@@ -88,13 +88,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenPric
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--brand-text)] bg-[var(--brand-soft)] px-2.5 py-1 rounded-md border border-[var(--border)]">
-                      <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                      HD 1080p
-                    </span>
-                  </div>
                 </div>
 
                 {/* 16:9 Embedded YouTube Video Frame */}
@@ -267,22 +260,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenPric
                         setSelectedPracticeChoice(choice.id as 'A' | 'B' | 'C' | 'D');
                         setShowPracticeExplanation(true);
                       }}
-                      className={`p-3.5 rounded-xl border text-[14px] flex items-center gap-3.5 cursor-pointer transition-colors ${
-                        selectedPracticeChoice === choice.id
+                      className={`p-3.5 rounded-xl border text-[14px] flex items-center gap-3.5 cursor-pointer transition-colors ${selectedPracticeChoice === choice.id
                           ? choice.id === 'B'
                             ? 'bg-teal-50/70 border-[var(--brand)] text-[var(--foreground)] font-semibold shadow-xs'
                             : 'bg-rose-50 border-rose-500 text-rose-950 font-semibold'
                           : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-soft)] text-[var(--foreground)]'
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
-                          selectedPracticeChoice === choice.id
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${selectedPracticeChoice === choice.id
                             ? choice.id === 'B'
                               ? 'bg-[var(--brand-cta)] text-white'
                               : 'bg-rose-600 text-white'
                             : 'bg-[var(--surface-soft)] text-[var(--foreground-secondary)]'
-                        }`}
+                          }`}
                       >
                         {choice.id}
                       </span>
@@ -602,13 +593,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenPric
                   {Array.from({ length: 20 }, (_, i) => (
                     <div
                       key={i}
-                      className={`p-2 rounded-lg border ${
-                        i === 13
+                      className={`p-2 rounded-lg border ${i === 13
                           ? 'bg-[var(--navy-section)] text-white border-[var(--navy-section)] font-bold shadow-xs'
                           : i < 13
-                          ? 'bg-[var(--surface)] text-[var(--foreground)] border-[var(--border-strong)]'
-                          : 'bg-[var(--surface-soft)] text-[var(--foreground-muted)] border-transparent'
-                      }`}
+                            ? 'bg-[var(--surface)] text-[var(--foreground)] border-[var(--border-strong)]'
+                            : 'bg-[var(--surface-soft)] text-[var(--foreground-muted)] border-transparent'
+                        }`}
                     >
                       {i + 1}
                     </div>

@@ -112,7 +112,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-app-canvas text-[var(--foreground)] selection:bg-teal-100 selection:text-teal-900">
+    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] selection:bg-teal-100 selection:text-teal-900">
       {/* Global Navigation Bar */}
       <Navbar
         currentView={getCurrentNavView()}
