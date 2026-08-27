@@ -37,13 +37,13 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-[var(--border)] bg-[var(--brand-soft)]">
-          <span className="text-[11px] font-bold text-[var(--brand-text)] uppercase tracking-wider">
+      <div className="w-full max-w-md bg-(--surface) border border(--border) rounded-2xl overflow-hidden">
+        <div className="px-6 py-5 border-b border(--border) bg-(--brand-soft)">
+          <span className="text-[11px] font-bold text-(--brand-text) uppercase tracking-wider">
             Account recovery
           </span>
-          <h1 className="text-lg font-bold text-[var(--foreground)]">Choose a new password</h1>
-          <p className="text-[12px] text-[var(--foreground-secondary)] mt-1">
+          <h1 className="text-lg font-bold text-(--foreground)">Choose a new password</h1>
+          <p className="text-[12px] text-(--foreground-secondary) mt-1">
             Setting a new password signs you out on every other device.
           </p>
         </div>

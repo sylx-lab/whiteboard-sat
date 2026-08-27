@@ -37,9 +37,12 @@ const applyThemeBeforePaint = `
       // moment later, instead of resetting a dark-preferring visitor to white.
       localStorage.setItem('wbsat_theme', JSON.stringify(saved));
     }
-    document.body.classList.add('mode-' + saved);
+    document.documentElement.classList.add('mode-' + saved);
+    if (document.body) {
+      document.body.classList.add('mode-' + saved);
+    }
   } catch (e) {
-    document.body.classList.add('mode-white');
+    document.documentElement.classList.add('mode-white');
   }
 })();
 `;
@@ -49,9 +52,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <script dangerouslySetInnerHTML={{ __html: applyThemeBeforePaint }} />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: applyThemeBeforePaint }}
+          suppressHydrationWarning
+        />
+      </head>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>

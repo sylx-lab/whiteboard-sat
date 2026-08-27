@@ -14,9 +14,14 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const pathname = usePathname();
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<ProductPlan | null>(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isAdminRoute = pathname.startsWith('/admin');
 
@@ -112,8 +117,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <Navbar
         currentView={getCurrentNavView()}
         onNavigate={handleNavigate}
-        currentUser={store.currentUser}
-        theme={store.theme}
+        currentUser={mounted ? store.currentUser : null}
+        theme={mounted ? store.theme : 'white'}
         onSetTheme={store.setTheme}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={store.logout}
