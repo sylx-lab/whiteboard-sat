@@ -44,13 +44,25 @@ export async function POST(request: Request) {
 
   const body = await readBody(request);
   if (!body?.name?.trim()) return bad('A name is required');
-  if (!body.phone?.trim() && !body.email?.trim()) return bad('A phone number or email is required');
+  if (!body.email?.trim()) return bad('An email address is required');
+
+  const cleanEmail = body.email.trim().toLowerCase();
+  const cleanPhone = body.phone?.trim() ? body.phone.trim() : undefined;
+
+  const users = await collections.users();
+  const emailClash = await users.findOne({ email: cleanEmail });
+  if (emailClash) return bad('An account with this email already exists', 409);
+
+  if (cleanPhone) {
+    const phoneClash = await users.findOne({ phone: cleanPhone });
+    if (phoneClash) return bad('An account with this phone number already exists', 409);
+  }
 
   const doc: UserDoc = {
     _id: newId('user-staff'),
     name: body.name.trim(),
-    ...(body.phone?.trim() ? { phone: body.phone.trim() } : {}),
-    ...(body.email?.trim() ? { email: body.email.trim().toLowerCase() } : {}),
+    email: cleanEmail,
+    ...(cleanPhone ? { phone: cleanPhone } : {}),
     role: 'sub_admin',
     targetScore: 1600,
     createdAt: today(),
@@ -64,14 +76,6 @@ export async function POST(request: Request) {
     permissions: { ...NO_PERMISSIONS, ...(body.permissions ?? {}) },
     courseProgress: {},
   };
-
-  const users = await collections.users();
-  const clash = await users.findOne({
-    $or: [doc.phone ? { phone: doc.phone } : null, doc.email ? { email: doc.email } : null].filter(
-      Boolean,
-    ) as object[],
-  });
-  if (clash) return bad('An account with that phone or email already exists', 409);
 
   await users.insertOne(doc);
   return Response.json({ item: hydrate.user(doc) }, { status: 201 });

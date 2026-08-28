@@ -88,8 +88,8 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
           <EditorSection icon={GraduationCap} title="Account">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
               {[
-                ['Phone', person.phone],
                 ['Email', person.email || 'None on file'],
+                ['Phone', person.phone || 'None on file'],
                 ['Target score', `${person.targetScore} / 1600`],
                 ['Exam date', person.examDate || 'Not set'],
                 ['Registered', person.createdAt],

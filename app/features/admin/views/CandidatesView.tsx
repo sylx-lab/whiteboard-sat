@@ -117,7 +117,7 @@ export const CandidatesView: React.FC<CandidatesViewProps> = ({
                 <div className="text-[11px] text-[#58708A]">{u.email || 'No email on file'}</div>
               </td>
 
-              <td className="font-mono text-[#071126]">{u.phone}</td>
+              <td className="font-mono text-[#071126] text-[12px]">{u.phone || '—'}</td>
 
               <td className="font-mono font-semibold text-[#087C76] tabular-nums">{u.targetScore}</td>
 

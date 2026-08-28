@@ -60,20 +60,26 @@ export async function POST(request: Request, ctx: Ctx) {
   const users = await collections.users();
 
   if (action[0] === 'register') {
-    const { name, phone, email, password, targetScore } = body;
+    const { name, email, phone, password, targetScore } = body;
     if (!name?.trim() || !password) return bad('Name and password are required');
-    if (!phone?.trim() && !email?.trim()) return bad('A phone number or email is required');
+    if (!email?.trim()) return bad('Email address is required');
     if (password.length < 8) return bad('Password must be at least 8 characters');
 
-    const clash = await users.findOne({
-      $or: [phone ? { phone } : null, email ? { email } : null].filter(Boolean) as object[],
-    });
-    if (clash) return bad('An account with that phone or email already exists', 409);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone?.trim() ? phone.trim() : undefined;
+
+    const emailClash = await users.findOne({ email: cleanEmail });
+    if (emailClash) return bad('An account with this email already exists', 409);
+
+    if (cleanPhone) {
+      const phoneClash = await users.findOne({ phone: cleanPhone });
+      if (phoneClash) return bad('An account with this phone number already exists', 409);
+    }
 
     const doc = newUser({
       name: name.trim(),
-      ...(phone?.trim() ? { phone: phone.trim() } : {}),
-      ...(email?.trim() ? { email: email.trim().toLowerCase() } : {}),
+      email: cleanEmail,
+      ...(cleanPhone ? { phone: cleanPhone } : {}),
       ...(targetScore ? { targetScore: Number(targetScore) } : {}),
       passwordHash: await hashPassword(password),
     });

@@ -379,7 +379,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <div className="px-3 py-2 border-b border-[var(--border)]">
                       <div className="font-bold text-[var(--foreground)]">{currentUser.name}</div>
-                      <div className="text-[var(--foreground-secondary)] text-[11px] truncate">{currentUser.phone}</div>
+                      <div className="text-[var(--foreground-secondary)] text-[11px] truncate">{currentUser.email || currentUser.phone}</div>
                     </div>
 
                     <button

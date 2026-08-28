@@ -273,15 +273,15 @@ export function useAppStore() {
 
   const registerUser = async (
     name: string,
-    phone: string,
+    email: string,
     password: string,
-    email?: string,
+    phone?: string,
     targetScore: number = 1550
   ): Promise<AuthResult> => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, password, targetScore }),
+      body: JSON.stringify({ name, email, password, phone, targetScore }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: data.error ?? 'Unable to create the account.' };
@@ -508,11 +508,11 @@ export function useAppStore() {
   /** No password is set: the new staff member signs in through the reset-password flow. */
   const createStaffUser = (
     name: string,
-    phone: string,
-    email?: string,
+    email: string,
+    phone?: string,
     permissions: Partial<AdminPermission> = {},
   ): Promise<UserProfile> =>
-    createIn<UserProfile>('/users', setAllUsers, { name, phone, email, permissions });
+    createIn<UserProfile>('/users', setAllUsers, { name, email, phone, permissions });
 
   // --- QUESTION MANAGEMENT CRUD ---
   const addQuestion = (newQ: Omit<Question, 'id' | 'created_at' | 'updated_at'>) =>

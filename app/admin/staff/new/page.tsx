@@ -33,11 +33,11 @@ export default function NewStaffPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Await it: the server mints the id this navigates to, and a failure here
-    // (a phone already in use) must not look like a successful create.
+    // (an email already in use) must not look like a successful create.
     const staff = await store.createStaffUser(
       name.trim(),
-      phone.trim(),
-      email.trim() || undefined,
+      email.trim(),
+      phone.trim() || undefined,
       permissions,
     );
     setIsDirty(false);
@@ -82,22 +82,22 @@ export default function NewStaffPage() {
               />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Phone" hint="Used to sign in">
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+880 1700 000000"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Email" hint="Optional">
+              <Field label="Email" hint="Used to sign in">
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="rafiq@whiteboardsat.com"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Phone" hint="Optional">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+880 1700 000000"
                   className={inputClass}
                 />
               </Field>

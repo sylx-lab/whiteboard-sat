@@ -8,9 +8,9 @@ interface AuthModalProps {
   onLogin: (phoneOrEmail: string, password: string) => Promise<AuthResult>;
   onRegister: (
     name: string,
-    phone: string,
+    email: string,
     password: string,
-    email?: string,
+    phone?: string,
     targetScore?: number
   ) => Promise<AuthResult>;
   onForgotPassword: (email: string) => Promise<void>;
@@ -30,8 +30,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const isRegister = mode === 'register';
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [targetScore, setTargetScore] = useState('1550');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -54,10 +54,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const result = isRegister
       ? await onRegister(
           name.trim(),
-          phone.trim(),
+          email.trim().toLowerCase(),
           password,
-          email.trim() || undefined,
-          parseInt(targetScore, 10) || 1500
+          phone.trim() || undefined,
+          parseInt(targetScore, 10) || 1550
         )
       : await onLogin(phoneOrEmail.trim(), password);
 
@@ -145,16 +145,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div>
                 <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
-                  Phone Number (Primary Account Key)
+                  Email Address (Primary Account Key)
                 </label>
                 <div className="relative">
-                  <Phone className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
+                  <Mail className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                   <input
-                    type="tel"
+                    type="email"
                     required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+880 1712 345678"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@example.com"
                     className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                   />
                 </div>
@@ -162,15 +162,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div>
                 <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
-                  Email Address (Optional)
+                  Phone Number (Optional)
                 </label>
                 <div className="relative">
-                  <Mail className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
+                  <Phone className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@example.com"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+880 1712 345678"
                     className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                   />
                 </div>
@@ -197,16 +197,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           ) : (
             <div>
               <label className="block text-[11px] font-bold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">
-                Phone Number or Email
+                Email or Phone Number
               </label>
               <div className="relative">
-                <Phone className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
+                <Mail className="w-3.5 h-3.5 text-[var(--foreground-muted)] absolute left-3 top-3" />
                 <input
                   type="text"
                   required
                   value={phoneOrEmail}
                   onChange={(e) => setPhoneOrEmail(e.target.value)}
-                  placeholder="e.g. +880 1712 345678 or student@whiteboard.edu"
+                  placeholder="e.g. student@example.com or +880 1712 345678"
                   className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg text-[12px] focus:outline-none focus:border-[var(--brand)]"
                 />
               </div>

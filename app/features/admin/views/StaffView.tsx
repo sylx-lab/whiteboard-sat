@@ -102,8 +102,8 @@ export const StaffView: React.FC<StaffViewProps> = ({ users, currentUser }) => {
                 </td>
 
                 <td>
-                  <div className="font-mono text-[#071126]">{u.phone}</div>
-                  <div className="text-[11px] text-[#58708A]">{u.email || 'No email'}</div>
+                  <div className="text-[12px] text-[#071126]">{u.email || 'No email'}</div>
+                  <div className="font-mono text-[11px] text-[#58708A]">{u.phone || 'No phone'}</div>
                 </td>
 
                 <td>
