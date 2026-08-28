@@ -3,6 +3,7 @@ import { topSolvers } from '../lib/leaderboard';
 import { currentUser } from '../lib/session';
 import { LeaderboardView } from '../features/leaderboard/LeaderboardView';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Leaderboard — White Board SAT' };
 
 /**
@@ -11,11 +12,16 @@ export const metadata = { title: 'Leaderboard — White Board SAT' };
  * and the loading state entirely. Reading the cookie is only to mark "you".
  */
 export default async function LeaderboardPage() {
-  const [rows, me, totalQuestions] = await Promise.all([
-    topSolvers(),
-    currentUser(),
-    (await collections.questions()).countDocuments({ status: 'published' }),
-  ]);
+  try {
+    const [rows, me, totalQuestions] = await Promise.all([
+      topSolvers(),
+      currentUser(),
+      (await collections.questions()).countDocuments({ status: 'published' }),
+    ]);
 
-  return <LeaderboardView rows={rows} currentUserId={me?.id ?? null} totalQuestions={totalQuestions} />;
+    return <LeaderboardView rows={rows} currentUserId={me?.id ?? null} totalQuestions={totalQuestions} />;
+  } catch (err) {
+    console.error('Failed to load leaderboard data:', err);
+    return <LeaderboardView rows={[]} currentUserId={null} totalQuestions={0} />;
+  }
 }
