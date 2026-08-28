@@ -17,6 +17,7 @@ const routes = crud<Question, QuestionDoc>({
     return {
       ...(row as Question),
       id,
+      code: row.code?.trim() || `Q-${id}`.toUpperCase(),
       choices,
       answer_choices: choices,
       status: row.status ?? 'draft',

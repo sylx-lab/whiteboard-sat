@@ -1,11 +1,13 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '../services/store';
 import { AdminPanel } from '../features/admin/AdminPanel';
 
 export default function AdminPage() {
   const store = useAppStore();
+  const router = useRouter();
 
   return (
     // AdminPanel reads the active tab from ?tab=, so it needs a Suspense boundary.
@@ -28,6 +30,10 @@ export default function AdminPage() {
         onDeleteResource={store.deleteResource}
         onDeleteMockTest={store.deleteMockTest}
         onApplyTopicUpdates={store.applyTopicUpdates}
+        onLogout={async () => {
+          await store.logout();
+          router.push('/');
+        }}
       />
     </Suspense>
   );

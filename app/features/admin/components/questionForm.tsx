@@ -103,6 +103,7 @@ export interface QuestionFormController {
   setShowPassage: (show: boolean) => void;
   /** Set when the subject is fixed by context (a mock test module's section). */
   lockedSubject?: Subject;
+  initialQuestion?: Question | null;
   /** Suffix that keeps datalist ids unique when two forms are mounted at once. */
   idScope: string;
 }
@@ -136,7 +137,7 @@ export function useQuestionForm(opts: {
   };
 
   const suggestedCode = suggestQuestionCode(form.domain, allQuestions);
-  const codeConflict = findCodeConflict(form.code, allQuestions, initialQuestion?.id);
+  const codeConflict = findCodeConflict(initialQuestion?.code || suggestedCode, allQuestions, initialQuestion?.id);
 
   // Topics are free text, so offer what already exists in this domain first —
   // that is what keeps the bank's categories from drifting into near-duplicates.
@@ -152,8 +153,8 @@ export function useQuestionForm(opts: {
 
     return {
       id: initialQuestion?.id,
-      // Fall back to the suggested code so a blank field never produces an unlabelled question.
-      code: form.code.trim() || suggestedCode,
+      // Fully auto-generated code for new questions, preserved code for edited questions.
+      code: initialQuestion?.code || suggestedCode,
       subject: form.subject,
       section: form.subject === 'math' ? 'Math' : 'Reading & Writing',
       domain: form.domain,
@@ -208,6 +209,7 @@ export function useQuestionForm(opts: {
     showPassage,
     setShowPassage,
     lockedSubject,
+    initialQuestion,
     idScope,
   };
 }
@@ -308,64 +310,28 @@ export const QuestionFormFields: React.FC<{
           </Field>
 
           {isFull && (
-            <>
-              <Field label="Subtopic" hint="Optional">
-                <input
-                  type="text"
-                  list={`subtopic-options-${idScope}`}
-                  value={form.subtopic}
-                  onChange={(e) => update({ subtopic: e.target.value })}
-                  placeholder="Solving Systems"
-                  className={inputClass}
-                />
-              </Field>
-
-              <Field
-                label="Question code"
-                hint={form.code.trim() ? undefined : `Left blank, this becomes ${suggestedCode}`}
-                className="sm:col-span-2"
-              >
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={form.code}
-                    onChange={(e) => update({ code: e.target.value })}
-                    placeholder={suggestedCode}
-                    aria-invalid={Boolean(codeConflict)}
-                    className={`${inputClass} font-mono`}
-                  />
-                  {form.code.trim() !== suggestedCode && (
-                    <button
-                      type="button"
-                      onClick={() => update({ code: suggestedCode })}
-                      title={`Use the next free code, ${suggestedCode}`}
-                      className="h-10 px-3 shrink-0 bg-white hover:bg-[#F1F8F7] border border-[#E2E8F0] rounded-[10px] text-[12px] font-semibold text-[#071126] transition-colors cursor-pointer"
-                    >
-                      Next free
-                    </button>
-                  )}
-                </div>
-              </Field>
-            </>
+            <Field label="Subtopic" hint="Optional">
+              <input
+                type="text"
+                list={`subtopic-options-${idScope}`}
+                value={form.subtopic}
+                onChange={(e) => update({ subtopic: e.target.value })}
+                placeholder="Solving Systems"
+                className={inputClass}
+              />
+            </Field>
           )}
-        </div>
 
-        {!isFull && (
-          <p className="text-[11px] text-[#58708A]">
-            Will be saved as <span className="font-mono text-[#071126]">{suggestedCode}</span>.
-          </p>
-        )}
-
-        {isFull && codeConflict && (
-          <p className="flex items-start gap-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-2.5 leading-relaxed">
-            <AlertTriangle className="w-4 h-4 mt-px shrink-0" />
-            <span>
-              <span className="font-mono font-semibold">{codeConflict.code}</span> is already used by a{' '}
-              {formatDomainName(codeConflict.domain)} question ({codeConflict.topic}). Two questions
-              sharing a code makes attempt history ambiguous.
+          <div className="sm:col-span-2 flex items-center justify-between p-3 bg-[#F8FBFB] border border-[#E2E8F0] rounded-xl text-[12px]">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[#071126]">Question Code</span>
+              <span className="text-[11px] text-[#58708A]">(Auto-generated)</span>
+            </div>
+            <span className="font-mono font-bold text-[#087C76] bg-white px-2.5 py-1 rounded-lg border border-[#D5E5E3]">
+              {ctl.initialQuestion?.code || suggestedCode}
             </span>
-          </p>
-        )}
+          </div>
+        </div>
       </EditorSection>
 
       {showPassage ? (
@@ -570,13 +536,13 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
   ctl,
   compact = false,
 }) => {
-  const { form, suggestedCode } = ctl;
+  const { form, suggestedCode, initialQuestion } = ctl;
 
   return (
     <div className="p-5 rounded-2xl bg-white border border-[#E2E8F0] space-y-4">
       <div className="flex items-center justify-between gap-2 text-[12px]">
         <span className="font-mono font-semibold text-[#087C76]">
-          {form.code.trim() || suggestedCode}
+          {initialQuestion?.code || suggestedCode}
           {form.topic && <span className="text-[#58708A]"> · {form.topic}</span>}
         </span>
         <span className="px-2 py-0.5 rounded bg-[#F1F8F7] text-[#58708A] text-[11px] font-semibold">

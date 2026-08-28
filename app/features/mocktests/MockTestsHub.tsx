@@ -86,16 +86,18 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       });
     });
 
-    const firstModule = test.modules[0];
+    const firstPlayableIdx = test.modules.findIndex((m) => m.questions.length > 0);
+    const startModIdx = firstPlayableIdx >= 0 ? firstPlayableIdx : 0;
+    const firstModule = test.modules[startModIdx] || test.modules[0];
     const newAttempt: MockTestAttempt = {
       id: `m-att-${test.id}-${currentUser?.id || 'guest'}`,
       userId: currentUser?.id || 'guest',
       testId: test.id,
       testTitle: test.title,
       status: 'in_progress',
-      currentModuleIndex: 0,
+      currentModuleIndex: startModIdx,
       currentQuestionIndex: 0,
-      timeRemainingSeconds: firstModule.timeLimitMinutes * 60,
+      timeRemainingSeconds: (firstModule?.timeLimitMinutes || 35) * 60,
       interactions: initialInteractions,
       startedAt: new Date().toISOString(),
     };
@@ -202,7 +204,15 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   const handleSubmitModule = async () => {
     if (!activeAttempt || !activeTest) return;
 
-    const nextModuleIdx = activeAttempt.currentModuleIndex + 1;
+    let nextModuleIdx = activeAttempt.currentModuleIndex + 1;
+    // Skip empty modules
+    while (
+      nextModuleIdx < activeTest.modules.length &&
+      activeTest.modules[nextModuleIdx].questions.length === 0
+    ) {
+      nextModuleIdx++;
+    }
+
     if (nextModuleIdx < activeTest.modules.length) {
       // Advance to next module
       const nextMod = activeTest.modules[nextModuleIdx];
@@ -210,7 +220,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         ...activeAttempt,
         currentModuleIndex: nextModuleIdx,
         currentQuestionIndex: 0,
-        timeRemainingSeconds: nextMod.timeLimitMinutes * 60,
+        timeRemainingSeconds: (nextMod.timeLimitMinutes || 35) * 60,
       };
       setActiveAttempt(updated);
       onSaveAttempt(updated);

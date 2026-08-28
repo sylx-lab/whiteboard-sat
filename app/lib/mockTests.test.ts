@@ -77,14 +77,14 @@ test('a test with no modules is blocking and not playable', () => {
   assert.equal(isPlayable({ modules: [] }), false);
 });
 
-test('an empty FIRST module blocks, since starting an attempt reads it', () => {
-  const mods = [mod({ questions: [] }), mod({ id: 'm2', questions: [q()] })];
+test('a test with all empty modules blocks', () => {
+  const mods = [mod({ questions: [] }), mod({ id: 'm2', questions: [] })];
   assert.equal(mockTestIssues(mods)[0].severity, 'blocking');
   assert.equal(isPlayable({ modules: mods }), false);
 });
 
-test('an empty LATER module only warns', () => {
-  const mods = [mod({ questions: [q()] }), mod({ id: 'm2', questions: [] })];
+test('a test with questions in any module is playable and warns on empty modules', () => {
+  const mods = [mod({ questions: [] }), mod({ id: 'm2', questions: [q()] })];
   const issues = mockTestIssues(mods);
   assert.equal(issues.length, 1);
   assert.equal(issues[0].severity, 'warning');

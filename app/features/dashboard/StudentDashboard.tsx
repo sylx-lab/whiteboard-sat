@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import { UserProfile, Course, PracticeAttempt, Domain } from '../../types';
 import { formatDomainName } from '../../lib/utils';
@@ -33,6 +34,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   onNavigate,
   onOpenPricing,
 }) => {
+  const [greetingTime, setGreetingTime] = useState('GOOD DAY');
   const [hoveredPoint, setHoveredPoint] = useState<{
     day: string;
     score: string;
@@ -40,6 +42,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     cx: number;
     cy: number;
   } | null>(null);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreetingTime('GOOD MORNING');
+    else if (hour < 18) setGreetingTime('GOOD AFTERNOON');
+    else setGreetingTime('GOOD EVENING');
+  }, []);
 
   // Enrolled Courses
   const enrolledCourses = courses.filter(
@@ -51,18 +60,80 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const mins = totalTimeSpentMinutes % 60;
   const timeFormatted = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
-  // Weakest domain for focus recommendation
-  const sortedDomains = [...domainStats].sort((a, b) => b.accuracy - a.accuracy);
-  const attemptedDomains = sortedDomains.filter((d) => d.total > 0);
-  const focusDomain = attemptedDomains.length > 0 ? attemptedDomains[attemptedDomains.length - 1] : domainStats[0];
+  // Calculate dynamic projected SAT score from math & verbal accuracy
+  const mathStats = domainStats.filter((d) =>
+    ['algebra', 'advanced_math', 'problem_solving_data_analysis', 'geometry_trigonometry'].includes(d.domain)
+  );
+  const mathTotal = mathStats.reduce((acc, d) => acc + d.total, 0);
+  const mathCorrect = mathStats.reduce((acc, d) => acc + d.correct, 0);
+  const mathAcc = mathTotal > 0 ? mathCorrect / mathTotal : null;
 
-  const trendPoints = [
-    { day: 'Day 1', score: '55%', ref: 'Diagnostic Test #1', cx: 0, cy: 100 },
-    { day: 'Day 7', score: '62%', ref: 'Practice Drill Set A', cx: 140, cy: 70 },
-    { day: 'Day 14', score: '65%', ref: 'High-Yield Mock #2', cx: 260, cy: 55 },
-    { day: 'Day 21', score: '66%', ref: 'Targeted Algebra Drill', cx: 380, cy: 40 },
-    { day: 'Today', score: '67%', ref: 'Official Diagnostic #1', cx: 500, cy: 25 },
-  ];
+  const rwStats = domainStats.filter((d) =>
+    ['information_ideas', 'craft_structure', 'expression_ideas', 'standard_english_conventions'].includes(d.domain)
+  );
+  const rwTotal = rwStats.reduce((acc, d) => acc + d.total, 0);
+  const rwCorrect = rwStats.reduce((acc, d) => acc + d.correct, 0);
+  const rwAcc = rwTotal > 0 ? rwCorrect / rwTotal : null;
+
+  let projectedRangeText = 'Calibrating after 1st drill';
+  if (totalQuestionsAttempted > 0) {
+    const estimatedMath = mathAcc !== null ? Math.round(200 + mathAcc * 600) : 500;
+    const estimatedRW = rwAcc !== null ? Math.round(200 + rwAcc * 600) : 500;
+    const estTotal = Math.min(1600, Math.max(400, Math.round((estimatedMath + estimatedRW) / 10) * 10));
+    const low = Math.max(400, Math.round((estTotal - 30) / 10) * 10);
+    const high = Math.min(1600, Math.round((estTotal + 30) / 10) * 10);
+    projectedRangeText = `${low}–${high}`;
+  }
+
+  // Weakest domain for focus recommendation
+  const attemptedDomains = domainStats.filter((d) => d.total > 0).sort((a, b) => a.accuracy - b.accuracy);
+  const focusDomain = attemptedDomains.length > 0 ? attemptedDomains[0] : domainStats[0];
+
+  // Dynamic Performance Trend Calculation from real practice attempts
+  const sortedAttempts = [...practiceAttempts]
+    .filter((a) => a.userId === currentUser.id)
+    .sort((a, b) => new Date(a.attemptedAt || a.timestamp || 0).getTime() - new Date(b.attemptedAt || b.timestamp || 0).getTime());
+
+  const bucketCount = Math.min(5, Math.max(2, sortedAttempts.length));
+  const trendPoints: { day: string; score: string; ref: string; acc: number; cx: number; cy: number }[] = [];
+
+  if (sortedAttempts.length > 0) {
+    for (let i = 0; i < bucketCount; i++) {
+      const sliceEnd = Math.round(((i + 1) / bucketCount) * sortedAttempts.length);
+      const slice = sortedAttempts.slice(0, sliceEnd);
+      const correct = slice.filter((a) => a.isCorrect).length;
+      const acc = Math.round((correct / slice.length) * 100);
+      const latestAttempt = slice[slice.length - 1];
+      const dateStr = latestAttempt.attemptedAt
+        ? new Date(latestAttempt.attemptedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : `Drill #${i + 1}`;
+
+      const cx = Math.round((i / (bucketCount - 1)) * 500);
+      // Map 0%..100% to cy 105..15 in SVG coordinate space
+      const cy = Math.round(105 - (acc / 100) * 85);
+
+      trendPoints.push({
+        day: i === bucketCount - 1 ? 'Latest' : (i === 0 ? 'Start' : dateStr),
+        score: `${acc}%`,
+        ref: `${correct}/${slice.length} correct in ${formatDomainName(latestAttempt.domain)}`,
+        acc,
+        cx,
+        cy,
+      });
+    }
+  }
+
+  const trendPathD =
+    trendPoints.length >= 2
+      ? `M ${trendPoints[0].cx} ${trendPoints[0].cy} ${trendPoints.slice(1).map((p) => `L ${p.cx} ${p.cy}`).join(' ')}`
+      : '';
+  const trendAreaD =
+    trendPoints.length >= 2
+      ? `M ${trendPoints[0].cx} ${trendPoints[0].cy} ${trendPoints.slice(1).map((p) => `L ${p.cx} ${p.cy}`).join(' ')} L 500 120 L 0 120 Z`
+      : '';
+
+  const rollingDelta =
+    trendPoints.length >= 2 ? trendPoints[trendPoints.length - 1].acc - trendPoints[0].acc : 0;
 
   return (
     <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12 animate-in fade-in duration-200">
@@ -72,7 +143,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       <div className="pb-8 border-b border-[var(--border)] space-y-6">
         <div className="space-y-1">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--brand-text)] font-mono">
-            GOOD MORNING, {currentUser?.name?.toUpperCase() || 'STUDENT'}
+            {greetingTime}, {currentUser?.name?.toUpperCase() || 'STUDENT'}
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
             Your preparation is moving forward.
@@ -87,11 +158,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               Current Accuracy (Primary)
             </span>
             <div className="text-4xl sm:text-5xl font-extrabold font-mono text-[var(--foreground)]">
-              {overallAccuracy > 0 ? `${overallAccuracy}%` : '67%'}
+              {totalQuestionsAttempted > 0 ? `${overallAccuracy}%` : '0%'}
             </div>
             <div className="text-[12px] text-[var(--brand-text)] font-semibold flex items-center gap-1 pt-0.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--brand-text)]" />
-              <span>{totalCorrect > 0 ? totalCorrect : 992} of {totalQuestionsAttempted > 0 ? totalQuestionsAttempted : 1480} correct</span>
+              <span>
+                {totalQuestionsAttempted > 0
+                  ? `${totalCorrect} of ${totalQuestionsAttempted} correct`
+                  : '0 questions practiced yet'}
+              </span>
             </div>
           </div>
 
@@ -104,7 +179,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               {currentUser.targetScore || 1550}
             </div>
             <div className="text-[12px] text-[var(--foreground-secondary)] pt-1">
-              Projected Range: <span className="font-semibold text-[var(--foreground)]">1510–1560</span>
+              Projected Range: <span className="font-semibold text-[var(--foreground)]">{projectedRangeText}</span>
             </div>
           </div>
 
@@ -114,7 +189,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               Total Practice Time
             </span>
             <div className="text-4xl font-bold font-mono text-[var(--foreground)]">
-              {totalTimeSpentMinutes > 0 ? timeFormatted : '8h 42m'}
+              {totalTimeSpentMinutes > 0 ? timeFormatted : '0m'}
             </div>
             <div className="text-[12px] text-[var(--foreground-secondary)] pt-1">Across Math & Verbal Banks</div>
           </div>
@@ -160,9 +235,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <div className="flex items-center justify-between text-[12px]">
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--foreground)]">
-                  {overallAccuracy > 0 ? `${overallAccuracy}%` : '67%'}
+                  {totalQuestionsAttempted > 0 ? `${overallAccuracy}%` : '0%'}
                 </div>
-                <div className="text-[11px] text-[var(--brand-text)] font-semibold">+8% rolling increase</div>
+                <div className="text-[11px] text-[var(--brand-text)] font-semibold">
+                  {totalQuestionsAttempted > 0
+                    ? rollingDelta >= 0
+                      ? `+${rollingDelta}% rolling trend`
+                      : `${rollingDelta}% rolling trend`
+                    : 'Awaiting your first practice session'}
+                </div>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-[var(--foreground-secondary)]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand)]" />
@@ -181,43 +262,57 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             )}
 
-            {/* SVG Trend Line with Clean Fill */}
-            <div className="h-36 w-full pt-2">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
-                <path
-                  d="M 0 100 Q 80 85, 140 70 T 260 55 T 380 40 T 500 25 L 500 120 L 0 120 Z"
-                  fill="#F1F8F7"
-                />
-                <path
-                  d="M 0 100 Q 80 85, 140 70 T 260 55 T 380 40 T 500 25"
-                  fill="none"
-                  stroke="#0D918A"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                {/* Interactive Data Points */}
-                {trendPoints.map((pt, i) => (
-                  <circle
-                    key={i}
-                    cx={pt.cx}
-                    cy={pt.cy}
-                    r={hoveredPoint?.day === pt.day ? '6' : '4'}
-                    fill="#087C76"
-                    className="cursor-pointer transition-all duration-150"
-                    onMouseEnter={() => setHoveredPoint(pt)}
-                    onMouseLeave={() => setHoveredPoint(null)}
+            {/* SVG Trend Line with Dynamic Data Points */}
+            <div className="h-36 w-full pt-2 flex items-center justify-center">
+              {trendPoints.length >= 2 ? (
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
+                  <path d={trendAreaD} fill="#F1F8F7" />
+                  <path
+                    d={trendPathD}
+                    fill="none"
+                    stroke="#0D918A"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                ))}
-              </svg>
+                  {trendPoints.map((pt, i) => (
+                    <circle
+                      key={i}
+                      cx={pt.cx}
+                      cy={pt.cy}
+                      r={hoveredPoint?.day === pt.day ? '6' : '4'}
+                      fill="#087C76"
+                      className="cursor-pointer transition-all duration-150"
+                      onMouseEnter={() => setHoveredPoint(pt)}
+                      onMouseLeave={() => setHoveredPoint(null)}
+                    />
+                  ))}
+                </svg>
+              ) : (
+                <div className="text-center py-6 space-y-2">
+                  <p className="text-[13px] text-[var(--foreground-secondary)]">
+                    No practice attempts recorded yet.
+                  </p>
+                  <p className="text-[11px] text-[var(--foreground-muted)]">
+                    Complete practice sets to visualize your accuracy progression curve.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-between text-[11px] text-[var(--foreground-secondary)] font-mono border-t border-[var(--border)] pt-3">
-              <span>Day 1 (55%)</span>
-              <span>Day 7 (62%)</span>
-              <span>Day 14 (65%)</span>
-              <span>Day 21 (66%)</span>
-              <span>Today (67%)</span>
-            </div>
+            {trendPoints.length > 0 ? (
+              <div className="flex justify-between text-[11px] text-[var(--foreground-secondary)] font-mono border-t border-[var(--border)] pt-3">
+                {trendPoints.map((pt, i) => (
+                  <span key={i}>
+                    {pt.day} ({pt.score})
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[11px] text-[var(--foreground-muted)] font-mono border-t border-[var(--border)] pt-3">
+                Daily accuracy timeline will appear here
+              </div>
+            )}
           </div>
         </div>
 
@@ -233,14 +328,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
             <div className="space-y-1">
               <h3 className="text-base font-bold text-[var(--foreground)]">
-                {focusDomain ? formatDomainName(focusDomain.domain) : 'Advanced Math'}
+                {focusDomain ? formatDomainName(focusDomain.domain) : 'Algebra'}
               </h3>
               <p className="text-[13px] text-[var(--foreground-secondary)] leading-relaxed">
-                Your current accuracy in this domain is{' '}
-                <strong className="text-[var(--foreground)] font-mono">
-                  {focusDomain ? `${focusDomain.accuracy}%` : '58%'}
-                </strong>
-                . Improving by 15% yields approximately +40 points on your digital SAT section score.
+                {focusDomain && focusDomain.total > 0 ? (
+                  <>
+                    Your current accuracy in this domain is{' '}
+                    <strong className="text-[var(--foreground)] font-mono">
+                      {focusDomain.accuracy}%
+                    </strong>{' '}
+                    ({focusDomain.correct} of {focusDomain.total} correct). Improving by 15% yields approximately +40 points on your digital SAT section score.
+                  </>
+                ) : (
+                  <>
+                    You have not practiced{' '}
+                    <strong className="text-[var(--foreground)]">
+                      {focusDomain ? formatDomainName(focusDomain.domain) : 'this domain'}
+                    </strong>{' '}
+                    yet. Begin with targeted drills to establish your baseline score.
+                  </>
+                )}
               </p>
             </div>
 

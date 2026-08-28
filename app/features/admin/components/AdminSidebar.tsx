@@ -16,7 +16,7 @@ import {
   Tags,
   PanelLeftClose,
   PanelLeftOpen,
-  ExternalLink,
+  LogOut,
   X,
 } from 'lucide-react';
 
@@ -62,6 +62,7 @@ interface AdminSidebarProps {
   /** Mobile drawer state — the sidebar is off-canvas below lg. */
   isMobileOpen: boolean;
   onCloseMobile: () => void;
+  onLogout?: () => void;
 }
 
 const SECTIONS = ['Analytics', 'People & payments', 'Content'] as const;
@@ -83,108 +84,137 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
+  onLogout,
 }) => {
   type NavItem = {
     id: AdminSubPage;
     label: string;
     icon: typeof BarChart3;
-    section: (typeof SECTIONS)[number];
     count?: number;
     urgent?: boolean;
   };
 
-  const allNavItems: NavItem[] = [
-    { id: 'overview', label: 'Overview', icon: BarChart3, section: 'Analytics' },
-    {
-      id: 'payments',
-      label: 'Payments',
-      icon: CreditCard,
-      section: 'People & payments',
-      count: pendingPaymentsCount || undefined,
-      urgent: pendingPaymentsCount > 0,
-    },
-    {
-      id: 'candidates',
-      label: 'Students',
-      icon: Users,
-      section: 'People & payments',
-      count: totalUsersCount,
-    },
-    { id: 'staff', label: 'Team', icon: ShieldCheck, section: 'People & payments', count: totalStaffCount },
-    { id: 'questions', label: 'Question bank', icon: Database, section: 'Content', count: totalQuestionsCount },
-    { id: 'topics', label: 'Topics', icon: Tags, section: 'Content', count: totalTopicsCount },
-    { id: 'courses', label: 'Courses', icon: BookOpen, section: 'Content', count: totalCoursesCount },
-    { id: 'mock-tests', label: 'Mock tests', icon: Award, section: 'Content', count: totalMockTestsCount },
-    { id: 'resources', label: 'Resources', icon: FileText, section: 'Content', count: totalResourcesCount },
-  ];
+  const navItem = (page: AdminSubPage): NavItem | null => {
+    if (!allowedPages.includes(page)) return null;
+    switch (page) {
+      case 'overview':
+        return { id: 'overview', label: 'Overview', icon: BarChart3 };
+      case 'payments':
+        return {
+          id: 'payments',
+          label: 'Payments',
+          icon: CreditCard,
+          count: pendingPaymentsCount,
+          urgent: pendingPaymentsCount > 0,
+        };
+      case 'candidates':
+        return { id: 'candidates', label: 'Students', icon: Users, count: totalUsersCount };
+      case 'staff':
+        return { id: 'staff', label: 'Team', icon: ShieldCheck, count: totalStaffCount };
+      case 'questions':
+        return { id: 'questions', label: 'Question bank', icon: Database, count: totalQuestionsCount };
+      case 'topics':
+        return { id: 'topics', label: 'Topics', icon: Tags, count: totalTopicsCount };
+      case 'courses':
+        return { id: 'courses', label: 'Courses', icon: BookOpen, count: totalCoursesCount };
+      case 'mock-tests':
+        return { id: 'mock-tests', label: 'Mock tests', icon: Award, count: totalMockTestsCount };
+      case 'resources':
+        return { id: 'resources', label: 'Resources', icon: FileText, count: totalResourcesCount };
+    }
+  };
 
-  // Pages a staff member cannot manage are hidden outright, not shown disabled.
-  const navItems = allNavItems.filter((item) => allowedPages.includes(item.id));
+  const sectionItems: Record<(typeof SECTIONS)[number], NavItem[]> = {
+    Analytics: [navItem('overview')].filter(Boolean) as NavItem[],
+    'People & payments': [navItem('payments'), navItem('candidates'), navItem('staff')].filter(
+      Boolean
+    ) as NavItem[],
+    Content: [
+      navItem('questions'),
+      navItem('topics'),
+      navItem('courses'),
+      navItem('mock-tests'),
+      navItem('resources'),
+    ].filter(Boolean) as NavItem[],
+  };
 
-  const showLabels = !isCollapsed;
+  // On desktop the sidebar can collapse to icons-only; on mobile drawer it is always full.
+  const showLabels = isMobileOpen || !isCollapsed;
 
   return (
     <>
-      {/* Mobile scrim */}
+      {/* Mobile backdrop */}
       {isMobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-[#071126]/40 lg:hidden animate-in fade-in duration-150"
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 animate-in fade-in duration-150"
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`bg-white border-r border-[#E2E8F0] flex flex-col shrink-0 transition-all duration-200
-          fixed inset-y-0 left-0 z-50 w-64 lg:static lg:z-auto lg:translate-x-0
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${isCollapsed ? 'lg:w-[68px]' : 'lg:w-60'}`}
+        className={`fixed top-0 bottom-0 left-0 z-40 bg-white border-r border-[#E2E8F0] flex flex-col transition-all duration-200 ${
+          isCollapsed ? 'lg:w-16' : 'lg:w-60'
+        } ${isMobileOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        {/* Brand + collapse */}
-        <div className="h-14 px-3 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
-          <div className={`flex items-center gap-2.5 min-w-0 ${isCollapsed ? 'lg:mx-auto' : ''}`}>
-            <div className="w-8 h-8 rounded-[10px] bg-[#0D918A] text-white flex items-center justify-center shrink-0">
+        {/* Brand header */}
+        <div className="h-14 px-3 flex items-center justify-between border-b border-[#E2E8F0] shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-[10px] bg-[#087C76] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
               <Shield className="w-4 h-4" />
             </div>
             {showLabels && (
-              <div className="min-w-0">
-                <div className="text-[13px] font-bold text-[#071126] leading-tight truncate">Admin console</div>
-                <div className="text-[11px] text-[#58708A] leading-tight">White Board SAT</div>
+              <div className="truncate">
+                <div className="font-bold text-[13px] text-[#071126] leading-tight">Admin console</div>
+                <div className="text-[10px] text-[#58708A] leading-tight">White Board SAT</div>
               </div>
             )}
           </div>
 
+          {/* Desktop collapse toggle */}
           <button
             onClick={onToggleCollapse}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-[#F1F8F7] transition-colors cursor-pointer hidden lg:block"
+            className="hidden lg:flex p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-[#F8FBFB] rounded-lg transition-colors cursor-pointer"
           >
-            {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
           </button>
 
+          {/* Mobile drawer close */}
           <button
             onClick={onCloseMobile}
-            aria-label="Close navigation"
-            className="p-1.5 rounded-lg text-[#58708A] hover:bg-[#F1F8F7] transition-colors cursor-pointer lg:hidden"
+            aria-label="Close menu"
+            className="lg:hidden p-1.5 text-[#58708A] hover:text-[#071126] hover:bg-[#F8FBFB] rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto p-2.5 space-y-5" aria-label="Admin sections">
+        {/* Navigation items grouped by section */}
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
           {SECTIONS.map((section) => {
-            const items = navItems.filter((i) => i.section === section);
-            if (items.length === 0) return null;
+            const items = sectionItems[section];
+            if (!items.length) return null;
+
             return (
               <div key={section} className="space-y-0.5">
-                {showLabels && (
-                  <div className="px-2.5 pb-1 text-[11px] font-semibold text-[#58708A]">{section}</div>
+                {showLabels ? (
+                  <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#58708A]">
+                    {section}
+                  </div>
+                ) : (
+                  <div className="h-2" />
                 )}
+
                 {items.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeSubPage === item.id;
+
                   return (
                     <button
                       key={item.id}
@@ -192,35 +222,32 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         onSelectSubPage(item.id);
                         onCloseMobile();
                       }}
-                      aria-current={isActive ? 'page' : undefined}
-                      title={isCollapsed ? item.label : undefined}
-                      className={`relative w-full h-10 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium transition-colors cursor-pointer ${
-                        isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
-                      } ${
+                      title={!showLabels ? item.label : undefined}
+                      className={`relative w-full flex items-center gap-2 px-2.5 py-2 rounded-[10px] text-[12px] font-medium transition-colors cursor-pointer ${
                         isActive
                           ? 'bg-[#F1F8F7] text-[#087C76] font-semibold'
                           : 'text-[#071126] hover:bg-[#F8FBFB]'
                       }`}
                     >
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#0D918A]' : 'text-[#58708A]'}`}
-                      />
-                      {showLabels && <span className="flex-1 text-left truncate">{item.label}</span>}
-                      {showLabels && item.count !== undefined && (
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold tabular-nums shrink-0 ${
-                            item.urgent ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-[#58708A]'
-                          }`}
-                        >
-                          {item.count}
-                        </span>
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#087C76]' : 'text-[#58708A]'}`} />
+                      {showLabels && (
+                        <>
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {item.count !== undefined && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                item.urgent
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-slate-100 text-[#58708A]'
+                              }`}
+                            >
+                              {item.count}
+                            </span>
+                          )}
+                        </>
                       )}
-                      {/* Collapsed: keep the pending-payment signal visible as a dot */}
-                      {isCollapsed && item.urgent && (
-                        <span
-                          className="hidden lg:block absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"
-                          aria-hidden="true"
-                        />
+                      {!showLabels && item.urgent && (
+                        <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full border-2 border-white" />
                       )}
                     </button>
                   );
@@ -230,14 +257,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           })}
         </nav>
 
-        {/* Signed-in identity + exit to student app */}
+        {/* Signed-in identity + Log out */}
         <div className="p-2.5 border-t border-[#E2E8F0] space-y-1.5 shrink-0">
           {showLabels ? (
             <div className="px-2.5 py-2 rounded-[10px] bg-[#F8FBFB] border border-[#E2E8F0]">
               <div className="text-[12px] font-semibold text-[#071126] truncate">
                 {currentUser?.name || 'Not signed in'}
               </div>
-              <div className="text-[11px] text-[#58708A] truncate">
+              <div className="text-[10px] text-[#58708A] truncate">
                 {currentUser?.email || currentUser?.phone || 'No contact on file'}
               </div>
             </div>
@@ -250,16 +277,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           )}
 
-          <Link
-            href="/dashboard"
-            className={`h-9 flex items-center gap-2 rounded-[10px] text-[12px] font-medium text-[#58708A] hover:text-[#071126] hover:bg-[#F8FBFB] transition-colors ${
+          <button
+            type="button"
+            onClick={onLogout}
+            className={`w-full h-9 flex items-center gap-2 rounded-[10px] text-[12px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer ${
               isCollapsed ? 'lg:justify-center px-2.5' : 'px-2.5'
             }`}
-            title="Open the student app"
+            title="Log out"
           >
-            <ExternalLink className="w-4 h-4 shrink-0" />
-            {showLabels && <span>Student app</span>}
-          </Link>
+            <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
+            {showLabels && <span>Log out</span>}
+          </button>
         </div>
       </aside>
     </>

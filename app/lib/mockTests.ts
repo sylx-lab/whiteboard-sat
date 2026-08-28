@@ -84,21 +84,30 @@ export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
     return issues;
   }
 
+  const totalQuestions = modules.reduce((sum, m) => sum + m.questions.length, 0);
+  if (totalQuestions === 0) {
+    issues.push({
+      severity: 'blocking',
+      message: 'This test has no questions added yet.',
+    });
+    return issues;
+  }
+
   const empty = modules.filter((m) => m.questions.length === 0);
   if (empty.length) {
     issues.push({
-      severity: empty[0].id === modules[0].id ? 'blocking' : 'warning',
+      severity: 'warning',
       message: `${empty.length} module${empty.length === 1 ? '' : 's'} ${
         empty.length === 1 ? 'has' : 'have'
       } no questions: ${empty.map((m) => m.title).join(', ')}.`,
     });
   }
 
-  const untimed = modules.filter((m) => !m.timeLimitMinutes || m.timeLimitMinutes < 1);
+  const untimed = modules.filter((m) => m.questions.length > 0 && (!m.timeLimitMinutes || m.timeLimitMinutes < 1));
   if (untimed.length) {
     issues.push({
       severity: 'blocking',
-      message: `${untimed.length} module${untimed.length === 1 ? '' : 's'} ${
+      message: `${untimed.length} module${untimed.length === 1 ? '' : 's'} with questions ${
         untimed.length === 1 ? 'has' : 'have'
       } no time limit.`,
     });

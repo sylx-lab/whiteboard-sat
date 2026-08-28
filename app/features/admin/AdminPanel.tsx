@@ -48,6 +48,7 @@ export interface AdminPanelProps {
   onDeleteMockTest: (id: string) => void;
   /** Bulk topic rename/merge from the Topics view. */
   onApplyTopicUpdates: (updates: { questionId: string; topic: string }[]) => void;
+  onLogout?: () => void;
 }
 
 /** Primary "create" action per page — kept next to the page title in the header. */
@@ -93,6 +94,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteResource,
   onDeleteMockTest,
   onApplyTopicUpdates,
+  onLogout,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -182,6 +184,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         isMobileOpen={isMobileNavOpen}
         onCloseMobile={() => setIsMobileNavOpen(false)}
+        onLogout={onLogout}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
