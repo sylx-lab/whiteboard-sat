@@ -40,8 +40,6 @@ export type PracticeSessionDoc = Doc<PracticeSession>;
 export type UserDoc = Doc<Omit<UserProfile, 'status'>> & {
   courseProgress: Record<string, string[]>;
   passwordHash?: string;
-  /** Set for Google sign-in accounts, which have no password and no phone. */
-  googleId?: string;
 };
 
 /**
@@ -49,7 +47,7 @@ export type UserDoc = Doc<Omit<UserProfile, 'status'>> & {
  * than a Mongo projection so the compiler also knows the secrets are gone.
  */
 export const publicUser = (doc: UserDoc): UserProfile => {
-  const { passwordHash: _hash, googleId: _google, ...rest } = doc;
+  const { passwordHash: _hash, ...rest } = doc;
   return fromDoc(rest) as UserProfile;
 };
 
@@ -148,7 +146,6 @@ export async function ensureIndexes() {
     (await c.users()).createIndexes([
       { key: { phone: 1 }, unique: true, sparse: true },
       { key: { email: 1 }, unique: true, sparse: true },
-      { key: { googleId: 1 }, unique: true, sparse: true },
       { key: { role: 1 } },
     ]),
     (await c.questions()).createIndexes([

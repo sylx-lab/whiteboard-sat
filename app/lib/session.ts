@@ -11,7 +11,6 @@ export async function setAuthCookie(user: { _id: string; passwordHash?: string }
   (await cookies()).set(COOKIE_NAME, signToken(user._id, 'session', user.passwordHash), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    // 'lax' rather than 'strict' so the cookie survives the Google OAuth redirect back.
     sameSite: 'lax',
     path: '/',
     maxAge: MAX_AGE_SECONDS,

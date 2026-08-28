@@ -255,29 +255,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'Sign In'}
           </button>
 
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-[var(--border)]" />
-            <span className="text-[11px] text-[var(--foreground-secondary)]">or</span>
-            <span className="h-px flex-1 bg-[var(--border)]" />
-          </div>
-
-          {/* Deliberately a plain <a>, not <Link> or router.push: the OAuth
-              handshake is a document-level redirect off-origin to Google and
-              back, which the client-side router cannot follow. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a
-            href="/api/auth/google"
-            className="w-full py-2.5 flex items-center justify-center gap-2 border border-[var(--border)] hover:bg-[var(--surface-soft)] rounded-lg text-[12px] font-medium text-[var(--foreground)] transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.2-2.2H12v4h6.6c-.1 1.1-.9 2.8-2.5 3.9l-.02.15 3.6 2.8.25.02c2.3-2.1 3.6-5.2 3.6-8.7Z" />
-              <path fill="#34A853" d="M12 24c3.3 0 6-1.1 8-2.9l-3.8-3c-1 .7-2.4 1.2-4.2 1.2a7.3 7.3 0 0 1-6.9-5l-.14.01-3.7 2.9-.05.14A12 12 0 0 0 12 24Z" />
-              <path fill="#FBBC05" d="M5.1 14.3a7.4 7.4 0 0 1 0-4.6l-.01-.16-3.75-2.9-.12.06a12 12 0 0 0 0 10.8l3.9-3.1Z" />
-              <path fill="#EA4335" d="M12 4.8c2.1 0 3.6.9 4.4 1.7l3.2-3.2C17.9 1.4 15.3 0 12 0A12 12 0 0 0 1.2 6.7l3.9 3a7.3 7.3 0 0 1 6.9-4.9Z" />
-            </svg>
-            Continue with Google
-          </a>
-
           <div className="pt-2 text-center text-[12px] text-[var(--foreground-secondary)]">
             {mode === 'forgot' ? (
               <button

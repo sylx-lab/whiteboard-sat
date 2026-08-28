@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import { cookies } from 'next/headers';
 import { collections, publicUser } from '../../../lib/db.ts';
 import type { UserDoc } from '../../../lib/db.ts';
 import {
@@ -18,7 +17,6 @@ import { clearAuthCookie, currentUser, setAuthCookie } from '../../../lib/sessio
 // three lines of handler under ten lines of identical imports.
 type Ctx = { params: Promise<{ action: string[] }> };
 
-const STATE_COOKIE = 'wbsat_oauth_state';
 const bad = (message: string, status = 400) => Response.json({ error: message }, { status });
 
 const newUser = (fields: Partial<UserDoc> & { name: string }): UserDoc => ({
@@ -45,8 +43,6 @@ export async function GET(request: Request, ctx: Ctx) {
   }
 
   if (action[0] === 'verify-email') return verifyEmail(request);
-  if (action[0] === 'google' && action.length === 1) return googleRedirect(request);
-  if (action[0] === 'google' && action[1] === 'callback') return googleCallback(request);
 
   return bad('Unknown auth route', 404);
 }
@@ -154,102 +150,9 @@ export async function POST(request: Request, ctx: Ctx) {
   return bad('Unknown auth route', 404);
 }
 
-// ---------------------------------------------------------------- Google OAuth
-
 /** APP_URL overrides the request origin for link building behind a proxy. */
 const appUrl = (path: string, request: Request) =>
   new URL(path, process.env.APP_URL ?? request.url).toString();
-
-const redirectUri = (request: Request) => appUrl('/api/auth/google/callback', request);
-
-function googleEnv() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) throw new Error('GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not set');
-  return { clientId, clientSecret };
-}
-
-
-
-async function googleRedirect(request: Request) {
-  const { clientId } = googleEnv();
-  const state = randomBytes(16).toString('base64url');
-
-  // The state cookie is the CSRF check: the callback only proceeds if the state
-  // Google hands back matches the one this browser was issued.
-  (await cookies()).set(STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-  });
-
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.search = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri(request),
-    response_type: 'code',
-    scope: 'openid email profile',
-    state,
-  }).toString();
-  return Response.redirect(url, 302);
-}
-
-async function googleCallback(request: Request) {
-  const { clientId, clientSecret } = googleEnv();
-  const params = new URL(request.url).searchParams;
-  const code = params.get('code');
-
-  const jar = await cookies();
-  const expectedState = jar.get(STATE_COOKIE)?.value;
-  jar.delete(STATE_COOKIE);
-  if (!code || !expectedState || params.get('state') !== expectedState) {
-    return bad('Google sign-in failed the state check. Please try again.', 401);
-  }
-
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      code,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri(request),
-      grant_type: 'authorization_code',
-    }),
-  });
-  if (!tokenRes.ok) return bad('Google rejected the sign-in code', 401);
-
-  // The id_token came straight from Google's token endpoint over TLS using our
-  // client secret, so per Google's own guidance its signature does not need
-  // re-verifying here — which is why there is no JWKS fetch or JWT library.
-  const { id_token: idToken } = (await tokenRes.json()) as { id_token?: string };
-  const payload = idToken && JSON.parse(Buffer.from(idToken.split('.')[1] ?? '', 'base64url').toString() || 'null');
-  if (!payload?.sub || !payload.email_verified) return bad('Google did not return a verified email', 401);
-
-  const users = await collections.users();
-  const email = String(payload.email).toLowerCase();
-  let doc = await users.findOne({ $or: [{ googleId: payload.sub }, { email }] });
-
-  if (!doc) {
-    doc = newUser({
-      name: payload.name || email,
-      email,
-      googleId: payload.sub,
-      // Google already proved this address; email_verified was checked above.
-      emailVerifiedAt: new Date().toISOString(),
-    });
-    await users.insertOne(doc);
-  } else if (!doc.googleId) {
-    // Existing password account with the same verified email — link, don't fork.
-    await users.updateOne({ _id: doc._id }, { $set: { googleId: payload.sub } });
-  }
-
-  if (doc.isSuspended) return bad('This account is suspended. Contact support.', 403);
-  await setAuthCookie(doc);
-  return Response.redirect(new URL('/dashboard', request.url), 302);
-}
 
 // ------------------------------------------------------- Email verification
 

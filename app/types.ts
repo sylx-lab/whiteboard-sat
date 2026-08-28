@@ -251,7 +251,6 @@ export interface AdminPermission {
 export interface UserProfile {
   id: string;
   name: string;
-  /** Absent for Google sign-in accounts, which Google gives us no phone for. */
   phone?: string;
   email?: string;
   role: 'student' | 'admin' | 'sub_admin';

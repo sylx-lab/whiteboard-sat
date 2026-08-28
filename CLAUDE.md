@@ -67,7 +67,7 @@ The store's return object contains **intentional aliases** for the same function
 
 | Route | Methods |
 | --- | --- |
-| `/api/auth/[...action]` | register, login, logout, me, forgot/reset password, verify + resend email, Google OAuth |
+| `/api/auth/[...action]` | register, login, logout, me, forgot/reset password, verify + resend email |
 | `/api/questions/[[...id]]` | GET (`?domain,?topic,?status,?q`…), POST (object **or array** = import), PATCH `/<id>`, PATCH (bulk `[{id,topic}]`), DELETE `/<id>` |
 | `/api/courses/[[...id]]` | GET, POST, PATCH `/<id>`, DELETE `/<id>` — lessons are embedded, so editing one is a PATCH of the course |
 | `/api/resources/[[...id]]`, `/api/mock-tests/[[...id]]` | same four |
