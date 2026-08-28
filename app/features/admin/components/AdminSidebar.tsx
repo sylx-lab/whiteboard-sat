@@ -94,51 +94,36 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     urgent?: boolean;
   };
 
-  const navItem = (page: AdminSubPage): NavItem | null => {
-    if (!allowedPages.includes(page)) return null;
-    switch (page) {
-      case 'overview':
-        return { id: 'overview', label: 'Overview', icon: BarChart3 };
-      case 'payments':
-        return {
-          id: 'payments',
-          label: 'Payments',
-          icon: CreditCard,
-          count: pendingPaymentsCount,
-          urgent: pendingPaymentsCount > 0,
-        };
-      case 'candidates':
-        return { id: 'candidates', label: 'Students', icon: Users, count: totalUsersCount };
-      case 'staff':
-        return { id: 'staff', label: 'Team', icon: ShieldCheck, count: totalStaffCount };
-      case 'questions':
-        return { id: 'questions', label: 'Question bank', icon: Database, count: totalQuestionsCount };
-      case 'topics':
-        return { id: 'topics', label: 'Topics', icon: Tags, count: totalTopicsCount };
-      case 'courses':
-        return { id: 'courses', label: 'Courses', icon: BookOpen, count: totalCoursesCount };
-      case 'mock-tests':
-        return { id: 'mock-tests', label: 'Mock tests', icon: Award, count: totalMockTestsCount };
-      case 'resources':
-        return { id: 'resources', label: 'Resources', icon: FileText, count: totalResourcesCount };
-    }
+  // All available nav items with their respective section grouping
+  const allNavItems: NavItem[] = [
+    { id: 'overview', label: 'Overview', icon: BarChart3, count: undefined },
+    {
+      id: 'payments',
+      label: 'Payments',
+      icon: CreditCard,
+      count: pendingPaymentsCount || undefined,
+      urgent: pendingPaymentsCount > 0,
+    },
+    {
+      id: 'candidates',
+      label: 'Students',
+      icon: Users,
+      count: totalUsersCount,
+    },
+    { id: 'staff', label: 'Team', icon: ShieldCheck, count: totalStaffCount },
+    { id: 'questions', label: 'Question bank', icon: Database, count: totalQuestionsCount },
+    { id: 'topics', label: 'Topics', icon: Tags, count: totalTopicsCount },
+    { id: 'courses', label: 'Courses', icon: BookOpen, count: totalCoursesCount },
+    { id: 'mock-tests', label: 'Mock tests', icon: Award, count: totalMockTestsCount },
+    { id: 'resources', label: 'Resources', icon: FileText, count: totalResourcesCount },
+  ];
+
+  const sectionMap: Record<(typeof SECTIONS)[number], AdminSubPage[]> = {
+    Analytics: ['overview'],
+    'People & payments': ['payments', 'candidates', 'staff'],
+    Content: ['questions', 'topics', 'courses', 'mock-tests', 'resources'],
   };
 
-  const sectionItems: Record<(typeof SECTIONS)[number], NavItem[]> = {
-    Analytics: [navItem('overview')].filter(Boolean) as NavItem[],
-    'People & payments': [navItem('payments'), navItem('candidates'), navItem('staff')].filter(
-      Boolean
-    ) as NavItem[],
-    Content: [
-      navItem('questions'),
-      navItem('topics'),
-      navItem('courses'),
-      navItem('mock-tests'),
-      navItem('resources'),
-    ].filter(Boolean) as NavItem[],
-  };
-
-  // On desktop the sidebar can collapse to icons-only; on mobile drawer it is always full.
   const showLabels = isMobileOpen || !isCollapsed;
 
   return (
@@ -153,20 +138,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 bg-white border-r border-[#E2E8F0] flex flex-col transition-all duration-200 ${
-          isCollapsed ? 'lg:w-16' : 'lg:w-60'
-        } ${isMobileOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`bg-white border-r border-[#E2E8F0] flex flex-col shrink-0 transition-all duration-200
+          fixed inset-y-0 left-0 z-50 w-64 lg:static lg:z-auto lg:translate-x-0
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${isCollapsed ? 'lg:w-[68px]' : 'lg:w-60'}`}
       >
         {/* Brand header */}
         <div className="h-14 px-3 flex items-center justify-between border-b border-[#E2E8F0] shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className={`flex items-center gap-2.5 min-w-0 ${isCollapsed ? 'lg:mx-auto' : ''}`}>
             <div className="w-8 h-8 rounded-[10px] bg-[#087C76] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
               <Shield className="w-4 h-4" />
             </div>
             {showLabels && (
-              <div className="truncate">
-                <div className="font-bold text-[13px] text-[#071126] leading-tight">Admin console</div>
-                <div className="text-[10px] text-[#58708A] leading-tight">White Board SAT</div>
+              <div className="min-w-0">
+                <div className="text-[13px] font-bold text-[#071126] leading-tight truncate">Admin console</div>
+                <div className="text-[10px] text-[#58708A] leading-tight truncate">White Board SAT</div>
               </div>
             )}
           </div>
@@ -196,19 +182,22 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Navigation items grouped by section */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+        <nav className="flex-1 overflow-y-auto p-2.5 space-y-4">
           {SECTIONS.map((section) => {
-            const items = sectionItems[section];
-            if (!items.length) return null;
+            const pageIds = sectionMap[section];
+            const items = allNavItems.filter(
+              (item) => pageIds.includes(item.id) && allowedPages.includes(item.id)
+            );
+            if (items.length === 0) return null;
 
             return (
               <div key={section} className="space-y-0.5">
                 {showLabels ? (
-                  <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#58708A]">
+                  <div className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#58708A]">
                     {section}
                   </div>
                 ) : (
-                  <div className="h-2" />
+                  <div className="h-1.5" />
                 )}
 
                 {items.map((item) => {
@@ -223,31 +212,33 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         onCloseMobile();
                       }}
                       title={!showLabels ? item.label : undefined}
-                      className={`relative w-full flex items-center gap-2 px-2.5 py-2 rounded-[10px] text-[12px] font-medium transition-colors cursor-pointer ${
+                      className={`relative w-full h-10 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-left transition-colors cursor-pointer ${
+                        isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
+                      } ${
                         isActive
                           ? 'bg-[#F1F8F7] text-[#087C76] font-semibold'
                           : 'text-[#071126] hover:bg-[#F8FBFB]'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#087C76]' : 'text-[#58708A]'}`} />
-                      {showLabels && (
-                        <>
-                          <span className="flex-1 truncate">{item.label}</span>
-                          {item.count !== undefined && (
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                item.urgent
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-slate-100 text-[#58708A]'
-                              }`}
-                            >
-                              {item.count}
-                            </span>
-                          )}
-                        </>
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#087C76]' : 'text-[#58708A]'}`}
+                      />
+                      {showLabels && <span className="flex-1 text-left truncate">{item.label}</span>}
+                      {showLabels && item.count !== undefined && (
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold tabular-nums shrink-0 ${
+                            item.urgent ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-[#58708A]'
+                          }`}
+                        >
+                          {item.count}
+                        </span>
                       )}
+                      {/* Collapsed: keep the pending-payment signal visible as a dot */}
                       {!showLabels && item.urgent && (
-                        <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full border-2 border-white" />
+                        <span
+                          className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"
+                          aria-hidden="true"
+                        />
                       )}
                     </button>
                   );
@@ -280,13 +271,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={onLogout}
-            className={`w-full h-9 flex items-center gap-2 rounded-[10px] text-[12px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer ${
-              isCollapsed ? 'lg:justify-center px-2.5' : 'px-2.5'
+            className={`w-full h-9 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer ${
+              isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
             }`}
             title="Log out"
           >
             <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
-            {showLabels && <span>Log out</span>}
+            {showLabels && <span className="text-left">Log out</span>}
           </button>
         </div>
       </aside>
