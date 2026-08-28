@@ -38,3 +38,4 @@ npm run start
 - `app/components/` - Global reusable UI components (Navbar, Footer, AuthModal, PaymentModal, MathRenderer, Calculator, QuestionCard, QuestionNavigator)
 - `app/features/` - Feature hubs (Landing Page, Practice Hub, Mock Tests Hub, Courses Hub, Student Dashboard, Progress Analytics, Admin Panel)
 - `app/types.ts` - Complete TypeScript interface definitions
+- 
