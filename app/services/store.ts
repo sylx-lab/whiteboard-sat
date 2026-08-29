@@ -197,38 +197,38 @@ export function useAppStore() {
 
     const load = async () => {
       const [q, c, r, m, pSets, pPlans] = await Promise.all([
-        api.get<{ items: Question[] }>('/questions'),
-        api.get<{ items: Course[] }>('/courses'),
-        api.get<{ items: ResourceItem[] }>('/resources'),
-        api.get<{ items: MockTest[] }>('/mock-tests'),
+        api.get<{ items: Question[] }>('/questions').catch(() => ({ items: [] as Question[] })),
+        api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })),
+        api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })),
+        api.get<{ items: MockTest[] }>('/mock-tests').catch(() => ({ items: [] as MockTest[] })),
         fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
         fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
       ]);
       if (cancelled) return;
-      setQuestions(q.items);
-      setCourses(c.items);
-      setResources(r.items);
-      setMockTests(m.items);
+      setQuestions(q?.items ?? []);
+      setCourses(c?.items ?? []);
+      setResources(r?.items ?? []);
+      setMockTests(m?.items ?? []);
       if (pSets?.settings) setPaymentSettings(pSets.settings);
       if (pPlans?.items?.length) setPlans(pPlans.items);
 
       // The roster is part of the same load, inline rather than through
       // refreshUsers() so every setState in this effect sits behind an await.
       if (isSignedIn && canSeeRoster(currentUser)) {
-        const roster = await api.get<{ items: UserProfile[] }>('/users');
+        const roster = await api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] }));
         if (cancelled) return;
-        setAllUsers(roster.items);
+        setAllUsers(roster?.items ?? []);
       }
 
       if (!isSignedIn) return;
       const [history, pays] = await Promise.all([
-        api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts'),
-        api.get<{ items: PaymentSubmission[] }>('/payments'),
+        api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
+        api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })),
       ]);
       if (cancelled) return;
-      setPracticeAttempts(history.practice);
-      setMockAttempts(history.mock);
-      setPayments(pays.items);
+      setPracticeAttempts(history?.practice ?? []);
+      setMockAttempts(history?.mock ?? []);
+      setPayments(pays?.items ?? []);
     };
 
     // ponytail: every route tree calls useAppStore(), so this refetches on each

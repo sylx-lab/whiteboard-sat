@@ -66,7 +66,7 @@ export function formatMathString(rawText: string): string {
 
   // 5. Restore KaTeX tokens
   tokens.forEach((html, i) => {
-    processed = processed.replace(`___KATEX_TOKEN_${i}___`, html);
+    processed = processed.replace(`___KATEX_TOKEN_${i}___`, () => html);
   });
 
   // 6. Convert newlines to breaks cleanly

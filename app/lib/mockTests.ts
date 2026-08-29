@@ -51,13 +51,14 @@ export function standardSatModules(testId: string): MockTestModule[] {
  * Totals are derived from the modules rather than typed by hand, so the summary a
  * student sees can never contradict the test they actually sit.
  */
-export function deriveTotals(modules: MockTestModule[]): {
+export function deriveTotals(modules?: MockTestModule[]): {
   totalQuestions: number;
   totalTimeMinutes: number;
 } {
+  const list = Array.isArray(modules) ? modules : [];
   return {
-    totalQuestions: modules.reduce((sum, m) => sum + m.questions.length, 0),
-    totalTimeMinutes: modules.reduce((sum, m) => sum + (Number(m.timeLimitMinutes) || 0), 0),
+    totalQuestions: list.reduce((sum, m) => sum + (m?.questions?.length || 0), 0),
+    totalTimeMinutes: list.reduce((sum, m) => sum + (Number(m?.timeLimitMinutes) || 0), 0),
   };
 }
 
@@ -73,10 +74,11 @@ export interface MockTestIssue {
  * `modules[0].timeLimitMinutes` when starting an attempt, so a test with no
  * modules — or a first module with no questions — is broken for students.
  */
-export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
+export function mockTestIssues(modules?: MockTestModule[]): MockTestIssue[] {
   const issues: MockTestIssue[] = [];
+  const list = Array.isArray(modules) ? modules : [];
 
-  if (modules.length === 0) {
+  if (list.length === 0) {
     issues.push({
       severity: 'blocking',
       message: 'This test has no modules, so students cannot start it.',
@@ -84,7 +86,7 @@ export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
     return issues;
   }
 
-  const totalQuestions = modules.reduce((sum, m) => sum + m.questions.length, 0);
+  const totalQuestions = list.reduce((sum, m) => sum + (m?.questions?.length || 0), 0);
   if (totalQuestions === 0) {
     issues.push({
       severity: 'blocking',
@@ -93,17 +95,17 @@ export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
     return issues;
   }
 
-  const empty = modules.filter((m) => m.questions.length === 0);
+  const empty = list.filter((m) => !m?.questions || m.questions.length === 0);
   if (empty.length) {
     issues.push({
       severity: 'warning',
       message: `${empty.length} module${empty.length === 1 ? '' : 's'} ${
         empty.length === 1 ? 'has' : 'have'
-      } no questions: ${empty.map((m) => m.title).join(', ')}.`,
+      } no questions: ${empty.map((m) => m?.title || 'Untitled Module').join(', ')}.`,
     });
   }
 
-  const untimed = modules.filter((m) => m.questions.length > 0 && (!m.timeLimitMinutes || m.timeLimitMinutes < 1));
+  const untimed = list.filter((m) => (m?.questions?.length || 0) > 0 && (!m?.timeLimitMinutes || m.timeLimitMinutes < 1));
   if (untimed.length) {
     issues.push({
       severity: 'blocking',
@@ -113,12 +115,12 @@ export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
     });
   }
 
-  const mismatched = modules.filter((m) => m.questions.some((q) => q.subject !== m.section));
+  const mismatched = list.filter((m) => m?.questions?.some((q) => q.subject !== m.section));
   if (mismatched.length) {
     issues.push({
       severity: 'warning',
       message: `${mismatched
-        .map((m) => m.title)
+        .map((m) => m?.title || 'Module')
         .join(', ')} contain${mismatched.length === 1 ? 's' : ''} questions from the other section.`,
     });
   }
@@ -127,13 +129,14 @@ export function mockTestIssues(modules: MockTestModule[]): MockTestIssue[] {
 }
 
 /** True when a student can actually sit this test. */
-export function isPlayable(test: Pick<MockTest, 'modules'>): boolean {
+export function isPlayable(test?: Pick<MockTest, 'modules'> | null): boolean {
+  if (!test || !Array.isArray(test.modules)) return false;
   return !mockTestIssues(test.modules).some((i) => i.severity === 'blocking');
 }
 
 /** Questions eligible for a module: published, and matching the module's section. */
 export function eligibleQuestions(questions: Question[], section: Subject): Question[] {
-  return questions.filter((q) => q.subject === section && (q.status || 'published') === 'published');
+  return (questions || []).filter((q) => q.subject === section && (q.status || 'published') === 'published');
 }
 
 /**
@@ -153,16 +156,17 @@ export function scoreAttempt(
   let totalQuestions = 0;
   let timeSpentSeconds = 0;
   const domainBreakdown: Record<string, { correct: number; total: number }> = {};
+  const modules = Array.isArray(test?.modules) ? test.modules : [];
 
-  for (const mod of test.modules) {
-    for (const q of mod.questions) {
+  for (const mod of modules) {
+    for (const q of (mod?.questions || [])) {
       totalQuestions += 1;
       domainBreakdown[q.domain] ??= { correct: 0, total: 0 };
       domainBreakdown[q.domain].total += 1;
       if (mod.section === 'math') mathTotal += 1;
       if (mod.section === 'reading_writing') rwTotal += 1;
 
-      const interaction = interactions[q.id];
+      const interaction = interactions?.[q.id];
       if (!interaction) continue;
       timeSpentSeconds += interaction.timeSpentSeconds || 0;
       if (interaction.selectedAnswer !== q.correct_answer) continue;
