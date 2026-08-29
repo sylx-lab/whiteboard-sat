@@ -4,7 +4,7 @@ import React, { Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAppStore } from '../../../services/store';
 import { PersonAccessEditor } from '../../../features/admin/components/PersonAccessEditor';
-import { EditorNotFound } from '../../../features/admin/components/EditorShell';
+import { EditorNotFound, EditorLoading } from '../../../features/admin/components/EditorShell';
 
 function PersonEditor() {
   const store = useAppStore();
@@ -13,7 +13,13 @@ function PersonEditor() {
   const personId = params?.id as string;
 
   const person = store.allUsers.find((u) => u.id === personId);
-  if (!person) return <EditorNotFound label="Account" backTab="candidates" />;
+
+  if (!person) {
+    if (store.isLoading && store.allUsers.length === 0) {
+      return <EditorLoading label="Loading Account…" />;
+    }
+    return <EditorNotFound label="Account" backTab="candidates" />;
+  }
 
   // Reached from either the Students list or the Team list; go back where we came from.
   const backTab = search.get('from') === 'staff' ? 'staff' : 'candidates';

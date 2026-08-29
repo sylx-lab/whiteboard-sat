@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Course } from '../../../types';
 import { useAppStore } from '../../../services/store';
 import { CourseVisualEditor } from '../../../features/admin/components/CourseVisualEditor';
-import { EditorNotFound } from '../../../features/admin/components/EditorShell';
+import { EditorNotFound, EditorLoading } from '../../../features/admin/components/EditorShell';
 
 export default function EditCoursePage() {
   const store = useAppStore();
@@ -15,7 +15,12 @@ export default function EditCoursePage() {
 
   const course = store.courses.find((c) => c.id === courseId);
 
-  if (!course) return <EditorNotFound label="Course" backTab="courses" />;
+  if (!course) {
+    if (store.isLoading && store.courses.length === 0) {
+      return <EditorLoading label="Loading Course…" />;
+    }
+    return <EditorNotFound label="Course" backTab="courses" />;
+  }
 
   return (
     <CourseVisualEditor

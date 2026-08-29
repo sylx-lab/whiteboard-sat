@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { MockTest } from '../../../types';
 import { useAppStore } from '../../../services/store';
 import { MockTestVisualEditor } from '../../../features/admin/components/MockTestVisualEditor';
-import { EditorNotFound } from '../../../features/admin/components/EditorShell';
+import { EditorNotFound, EditorLoading } from '../../../features/admin/components/EditorShell';
 
 export default function EditMockTestPage() {
   const store = useAppStore();
@@ -15,7 +15,12 @@ export default function EditMockTestPage() {
 
   const test = store.mockTests.find((t) => t.id === testId);
 
-  if (!test) return <EditorNotFound label="Mock test" backTab="mock-tests" />;
+  if (!test) {
+    if (store.isLoading && store.mockTests.length === 0) {
+      return <EditorLoading label="Loading Mock Test…" />;
+    }
+    return <EditorNotFound label="Mock test" backTab="mock-tests" />;
+  }
 
   return (
     <MockTestVisualEditor

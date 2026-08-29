@@ -121,6 +121,7 @@ export function useAppStore() {
    * roster — that would fire requests for a session that may not exist.
    */
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Hydrate local cached state on client mount without SSR mismatch
   const hasHydratedRef = useRef(false);
@@ -197,45 +198,50 @@ export function useAppStore() {
     let cancelled = false;
 
     const load = async () => {
-      const [q, c, r, m, pSets, pPlans] = await Promise.all([
-        api.get<{ items: Question[] }>('/questions').catch(() => ({ items: [] as Question[] })),
-        api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })),
-        api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })),
-        api.get<{ items: MockTest[] }>('/mock-tests').catch(() => ({ items: [] as MockTest[] })),
-        fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
-        fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
-      ]);
-      if (cancelled) return;
-      setQuestions(q?.items ?? []);
-      setCourses(c?.items ?? []);
-      setResources(r?.items ?? []);
-      setMockTests(m?.items ?? []);
-      if (pSets?.settings) setPaymentSettings(pSets.settings);
-      if (pPlans?.items?.length) setPlans(pPlans.items);
-
-      // The roster is part of the same load, inline rather than through
-      // refreshUsers() so every setState in this effect sits behind an await.
-      if (isSignedIn && canSeeRoster(currentUser)) {
-        const roster = await api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] }));
+      try {
+        const [q, c, r, m, pSets, pPlans] = await Promise.all([
+          api.get<{ items: Question[] }>('/questions').catch(() => ({ items: [] as Question[] })),
+          api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })),
+          api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })),
+          api.get<{ items: MockTest[] }>('/mock-tests').catch(() => ({ items: [] as MockTest[] })),
+          fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
+          fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
+        ]);
         if (cancelled) return;
-        setAllUsers(roster?.items ?? []);
-      }
+        setQuestions(q?.items ?? []);
+        setCourses(c?.items ?? []);
+        setResources(r?.items ?? []);
+        setMockTests(m?.items ?? []);
+        if (pSets?.settings) setPaymentSettings(pSets.settings);
+        if (pPlans?.items?.length) setPlans(pPlans.items);
 
-      if (!isSignedIn) return;
-      const [history, pays] = await Promise.all([
-        api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
-        api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })),
-      ]);
-      if (cancelled) return;
-      setPracticeAttempts(history?.practice ?? []);
-      setMockAttempts(history?.mock ?? []);
-      setPayments(pays?.items ?? []);
+        // The roster is part of the same load, inline rather than through
+        // refreshUsers() so every setState in this effect sits behind an await.
+        if (isSignedIn && canSeeRoster(currentUser)) {
+          const roster = await api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] }));
+          if (cancelled) return;
+          setAllUsers(roster?.items ?? []);
+        }
+
+        if (!isSignedIn) return;
+        const [history, pays] = await Promise.all([
+          api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
+          api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })),
+        ]);
+        if (cancelled) return;
+        setPracticeAttempts(history?.practice ?? []);
+        setMockAttempts(history?.mock ?? []);
+        setPayments(pays?.items ?? []);
+      } catch (err) {
+        console.error('Could not load from the API', err);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     };
 
-    // ponytail: every route tree calls useAppStore(), so this refetches on each
-    // navigation. Cheap at this size and always fresh; move the reads into
-    // server components (or add SWR) when the payload starts to hurt.
-    load().catch((err) => console.error('Could not load from the API', err));
+    load();
 
     return () => {
       cancelled = true;
@@ -695,6 +701,7 @@ export function useAppStore() {
   };
 
   return {
+    isLoading,
     theme,
     setTheme,
     currentUser,

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Question } from '../../../types';
 import { useAppStore } from '../../../services/store';
 import { QuestionVisualEditor } from '../../../features/admin/components/QuestionVisualEditor';
-import { EditorNotFound } from '../../../features/admin/components/EditorShell';
+import { EditorNotFound, EditorLoading } from '../../../features/admin/components/EditorShell';
 
 export default function EditQuestionPage() {
   const store = useAppStore();
@@ -15,7 +15,12 @@ export default function EditQuestionPage() {
 
   const question = store.questions.find((q) => q.id === questionId);
 
-  if (!question) return <EditorNotFound label="Question" backTab="questions" />;
+  if (!question) {
+    if (store.isLoading && store.questions.length === 0) {
+      return <EditorLoading label="Loading Question…" />;
+    }
+    return <EditorNotFound label="Question" backTab="questions" />;
+  }
 
   return (
     <QuestionVisualEditor

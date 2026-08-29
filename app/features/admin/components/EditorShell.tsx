@@ -191,17 +191,30 @@ export const inputClass =
 export const textareaClass =
   'w-full px-3 py-2.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y';
 
+/** Shown while an /admin/…/[id] record is being loaded from the server. */
+export const EditorLoading: React.FC<{ label?: string }> = ({ label = 'Loading…' }) => (
+  <div className="min-h-screen bg-slate-50 grid place-items-center p-6">
+    <div className="max-w-sm w-full p-8 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-4 shadow-2xs animate-in fade-in duration-150">
+      <div className="w-9 h-9 border-3 border-[#0D918A]/20 border-t-[#0D918A] rounded-full animate-spin mx-auto" />
+      <div className="space-y-1">
+        <h1 className="text-[14.5px] font-bold text-[#071126]">{label}</h1>
+        <p className="text-[12px] text-[#58708A]">Fetching data from server…</p>
+      </div>
+    </div>
+  </div>
+);
+
 /** Shown when an /admin/…/[id] route points at a record that no longer exists. */
 export const EditorNotFound: React.FC<{ label: string; backTab: string }> = ({ label, backTab }) => (
   <div className="min-h-screen bg-slate-50 grid place-items-center p-6">
-    <div className="max-w-sm w-full p-8 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-3">
+    <div className="max-w-sm w-full p-8 bg-white rounded-2xl border border-[#E2E8F0] text-center space-y-3 shadow-2xs">
       <h1 className="text-base font-bold text-[#071126]">{label} not found</h1>
       <p className="text-[13px] text-[#58708A] leading-relaxed">
         It may have been deleted, or the link is out of date.
       </p>
       <Link
         href={`/admin?tab=${backTab}`}
-        className="h-10 px-4 bg-[#0D918A] hover:bg-[#087C76] text-white text-[12px] font-semibold rounded-[10px] transition-colors inline-flex items-center justify-center"
+        className="h-10 px-4 bg-[#0D918A] hover:bg-[#087C76] text-white text-[12px] font-semibold rounded-[10px] transition-colors inline-flex items-center justify-center cursor-pointer"
       >
         Back to list
       </Link>
