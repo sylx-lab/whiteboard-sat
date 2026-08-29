@@ -26,6 +26,8 @@ export default function AdminPage() {
         onRejectPayment={store.rejectPayment}
         onUpdatePaymentSettings={store.updatePaymentSettings}
         onUpdatePlan={store.updatePlan}
+        onAddPlan={store.addPlan}
+        onDeletePlan={store.deletePlan}
         onUpdateUserAccess={store.updateUserAccess}
         onToggleUserStatus={store.toggleUserStatus}
         onAddQuestion={store.addQuestions}

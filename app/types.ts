@@ -20,6 +20,7 @@ export type QuestionStatus = 'draft' | 'published' | 'archived';
 export interface AnswerChoice {
   id: 'A' | 'B' | 'C' | 'D';
   text: string;
+  imageUrl?: string;
 }
 
 export interface Question {

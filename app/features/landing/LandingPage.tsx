@@ -289,9 +289,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenPric
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>Correct Answer: B (47)</span>
                     </div>
-                    <p className="text-[var(--foreground-secondary)] leading-relaxed">
-                      First solve for $x$: $3x = 21 \implies x = 7$. Then substitute into $6x + 5 = 6(7) + 5 = 42 + 5 = 47$.
-                    </p>
+                    <div className="text-[var(--foreground-secondary)] leading-relaxed">
+                      <MathRenderer content="First solve for $x$: $3x = 21 \implies x = 7$. Then substitute into $6x + 5 = 6(7) + 5 = 42 + 5 = 47$." />
+                    </div>
                   </div>
                 )}
               </div>

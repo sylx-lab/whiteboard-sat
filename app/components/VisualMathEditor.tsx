@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import katex from 'katex';
-import { Bold, Italic, Sigma, ChevronDown, Eye } from 'lucide-react';
+import { Bold, Italic, Sigma, ChevronDown, Eye, List, Maximize2, Minimize2, X } from 'lucide-react';
 import { buildInsertion, isInsideMath } from '../lib/mathInsert';
 import { MathRenderer } from './MathRenderer';
 import { SYMBOL_GROUPS } from '../lib/mathSymbols';
@@ -49,14 +49,18 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
   compact = false,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fullscreenTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [showRender, setShowRender] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   // Tracked in state, not read off the ref during render, so the palette hint
   // actually updates as the caret moves.
   const [caretPos, setCaretPos] = useState(0);
 
+  const activeRef = isFullscreen ? fullscreenTextareaRef : textareaRef;
+
   const applyInsertion = (latex: string) => {
-    const el = textareaRef.current;
+    const el = activeRef.current;
     const start = el?.selectionStart ?? value.length;
     const end = el?.selectionEnd ?? value.length;
 
@@ -72,7 +76,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
   };
 
   const wrapSelection = (prefix: string, suffix: string) => {
-    const el = textareaRef.current;
+    const el = activeRef.current;
     if (!el) {
       onChange(value + prefix + suffix);
       return;
@@ -87,96 +91,160 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     }, 0);
   };
 
+  const insertBullet = () => {
+    const el = activeRef.current;
+    if (!el) {
+      onChange(value ? `${value}\n• ` : '• ');
+      return;
+    }
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const before = value.slice(0, start);
+    const selection = value.slice(start, end);
+    const after = value.slice(end);
+
+    if (selection) {
+      const bulleted = selection
+        .split('\n')
+        .map((line) => (line.startsWith('• ') ? line : `• ${line}`))
+        .join('\n');
+      onChange(before + bulleted + after);
+    } else {
+      const insertion = '• ';
+      onChange(before + insertion + after);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + insertion.length, start + insertion.length);
+      }, 0);
+    }
+  };
+
   const caretInMath = isInsideMath(value, caretPos);
   const hasMath = value.includes('$');
 
   const toolButton =
     'h-7 px-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer inline-flex items-center gap-1';
 
+  const renderToolbar = (isFullModal = false) => (
+    <div className="px-2 py-1.5 border-b border-[var(--border)] bg-[var(--surface-soft)] flex items-center flex-wrap gap-1 select-none">
+      <button
+        type="button"
+        onClick={() => wrapSelection('**', '**')}
+        aria-label="Wrap selection in bold"
+        title="Bold"
+        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+      >
+        <Bold className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => wrapSelection('*', '*')}
+        aria-label="Wrap selection in italic"
+        title="Italic"
+        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+      >
+        <Italic className="w-3.5 h-3.5" />
+      </button>
+
+      <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+
+      {/* Bullet Point Button */}
+      <button
+        type="button"
+        onClick={insertBullet}
+        title="Insert bullet point (•)"
+        aria-label="Insert bullet point"
+        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+      >
+        <List className="w-3.5 h-3.5" />
+        <span>Bullet</span>
+      </button>
+
+      <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+
+      <button
+        type="button"
+        onClick={() => wrapSelection('$', '$')}
+        title="Wrap the selection in inline math — $x$"
+        className={`${toolButton} bg-[var(--brand-soft)] text-[var(--brand-text)] hover:bg-teal-100`}
+      >
+        <Sigma className="w-3.5 h-3.5" />
+        Inline
+      </button>
+      <button
+        type="button"
+        onClick={() => wrapSelection('$$', '$$')}
+        title="Wrap the selection in a centred block equation — $$x$$"
+        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+      >
+        Block
+      </button>
+
+      {!compact && (
+        <>
+          <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+          {SYMBOL_GROUPS.map((group) => (
+            <button
+              key={group.id}
+              type="button"
+              aria-expanded={openGroup === group.id}
+              onClick={() => setOpenGroup(openGroup === group.id ? null : group.id)}
+              title={`${group.label} symbols`}
+              className={`${toolButton} ${
+                openGroup === group.id
+                  ? 'bg-[var(--surface)] text-[var(--brand-text)] border border-[var(--brand)]'
+                  : 'text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]'
+              }`}
+            >
+              {group.label}
+              <ChevronDown
+                className={`w-3 h-3 transition-transform ${
+                  openGroup === group.id ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          ))}
+        </>
+      )}
+
+      <div className="ml-auto flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setShowRender(!showRender)}
+          aria-pressed={showRender}
+          title={showRender ? 'Hide the rendered result' : 'Show the rendered result'}
+          className={`${toolButton} ${
+            showRender ? 'text-[var(--brand-text)]' : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>Preview</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          title={isFullModal ? 'Exit full screen (Esc)' : 'Expand to full screen'}
+          aria-label={isFullModal ? 'Exit full screen' : 'Expand to full screen'}
+          className={`${toolButton} ${
+            isFullModal
+              ? 'bg-[var(--surface)] text-[var(--brand-text)] border border-[var(--brand)]'
+              : 'text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]'
+          }`}
+        >
+          {isFullModal ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          <span>{isFullModal ? 'Exit Full Screen' : 'Full Screen'}</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-1">
       {label && <label className="block text-[12px] font-semibold text-[var(--foreground)]">{label}</label>}
 
       <div className="bg-[var(--surface)] rounded-[10px] border border-[var(--border)] overflow-hidden focus-within:border-[var(--brand)] transition-colors">
-        <div className="px-2 py-1.5 border-b border-[var(--border)] bg-[var(--surface-soft)] flex items-center flex-wrap gap-1 select-none">
-          <button
-            type="button"
-            onClick={() => wrapSelection('**', '**')}
-            aria-label="Wrap selection in bold"
-            title="Bold"
-            className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
-          >
-            <Bold className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => wrapSelection('*', '*')}
-            aria-label="Wrap selection in italic"
-            title="Italic"
-            className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
-          >
-            <Italic className="w-3.5 h-3.5" />
-          </button>
-
-          <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
-
-          <button
-            type="button"
-            onClick={() => wrapSelection('$', '$')}
-            title="Wrap the selection in inline math — $x$"
-            className={`${toolButton} bg-[var(--brand-soft)] text-[var(--brand-text)] hover:bg-teal-100`}
-          >
-            <Sigma className="w-3.5 h-3.5" />
-            Inline
-          </button>
-          <button
-            type="button"
-            onClick={() => wrapSelection('$$', '$$')}
-            title="Wrap the selection in a centred block equation — $$x$$"
-            className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
-          >
-            Block
-          </button>
-
-          {!compact && (
-            <>
-              <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
-              {SYMBOL_GROUPS.map((group) => (
-                <button
-                  key={group.id}
-                  type="button"
-                  aria-expanded={openGroup === group.id}
-                  onClick={() => setOpenGroup(openGroup === group.id ? null : group.id)}
-                  title={`${group.label} symbols`}
-                  className={`${toolButton} ${
-                    openGroup === group.id
-                      ? 'bg-[var(--surface)] text-[var(--brand-text)] border border-[var(--brand)]'
-                      : 'text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]'
-                  }`}
-                >
-                  {group.label}
-                  <ChevronDown
-                    className={`w-3 h-3 transition-transform ${
-                      openGroup === group.id ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-              ))}
-            </>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setShowRender(!showRender)}
-            aria-pressed={showRender}
-            title={showRender ? 'Hide the rendered result' : 'Show the rendered result'}
-            className={`${toolButton} ml-auto ${
-              showRender ? 'text-[var(--brand-text)]' : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        {renderToolbar(false)}
 
         {/* Symbol palette — every face is the actual rendered symbol. */}
         {openGroup && (
@@ -223,12 +291,107 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         />
 
         {/* Live render of this field, right where it is being typed. */}
-        {showRender && hasMath && (
+        {showRender && (hasMath || value.includes('•') || value.includes('**')) && (
           <div className="px-3 py-2.5 border-t border-[var(--border)] bg-[var(--surface-soft)] text-[13px] text-[var(--foreground)] leading-relaxed">
             <MathRenderer content={value} />
           </div>
         )}
       </div>
+
+      {/* FULLSCREEN EXPANDED MODAL */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+          <div className="bg-[var(--surface)] w-full max-w-5xl h-[88vh] rounded-2xl border border-[var(--border)] shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-3 sm:p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[14px] text-[var(--foreground)]">
+                  {label || ariaLabel || 'Full Screen Editor'}
+                </span>
+                <span className="text-[11px] text-[var(--foreground-secondary)] font-mono">
+                  ({value.length} characters)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
+                title="Close full screen"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {renderToolbar(true)}
+
+            {openGroup && (
+              <div className="px-3 py-2 border-b border-[var(--border)] bg-[var(--surface)] max-h-36 overflow-y-auto">
+                <div className="flex flex-wrap gap-1">
+                  {SYMBOL_GROUPS.find((g) => g.id === openGroup)?.symbols.map((sym) => (
+                    <button
+                      key={sym.insert + sym.title}
+                      type="button"
+                      onClick={() => applyInsertion(sym.insert)}
+                      title={sym.title}
+                      aria-label={sym.title}
+                      className="min-w-9 h-9 px-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] hover:border-[var(--brand)] text-[var(--foreground)] transition-colors cursor-pointer inline-flex items-center justify-center"
+                    >
+                      {sym.text ? (
+                        <span className="text-[11px] font-mono">{sym.text}</span>
+                      ) : (
+                        <SymbolFace latex={sym.display ?? sym.insert.replace(/\{\}/g, '{\\square}')} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--border)] overflow-hidden">
+              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-[var(--surface)]">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)] mb-2 block">
+                  Source Editor
+                </label>
+                <textarea
+                  ref={fullscreenTextareaRef}
+                  value={value}
+                  onChange={(e) => {
+                    setCaretPos(e.target.selectionStart);
+                    onChange(e.target.value);
+                  }}
+                  onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
+                  placeholder={placeholder}
+                  className="w-full flex-1 p-3 bg-[var(--surface-soft)] border border-[var(--border)] rounded-xl text-[13.5px] font-mono text-[var(--foreground)] focus:outline-none focus:border-[var(--brand)] resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-[var(--brand-soft)]/40">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--brand-text)] mb-2 block">
+                  Live Formatted Output
+                </label>
+                <div className="flex-1 p-4 bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-y-auto text-[14.5px] text-[var(--foreground)] leading-[1.8] font-serif">
+                  {value.trim() ? (
+                    <MathRenderer content={value} />
+                  ) : (
+                    <span className="text-[var(--foreground-muted)] italic font-sans text-[13px]">
+                      Formatted preview will render here...
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                className="px-5 py-2 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Done Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

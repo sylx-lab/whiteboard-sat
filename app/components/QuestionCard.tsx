@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Bookmark,
   Flag,
@@ -14,6 +14,9 @@ import {
   ArrowRight,
   ExternalLink,
   Clock,
+  Maximize2,
+  Minimize2,
+  X,
 } from 'lucide-react';
 import { Question, QuestionInteractionState, AnswerChoice } from '../types';
 import { MathRenderer } from './MathRenderer';
@@ -106,16 +109,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         return {
           id: (choice.id || choice.key || choice.label || choice.letter || ['A', 'B', 'C', 'D'][index] || 'A') as 'A' | 'B' | 'C' | 'D',
           text: choice.text ?? choice.value ?? choice.content ?? choice.option ?? '',
+          imageUrl: choice.imageUrl ?? choice.image ?? choice.figureUrl,
         };
       });
     }
     if (typeof raw === 'object') {
       return (['A', 'B', 'C', 'D'] as const)
-        .filter((id) => (raw as Record<string, string>)[id] !== undefined)
-        .map((id) => ({
-          id,
-          text: String((raw as Record<string, string>)[id] || ''),
-        }));
+        .filter((id) => (raw as Record<string, any>)[id] !== undefined)
+        .map((id) => {
+          const val = (raw as Record<string, any>)[id];
+          if (typeof val === 'object' && val !== null) {
+            return {
+              id,
+              text: val.text ?? '',
+              imageUrl: val.imageUrl ?? val.image,
+            };
+          }
+          return {
+            id,
+            text: String(val || ''),
+          };
+        });
     }
     return [];
   }, [question]);
@@ -124,7 +138,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const diffStyle = getDifficultyColor(question.difficulty);
 
-  const [mobileReadingTab, setMobileReadingTab] = React.useState<'question' | 'passage'>('question');
+  const [mobileReadingTab, setMobileReadingTab] = useState<'question' | 'passage'>('question');
+  const [isPassageExpanded, setIsPassageExpanded] = useState(false);
 
   // Reset to question tab when question changes
   React.useEffect(() => {
@@ -234,9 +249,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   {choice.id}
                 </div>
 
-                {/* Choice Text */}
-                <div className={`flex-1 text-[14.5px] sm:text-[15px] font-normal leading-[1.55] break-words min-w-0 ${isCrossed ? 'line-through' : ''}`}>
-                  <MathRenderer content={choice.text} />
+                {/* Choice Text and Optional Graph/Figure */}
+                <div className={`flex-1 text-[14.5px] sm:text-[15px] font-normal leading-[1.55] break-words min-w-0 space-y-2 ${isCrossed ? 'line-through' : ''}`}>
+                  {choice.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={choice.imageUrl}
+                      alt={`Figure for choice ${choice.id}`}
+                      className="max-h-48 w-auto rounded-lg border border-[var(--border)] bg-white object-contain p-1.5 shadow-2xs"
+                    />
+                  )}
+                  {choice.text && <MathRenderer content={choice.text} />}
                 </div>
               </div>
 
@@ -571,14 +594,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">
                   Reading Passage / Source Context
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileReadingTab('question')}
-                  className="lg:hidden text-[11px] font-bold text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Go to Question</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPassageExpanded(true)}
+                    title="Enlarge reading passage"
+                    className="h-7 px-2.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] text-[11.5px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Enlarge Passage</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileReadingTab('question')}
+                    className="lg:hidden text-[11px] font-bold text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Go to Question</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
               <div className="text-[15px] sm:text-[15.5px] text-[var(--foreground)] font-serif leading-[1.8] space-y-4">
                 <MathRenderer content={stimulusText} />
@@ -616,6 +650,43 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               {renderContentBody()}
             </div>
           </div>
+
+          {/* FULLSCREEN / ENLARGED PASSAGE MODAL */}
+          {isPassageExpanded && stimulusText && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+              <div className="bg-[var(--surface)] w-full max-w-4xl max-h-[90vh] rounded-2xl border border-[var(--border)] shadow-2xl flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[14.5px] text-[var(--foreground)]">Reading Passage & Context</span>
+                    <span className="text-[11px] font-mono text-[var(--brand-text)] bg-[var(--brand-soft)] px-2 py-0.5 rounded-md border border-teal-200">
+                      Enlarged View
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPassageExpanded(false)}
+                    className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
+                    title="Close enlarged passage"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex-1 p-6 sm:p-8 overflow-y-auto bg-[var(--brand-soft)]/30 text-[16px] sm:text-[17px] text-[var(--foreground)] font-serif leading-[1.9] space-y-4">
+                  <MathRenderer content={stimulusText} />
+                </div>
+                <div className="p-3.5 border-t border-[var(--border)] bg-[var(--surface)] flex items-center justify-between">
+                  <span className="text-[12px] text-[var(--foreground-secondary)]">Click Done or close icon to return</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsPassageExpanded(false)}
+                    className="px-5 py-2 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs cursor-pointer"
+                  >
+                    Done Reading
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Standard Single Column Layout for Math & Non-Passage Items */

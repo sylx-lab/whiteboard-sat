@@ -44,6 +44,8 @@ export interface AdminPanelProps {
   onRejectPayment: (paymentId: string) => void;
   onUpdatePaymentSettings?: (settings: PaymentSettings) => Promise<PaymentSettings>;
   onUpdatePlan?: (plan: ProductPlan) => Promise<ProductPlan[]>;
+  onAddPlan?: (plan: Partial<ProductPlan> & { name: string; price: number }) => Promise<ProductPlan[]>;
+  onDeletePlan?: (planId: string) => Promise<ProductPlan[]>;
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
   /** The bank's JSON import adds straight from the list view. */
@@ -96,6 +98,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onRejectPayment,
   onUpdatePaymentSettings,
   onUpdatePlan,
+  onAddPlan,
+  onDeletePlan,
   onUpdateUserAccess,
   onToggleUserStatus,
   onAddQuestion,
@@ -228,6 +232,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               onInspectPayment={setInspectingPayment}
               onUpdatePaymentSettings={onUpdatePaymentSettings}
               onUpdatePlan={onUpdatePlan}
+              onAddPlan={onAddPlan}
+              onDeletePlan={onDeletePlan}
             />
           )}
 

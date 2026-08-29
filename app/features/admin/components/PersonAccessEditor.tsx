@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   UserProfile,
@@ -17,7 +17,7 @@ import {
 } from '../lib/permissions';
 import { Check, ShieldCheck, KeyRound, GraduationCap, Award, UserCog, Receipt } from 'lucide-react';
 import { EditorTopBar, EditorSection, Field, inputClass, editorPrimaryButtonClass } from './EditorShell';
-import { Pill, ToggleRow, Button } from './ui';
+import { Pill, ToggleRow, Button, SearchInput } from './ui';
 
 interface PersonAccessEditorProps {
   person: UserProfile;
@@ -56,6 +56,8 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   backTab,
 }) => {
   const router = useRouter();
+  const [mockSearch, setMockSearch] = useState('');
+  const [courseSearch, setCourseSearch] = useState('');
 
   const access = person.access;
   // A full pass covers the individual subject passes and all mock tests, so those render locked-on
@@ -72,6 +74,28 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   const unlockedMockCount = (access.unlockedMockTestIds || []).filter((id) =>
     mockTests.some((m) => m.id === id)
   ).length;
+
+  const filteredMockTests = useMemo(() => {
+    if (!mockSearch.trim()) return mockTests;
+    const q = mockSearch.toLowerCase();
+    return mockTests.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        m.description?.toLowerCase().includes(q) ||
+        m.difficulty?.toLowerCase().includes(q)
+    );
+  }, [mockTests, mockSearch]);
+
+  const filteredCourses = useMemo(() => {
+    if (!courseSearch.trim()) return courses;
+    const q = courseSearch.toLowerCase();
+    return courses.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.subject?.toLowerCase().includes(q)
+    );
+  }, [courses, courseSearch]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#071126] flex flex-col">
@@ -178,29 +202,48 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
             {mockTests.length === 0 ? (
               <p className="text-[13px] text-[#58708A]">No mock tests created yet.</p>
             ) : (
-              mockTests.map((mock) => {
-                const isUnlocked =
-                  mock.is_free ||
-                  coveredByFullPass ||
-                  (access.unlockedMockTestIds?.includes(mock.id) ?? false);
-                const isLockedReason = mock.is_free
-                  ? 'Free diagnostic test for all students.'
-                  : coveredByFullPass
-                  ? 'Included in the full master pass.'
-                  : undefined;
+              <>
+                {mockTests.length > 2 && (
+                  <div className="pb-1">
+                    <SearchInput
+                      label="Search mock tests"
+                      placeholder="Search mock tests by title or difficulty…"
+                      value={mockSearch}
+                      onChange={setMockSearch}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                {filteredMockTests.length === 0 ? (
+                  <p className="text-[12.5px] text-[#58708A] py-3 text-center">
+                    No mock tests match &ldquo;{mockSearch}&rdquo;
+                  </p>
+                ) : (
+                  filteredMockTests.map((mock) => {
+                    const isUnlocked =
+                      mock.is_free ||
+                      coveredByFullPass ||
+                      (access.unlockedMockTestIds?.includes(mock.id) ?? false);
+                    const isLockedReason = mock.is_free
+                      ? 'Free diagnostic test for all students.'
+                      : coveredByFullPass
+                      ? 'Included in the full master pass.'
+                      : undefined;
 
-                return (
-                  <ToggleRow
-                    key={mock.id}
-                    label={mock.title}
-                    hint={`${mock.totalQuestions} questions · ${mock.totalTimeMinutes} mins · ${mock.difficulty} · ${mock.is_free ? 'Free Diagnostic' : 'Premium'}`}
-                    checked={isUnlocked}
-                    disabled={mock.is_free || coveredByFullPass}
-                    lockedReason={isLockedReason}
-                    onChange={() => onToggleMockTest(person.id, mock.id)}
-                  />
-                );
-              })
+                    return (
+                      <ToggleRow
+                        key={mock.id}
+                        label={mock.title}
+                        hint={`${mock.totalQuestions} questions · ${mock.totalTimeMinutes} mins · ${mock.difficulty} · ${mock.is_free ? 'Free Diagnostic' : 'Premium'}`}
+                        checked={isUnlocked}
+                        disabled={mock.is_free || coveredByFullPass}
+                        lockedReason={isLockedReason}
+                        onChange={() => onToggleMockTest(person.id, mock.id)}
+                      />
+                    );
+                  })
+                )}
+              </>
             )}
           </EditorSection>
 
@@ -216,17 +259,36 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
             {courses.length === 0 ? (
               <p className="text-[13px] text-[#58708A]">No courses in the catalog yet.</p>
             ) : (
-              courses.map((course) => (
-                <ToggleRow
-                  key={course.id}
-                  label={course.title}
-                  hint={`${course.lessonsCount} lessons · ৳${course.price}`}
-                  checked={access.enrolledCourseIds.includes(course.id) || coveredByFullPass}
-                  disabled={coveredByFullPass}
-                  lockedReason={coveredByFullPass ? 'Included in the full master pass.' : undefined}
-                  onChange={() => onToggleCourse(person.id, course.id)}
-                />
-              ))
+              <>
+                {courses.length > 2 && (
+                  <div className="pb-1">
+                    <SearchInput
+                      label="Search courses"
+                      placeholder="Search courses by title…"
+                      value={courseSearch}
+                      onChange={setCourseSearch}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                {filteredCourses.length === 0 ? (
+                  <p className="text-[12.5px] text-[#58708A] py-3 text-center">
+                    No courses match &ldquo;{courseSearch}&rdquo;
+                  </p>
+                ) : (
+                  filteredCourses.map((course) => (
+                    <ToggleRow
+                      key={course.id}
+                      label={course.title}
+                      hint={`${course.lessonsCount} lessons · ৳${course.price}`}
+                      checked={access.enrolledCourseIds.includes(course.id) || coveredByFullPass}
+                      disabled={coveredByFullPass}
+                      lockedReason={coveredByFullPass ? 'Included in the full master pass.' : undefined}
+                      onChange={() => onToggleCourse(person.id, course.id)}
+                    />
+                  ))
+                )}
+              </>
             )}
           </EditorSection>
 

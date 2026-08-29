@@ -667,6 +667,33 @@ export function useAppStore() {
     return plans;
   };
 
+  const addPlan = async (newPlan: Partial<ProductPlan> & { name: string; price: number }): Promise<ProductPlan[]> => {
+    const res = await fetch('/api/plans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: newPlan }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.items) {
+      setPlans(data.items);
+      return data.items;
+    }
+    return plans;
+  };
+
+  const deletePlan = async (planId: string): Promise<ProductPlan[]> => {
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    const res = await fetch(`/api/plans?id=${encodeURIComponent(planId)}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.items) {
+      setPlans(data.items);
+      return data.items;
+    }
+    return plans;
+  };
+
   return {
     theme,
     setTheme,
@@ -678,9 +705,7 @@ export function useAppStore() {
     resources,
     mockTests,
     plans,
-    updatePlan,
     paymentSettings,
-    updatePaymentSettings,
     practiceAttempts,
     mockAttempts,
     mockTestAttempts: mockAttempts,
@@ -738,6 +763,11 @@ export function useAppStore() {
     addMockTest,
     updateMockTest,
     deleteMockTest,
+    // Plan and Settings CRUD
+    updatePaymentSettings,
+    updatePlan,
+    addPlan,
+    deletePlan,
     // Computed analytics
     totalQuestionsAttempted,
     totalCorrect,

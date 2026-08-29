@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PaymentSubmission,
   PaymentSettings,
@@ -20,6 +20,9 @@ import {
   Building2,
   Smartphone,
   Check,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
 import {
   AdminCard,
@@ -44,6 +47,8 @@ interface PaymentsViewProps {
   onInspectPayment: (payment: PaymentSubmission) => void;
   onUpdatePaymentSettings?: (settings: PaymentSettings) => Promise<PaymentSettings>;
   onUpdatePlan?: (plan: ProductPlan) => Promise<ProductPlan[]>;
+  onAddPlan?: (plan: Partial<ProductPlan> & { name: string; price: number }) => Promise<ProductPlan[]>;
+  onDeletePlan?: (planId: string) => Promise<ProductPlan[]>;
 }
 
 type TabMode = 'queue' | 'channels' | 'plans';
@@ -58,6 +63,8 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   onInspectPayment,
   onUpdatePaymentSettings,
   onUpdatePlan,
+  onAddPlan,
+  onDeletePlan,
 }) => {
   const [activeTab, setActiveTab] = useState<TabMode>('queue');
   const [search, setSearch] = useState('');
@@ -72,6 +79,21 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   const [editablePlans, setEditablePlans] = useState<ProductPlan[]>(plans);
   const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
   const [savedPlanIdSuccess, setSavedPlanIdSuccess] = useState<string | null>(null);
+  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
+  const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false);
+  const [newPlan, setNewPlan] = useState<Partial<ProductPlan>>({
+    name: '',
+    description: '',
+    price: 0,
+    originalPrice: 0,
+    badge: '',
+    features: ['Full Question Bank access', 'Timed SAT Mock Tests', 'Detailed Explanations'],
+  });
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+
+  useEffect(() => {
+    setEditablePlans(plans);
+  }, [plans]);
 
   const pendingCount = payments.filter((p) => p.status === 'pending').length;
 
@@ -117,6 +139,48 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       console.error('Error saving plan:', err);
     } finally {
       setSavingPlanId(null);
+    }
+  };
+
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onAddPlan || !newPlan.name?.trim()) return;
+    setIsCreatingPlan(true);
+    try {
+      await onAddPlan({
+        name: newPlan.name.trim(),
+        description: newPlan.description || '',
+        price: Number(newPlan.price) || 0,
+        originalPrice: Number(newPlan.originalPrice) || 0,
+        badge: newPlan.badge || '',
+        features: newPlan.features || [],
+      });
+      setIsNewPlanModalOpen(false);
+      setNewPlan({
+        name: '',
+        description: '',
+        price: 0,
+        originalPrice: 0,
+        badge: '',
+        features: ['Full Question Bank access', 'Timed SAT Mock Tests', 'Detailed Explanations'],
+      });
+    } catch (err) {
+      console.error('Error creating plan:', err);
+    } finally {
+      setIsCreatingPlan(false);
+    }
+  };
+
+  const handleDeletePlan = async (plan: ProductPlan) => {
+    if (!onDeletePlan) return;
+    if (!confirm(`Delete pricing plan "${plan.name}"? This will remove it from the public pricing page.`)) return;
+    setDeletingPlanId(plan.id);
+    try {
+      await onDeletePlan(plan.id);
+    } catch (err) {
+      console.error('Error deleting plan:', err);
+    } finally {
+      setDeletingPlanId(null);
     }
   };
 
@@ -724,128 +788,320 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
       {/* TAB 3: Pricing Plans Editor */}
       {activeTab === 'plans' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {editablePlans.map((plan, pIdx) => {
-            const isSaving = savingPlanId === plan.id;
-            const isSuccess = savedPlanIdSuccess === plan.id;
+        <div className="space-y-5">
+          {/* Plans Header & Add Action */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-xs">
+            <div>
+              <h3 className="font-bold text-[#071126] text-base">Public Pricing Plans</h3>
+              <p className="text-[12.5px] text-[#58708A]">
+                Configure the subscription packages and passes displayed to students on the public pricing page.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsNewPlanModalOpen(true)}
+              className="px-4 py-2 bg-[#087C76] hover:bg-[#0D918A] text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Add New Plan</span>
+            </button>
+          </div>
 
-            return (
-              <div
-                key={plan.id}
-                className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
+          {editablePlans.length === 0 ? (
+            <EmptyState
+              icon={Tag}
+              title="No pricing plans configured"
+              description="Create pricing passes for students to purchase via bKash, Nagad, or Bank Transfer."
+              action={{ label: 'Add first plan', onClick: () => setIsNewPlanModalOpen(true) }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {editablePlans.map((plan, pIdx) => {
+                const isSaving = savingPlanId === plan.id;
+                const isDeleting = deletingPlanId === plan.id;
+                const isSuccess = savedPlanIdSuccess === plan.id;
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col justify-between space-y-4 relative group hover:border-[#087C76]/40 transition-colors"
+                  >
+                    {/* Delete Plan Button */}
+                    <div className="flex items-center justify-between gap-2 border-b border-[#E2E8F0] pb-2.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#58708A]">
+                        Plan #{pIdx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        title={`Delete ${plan.name}`}
+                        onClick={() => handleDeletePlan(plan)}
+                        className="p-1 text-[#58708A] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 flex-1">
+                      <div>
+                        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                          Plan Name
+                        </label>
+                        <input
+                          type="text"
+                          value={plan.name}
+                          onChange={(e) => {
+                            const next = [...editablePlans];
+                            next[pIdx] = { ...next[pIdx], name: e.target.value };
+                            setEditablePlans(next);
+                          }}
+                          className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[13.5px] font-bold text-[#071126] focus:outline-none focus:border-[#087C76]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                            Sale Price (৳)
+                          </label>
+                          <input
+                            type="number"
+                            value={plan.price}
+                            onChange={(e) => {
+                              const next = [...editablePlans];
+                              next[pIdx] = { ...next[pIdx], price: Number(e.target.value) };
+                              setEditablePlans(next);
+                            }}
+                            className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[14px] font-mono font-bold text-[#071126] focus:outline-none focus:border-[#087C76]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                            Regular Price (৳)
+                          </label>
+                          <input
+                            type="number"
+                            value={plan.originalPrice || 0}
+                            onChange={(e) => {
+                              const next = [...editablePlans];
+                              next[pIdx] = { ...next[pIdx], originalPrice: Number(e.target.value) };
+                              setEditablePlans(next);
+                            }}
+                            className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[14px] font-mono text-[#58708A] focus:outline-none focus:border-[#087C76]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                          Badge / Tag
+                        </label>
+                        <input
+                          type="text"
+                          value={plan.badge || ''}
+                          onChange={(e) => {
+                            const next = [...editablePlans];
+                            next[pIdx] = { ...next[pIdx], badge: e.target.value };
+                            setEditablePlans(next);
+                          }}
+                          placeholder="e.g. Recommended / Popular"
+                          className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[12px] text-[#071126] focus:outline-none focus:border-[#087C76]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={plan.description}
+                          onChange={(e) => {
+                            const next = [...editablePlans];
+                            next[pIdx] = { ...next[pIdx], description: e.target.value };
+                            setEditablePlans(next);
+                          }}
+                          className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[12px] text-[#58708A] focus:outline-none focus:border-[#087C76]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                          Features (One per line)
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={(plan.features || []).join('\n')}
+                          onChange={(e) => {
+                            const lines = e.target.value.split('\n');
+                            const next = [...editablePlans];
+                            next[pIdx] = { ...next[pIdx], features: lines };
+                            setEditablePlans(next);
+                          }}
+                          placeholder="Full access to Math bank&#10;4 Timed digital SAT mocks&#10;Detailed explanations"
+                          className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[11.5px] text-[#071126] focus:outline-none focus:border-[#087C76] font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#E2E8F0]">
+                      <button
+                        type="button"
+                        disabled={isSaving || isDeleting}
+                        onClick={() => handleSavePlan(editablePlans[pIdx])}
+                        className={`w-full py-2 px-3 rounded-xl font-semibold text-[12.5px] transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                          isSuccess
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-[#087C76] hover:bg-[#0D918A] text-white shadow-xs'
+                        }`}
+                      >
+                        {isSuccess ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Saved!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-3.5 h-3.5" />
+                            <span>{isSaving ? 'Saving...' : 'Save Plan'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ADD NEW PLAN MODAL */}
+          {isNewPlanModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white max-w-lg w-full rounded-2xl border border-[#E2E8F0] shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#087C76] flex items-center justify-center font-bold">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-base font-bold text-[#071126]">Create New Pricing Plan</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewPlanModalOpen(false)}
+                    className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-slate-100 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreatePlan} className="space-y-4">
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
-                      Plan Name
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                      Plan Title / Name *
                     </label>
                     <input
                       type="text"
-                      value={plan.name}
-                      onChange={(e) => {
-                        const next = [...editablePlans];
-                        next[pIdx] = { ...next[pIdx], name: e.target.value };
-                        setEditablePlans(next);
-                      }}
-                      className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[13.5px] font-bold text-[#071126] focus:outline-none focus:border-[#087C76]"
+                      required
+                      value={newPlan.name || ''}
+                      onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                      placeholder="e.g. Complete 1550+ SAT Intensive"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[13px] text-[#071126] focus:outline-none focus:border-[#087C76]"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
-                        Sale Price (৳)
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                        Sale Price (৳) *
                       </label>
                       <input
                         type="number"
-                        value={plan.price}
-                        onChange={(e) => {
-                          const next = [...editablePlans];
-                          next[pIdx] = { ...next[pIdx], price: Number(e.target.value) };
-                          setEditablePlans(next);
-                        }}
-                        className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[14px] font-mono font-bold text-[#071126] focus:outline-none focus:border-[#087C76]"
+                        required
+                        min={0}
+                        value={newPlan.price || 0}
+                        onChange={(e) => setNewPlan({ ...newPlan, price: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[13px] font-mono text-[#071126] focus:outline-none focus:border-[#087C76]"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
                         Regular Price (৳)
                       </label>
                       <input
                         type="number"
-                        value={plan.originalPrice || 0}
-                        onChange={(e) => {
-                          const next = [...editablePlans];
-                          next[pIdx] = { ...next[pIdx], originalPrice: Number(e.target.value) };
-                          setEditablePlans(next);
-                        }}
-                        className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[14px] font-mono text-[#58708A] focus:outline-none focus:border-[#087C76]"
+                        min={0}
+                        value={newPlan.originalPrice || 0}
+                        onChange={(e) => setNewPlan({ ...newPlan, originalPrice: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[13px] font-mono text-[#58708A] focus:outline-none focus:border-[#087C76]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
-                      Badge / Tag
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                      Badge / Tag (Optional)
                     </label>
                     <input
                       type="text"
-                      value={plan.badge || ''}
-                      onChange={(e) => {
-                        const next = [...editablePlans];
-                        next[pIdx] = { ...next[pIdx], badge: e.target.value };
-                        setEditablePlans(next);
-                      }}
-                      placeholder="e.g. Recommended / Popular"
-                      className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[12px] text-[#071126] focus:outline-none focus:border-[#087C76]"
+                      value={newPlan.badge || ''}
+                      onChange={(e) => setNewPlan({ ...newPlan, badge: e.target.value })}
+                      placeholder="e.g. Popular, Recommended, Limited Offer"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[13px] text-[#071126] focus:outline-none focus:border-[#087C76]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
                       Description
                     </label>
                     <textarea
                       rows={2}
-                      value={plan.description}
-                      onChange={(e) => {
-                        const next = [...editablePlans];
-                        next[pIdx] = { ...next[pIdx], description: e.target.value };
-                        setEditablePlans(next);
-                      }}
-                      className="w-full px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[12px] text-[#58708A] focus:outline-none focus:border-[#087C76]"
+                      value={newPlan.description || ''}
+                      onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                      placeholder="Brief overview of what this plan delivers..."
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[12.5px] text-[#071126] focus:outline-none focus:border-[#087C76]"
                     />
                   </div>
-                </div>
 
-                <div className="pt-2 border-t border-[#E2E8F0]">
-                  <button
-                    type="button"
-                    disabled={isSaving}
-                    onClick={() => handleSavePlan(editablePlans[pIdx])}
-                    className={`w-full py-2 px-3 rounded-xl font-semibold text-[12.5px] transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      isSuccess
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-[#087C76] hover:bg-[#0D918A] text-white shadow-xs'
-                    }`}
-                  >
-                    {isSuccess ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>Saved!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3.5 h-3.5" />
-                        <span>{isSaving ? 'Saving...' : 'Save Plan'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#58708A] mb-1">
+                      Included Features (One bullet per line)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={(newPlan.features || []).join('\n')}
+                      onChange={(e) =>
+                        setNewPlan({
+                          ...newPlan,
+                          features: e.target.value.split('\n'),
+                        })
+                      }
+                      placeholder="All Math and RW questions&#10;Full Digital SAT mock tests&#10;Video explanations"
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#087C76]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E2E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => setIsNewPlanModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-[13px] font-medium text-[#58708A] hover:bg-slate-100 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingPlan}
+                      className="px-5 py-2 rounded-xl bg-[#087C76] hover:bg-[#0D918A] text-white font-semibold text-[13px] shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {isCreatingPlan ? 'Creating...' : 'Create Plan'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
       )}
     </div>

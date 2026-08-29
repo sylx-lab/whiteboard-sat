@@ -42,6 +42,7 @@ export interface QuestionFormState {
   imageUrl: string;
   questionText: string;
   choices: Record<ChoiceId, string>;
+  choiceImages: Record<ChoiceId, string>;
   correctAnswer: ChoiceId;
   explanation: string;
 }
@@ -61,6 +62,7 @@ export const blankQuestionForm = (subject: Subject = 'math'): QuestionFormState 
   imageUrl: '',
   questionText: '',
   choices: { A: '', B: '', C: '', D: '' },
+  choiceImages: { A: '', B: '', C: '', D: '' },
   correctAnswer: 'A',
   explanation: '',
 });
@@ -68,6 +70,7 @@ export const blankQuestionForm = (subject: Subject = 'math'): QuestionFormState 
 export const questionFormFromQuestion = (q: Question): QuestionFormState => {
   const existing = q.choices || q.answer_choices || [];
   const byId = (id: ChoiceId) => existing.find((c) => c.id === id)?.text || '';
+  const byImage = (id: ChoiceId) => existing.find((c) => c.id === id)?.imageUrl || '';
   return {
     code: q.code,
     subject: q.subject,
@@ -82,6 +85,7 @@ export const questionFormFromQuestion = (q: Question): QuestionFormState => {
     imageUrl: q.imageUrl || '',
     questionText: q.question_text,
     choices: { A: byId('A'), B: byId('B'), C: byId('C'), D: byId('D') },
+    choiceImages: { A: byImage('A'), B: byImage('B'), C: byImage('C'), D: byImage('D') },
     correctAnswer: q.correct_answer,
     explanation: q.explanation || '',
   };
@@ -148,6 +152,7 @@ export function useQuestionForm(opts: {
     const choicesPayload: AnswerChoice[] = CHOICE_IDS.map((id) => ({
       id,
       text: form.choices[id].trim(),
+      imageUrl: form.choiceImages[id]?.trim() || undefined,
     }));
     const stimulus = form.stimulus.trim();
 
@@ -224,11 +229,6 @@ export const QuestionDatalists: React.FC<{ ctl: QuestionFormController }> = ({ c
     </datalist>
     <datalist id={`subtopic-options-${ctl.idScope}`}>
       {ctl.subtopicOptions.map((t) => (
-        <option key={t} value={t} />
-      ))}
-    </datalist>
-    <datalist id={`source-options-${ctl.idScope}`}>
-      {ctl.sourceOptions.map((t) => (
         <option key={t} value={t} />
       ))}
     </datalist>
@@ -404,20 +404,21 @@ export const QuestionFormFields: React.FC<{
         )}
       </EditorSection>
 
-      <EditorSection icon={ListChecks} title="Answer choices" hint="Select the correct one">
-        <div className="space-y-2">
+      <EditorSection icon={ListChecks} title="Answer choices" hint="Select the correct one and optionally add graph images">
+        <div className="space-y-3">
           {CHOICE_IDS.map((id) => {
             const isCorrect = form.correctAnswer === id;
+            const hasImage = Boolean(form.choiceImages[id]);
             return (
               <div
                 key={id}
-                className={`p-2.5 rounded-xl border flex items-start gap-2.5 transition-colors ${
-                  isCorrect ? 'bg-emerald-50 border-emerald-300' : 'bg-[#F8FBFB] border-[#E2E8F0]'
+                className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${
+                  isCorrect ? 'bg-emerald-50/70 border-emerald-300' : 'bg-[#F8FBFB] border-[#E2E8F0]'
                 }`}
               >
                 {/* Native radio: keyboard-navigable and announced as a group. */}
                 <label
-                  className="shrink-0 cursor-pointer mt-0.5"
+                  className="shrink-0 cursor-pointer mt-1"
                   title={`Mark choice ${id} as the correct answer`}
                 >
                   <input
@@ -431,7 +432,7 @@ export const QuestionFormFields: React.FC<{
                   <span
                     className={`w-7 h-7 rounded-full grid place-items-center text-[12px] font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#0D918A] peer-focus-visible:ring-offset-1 ${
                       isCorrect
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-white text-[#58708A] border border-[#E2E8F0]'
                     }`}
                   >
@@ -439,23 +440,57 @@ export const QuestionFormFields: React.FC<{
                   </span>
                 </label>
 
-                {/* Textarea, not input: verbal choices run long. `field-sizing-content`
-                    grows it to fit where supported, and it stays drag-resizable elsewhere. */}
-                <textarea
-                  rows={1}
-                  required
-                  value={form.choices[id]}
-                  onChange={(e) => update({ choices: { ...form.choices, [id]: e.target.value } })}
-                  placeholder={`Choice ${id}`}
-                  aria-label={`Choice ${id} text`}
-                  className="flex-1 min-w-0 min-h-9 px-3 py-2 field-sizing-content bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
-                />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      rows={1}
+                      value={form.choices[id]}
+                      onChange={(e) => update({ choices: { ...form.choices, [id]: e.target.value } })}
+                      placeholder={`Choice ${id} text or equation… (e.g. $y = 2x + 1$)`}
+                      aria-label={`Choice ${id} text`}
+                      className="flex-1 min-w-0 min-h-9 px-3 py-2 field-sizing-content bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
+                    />
 
-                {isCorrect && (
-                  <span className="text-[11px] font-semibold text-emerald-700 shrink-0 hidden sm:inline mt-1.5">
-                    Correct
-                  </span>
-                )}
+                    {!hasImage && (
+                      <UploadButton
+                        folder="questions"
+                        accept={ACCEPT.image}
+                        label="Add graph"
+                        onUploaded={(url) =>
+                          update({ choiceImages: { ...form.choiceImages, [id]: url } })
+                        }
+                      />
+                    )}
+
+                    {isCorrect && (
+                      <span className="text-[11px] font-semibold text-emerald-700 shrink-0 hidden sm:inline mt-2">
+                        Correct Answer
+                      </span>
+                    )}
+                  </div>
+
+                  {hasImage && (
+                    <div className="flex items-center gap-3 p-2 bg-white border border-[#E2E8F0] rounded-xl">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.choiceImages[id]}
+                        alt={`Figure for choice ${id}`}
+                        className="h-14 w-auto max-w-[140px] rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold text-[#071126]">Option {id} Graph Attached</p>
+                        <p className="text-[10px] text-[#58708A] font-mono truncate">{form.choiceImages[id]}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => update({ choiceImages: { ...form.choiceImages, [id]: '' } })}
+                        className="text-[11.5px] font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer px-2 py-1 hover:bg-rose-50 rounded-lg"
+                      >
+                        Remove figure
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -499,30 +534,17 @@ export const QuestionFormFields: React.FC<{
           </Field>
 
           {isFull && (
-            <>
-              <Field label="Status">
-                <select
-                  value={form.status}
-                  onChange={(e) => update({ status: e.target.value as QuestionStatus })}
-                  className={inputClass}
-                >
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </Field>
-
-              <Field label="Source" hint="Where this question came from" className="sm:col-span-3">
-                <input
-                  type="text"
-                  list={`source-options-${idScope}`}
-                  value={form.source}
-                  onChange={(e) => update({ source: e.target.value })}
-                  placeholder="White Board Official Bank"
-                  className={inputClass}
-                />
-              </Field>
-            </>
+            <Field label="Status">
+              <select
+                value={form.status}
+                onChange={(e) => update({ status: e.target.value as QuestionStatus })}
+                className={inputClass}
+              >
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </Field>
           )}
         </div>
       </EditorSection>
@@ -580,6 +602,7 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
       <div className="space-y-2">
         {CHOICE_IDS.map((id) => {
           const isCorrect = id === form.correctAnswer;
+          const choiceImg = form.choiceImages[id];
           return (
             <div
               key={id}
@@ -596,11 +619,19 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
               >
                 {id}
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                {choiceImg && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={choiceImg}
+                    alt={`Choice ${id} figure`}
+                    className="max-h-32 w-auto rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
+                  />
+                )}
                 {form.choices[id] ? (
                   <MathRenderer inline content={form.choices[id]} />
                 ) : (
-                  <span className="text-[#58708A]">Choice {id}</span>
+                  !choiceImg && <span className="text-[#58708A]">Choice {id}</span>
                 )}
               </div>
             </div>
