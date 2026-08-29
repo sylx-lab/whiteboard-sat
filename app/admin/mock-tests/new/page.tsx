@@ -13,6 +13,7 @@ export default function NewMockTestPage() {
   return (
     <MockTestVisualEditor
       allQuestions={store.questions}
+      allCourses={store.courses}
       onCreateQuestion={store.addQuestion}
       onSave={(data) => {
         store.addMockTest(data as unknown as Partial<MockTest> & { title: string });

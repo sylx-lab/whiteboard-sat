@@ -18,6 +18,7 @@ import {
   QuestionInteractionState,
   UserProfile,
   Domain,
+  Course,
 } from '../../types';
 import { isPlayable } from '../../lib/mockTests';
 import { formatDomainName } from '../../lib/utils';
@@ -34,6 +35,7 @@ interface MockTestsHubProps {
   onSaveAttempt: (attempt: MockTestAttempt) => void;
   onFinalizeTest: (attemptId: string) => Promise<MockTestAttempt | undefined>;
   onOpenPricing: () => void;
+  courses?: Course[];
 }
 
 export const MockTestsHub: React.FC<MockTestsHubProps> = ({
@@ -44,7 +46,9 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   onSaveAttempt,
   onFinalizeTest,
   onOpenPricing,
+  courses = [],
 }) => {
+  const courseName = (id?: string | null) => courses.find((c) => c.id === id)?.title ?? id ?? '';
   // Test Runner State
   const [activeAttempt, setActiveAttempt] = useState<MockTestAttempt | null>(null);
   const [activeTest, setActiveTest] = useState<MockTest | null>(null);
@@ -561,6 +565,12 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="space-y-1">
                   <h3 className="font-bold text-[var(--foreground)] text-base leading-snug">{test.title}</h3>
                   <p className="text-[12px] text-[var(--foreground-secondary)] leading-[1.5] min-h-[48px]">{test.description}</p>
+                  {(test.courseId || (test.courseIds && test.courseIds.length)) && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
+                      <BookOpen className="w-3 h-3" />
+                      <span>Course: {courseName(test.courseId ?? test.courseIds?.[0])}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)] space-y-1 text-[12px] text-[var(--foreground-secondary)]">
@@ -625,9 +635,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   <button
                     onClick={onOpenPricing}
                     className="w-full py-2.5 bg-[var(--brand-soft)] hover:bg-teal-100/60 text-[var(--brand-text)] font-semibold text-[12px] rounded-[10px] border border-teal-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    title={test.courseId ? `Enroll in ${courseName(test.courseId)} to unlock` : undefined}
                   >
                     <Lock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
-                    <span>Unlock with Pass</span>
+                    <span>{test.courseId ? `Enroll in Course to Unlock` : 'Unlock with Pass'}</span>
                   </button>
                 )}
               </div>

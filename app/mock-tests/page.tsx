@@ -21,6 +21,7 @@ export default function MockTestsPage() {
       onSaveAttempt={store.saveMockTestAttempt}
       onFinalizeTest={store.finalizeMockTestAttempt}
       onOpenPricing={() => router.push('/pricing')}
+      courses={store.courses}
     />
   );
 }

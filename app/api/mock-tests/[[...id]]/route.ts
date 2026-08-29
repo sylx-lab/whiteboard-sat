@@ -21,12 +21,18 @@ const routes = crud<MockTest, MockTestDoc>({
       title: m.title || moduleTitle(m.section, m.moduleNumber),
       questions: m.questions ?? [],
     }));
+    const isFree = row.is_free ?? false;
+    // Free tests ignore course gating — clear it to avoid conflicting data
+    const rawCourseId = isFree ? null : ((row as MockTest).courseId ?? null);
+    const rawCourseIds = isFree ? [] : ((row as MockTest).courseIds ?? (rawCourseId ? [rawCourseId] : []));
     return {
       ...(row as MockTest),
       id,
       description: row.description ?? '',
-      is_free: row.is_free ?? false,
+      is_free: isFree,
       difficulty: row.difficulty ?? 'medium',
+      courseId: rawCourseId || null,
+      courseIds: rawCourseIds.filter(Boolean),
       modules,
       ...deriveTotals(modules),
     };

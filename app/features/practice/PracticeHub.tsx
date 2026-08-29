@@ -78,6 +78,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const [questionStartMs, setQuestionStartMs] = useState<number>(Date.now());
   const [isCrossOutMode, setIsCrossOutMode] = useState(false);
   const [isMobileMatrixOpen, setIsMobileMatrixOpen] = useState(false);
+  const [isDesktopMatrixOpen, setIsDesktopMatrixOpen] = useState(false);
 
   // Reference Modals
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
@@ -405,6 +406,16 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               Formulas
             </button>
 
+            {/* Desktop Matrix Expand Button — hidden by default */}
+            <button
+              onClick={() => setIsDesktopMatrixOpen((v) => !v)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[11.5px] sm:text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer active:scale-95"
+              aria-expanded={isDesktopMatrixOpen}
+              aria-controls="practice-matrix"
+            >
+              {isDesktopMatrixOpen ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+              <span>{isDesktopMatrixOpen ? 'Hide Matrix' : `Matrix (${currentIndex + 1}/${sessionQuestionIds.length})`}</span>
+            </button>
             {/* Mobile Navigator Matrix Toggle Button */}
             <button
               onClick={() => setIsMobileMatrixOpen(true)}
@@ -417,7 +428,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
         {/* Runner Question Area */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          <div className="lg:col-span-8 space-y-5 sm:space-y-6">
+          <div className={`${isDesktopMatrixOpen ? 'lg:col-span-8' : 'lg:col-span-12'} space-y-5 sm:space-y-6`}>
             <QuestionCard
               question={currentSessionQuestion}
               interactionState={currentInteraction}
@@ -477,18 +488,26 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             </div>
           </div>
 
-          {/* Desktop Right Matrix Navigator */}
-          <div className="hidden lg:block lg:col-span-4 space-y-4">
-            <QuestionNavigator
-              totalQuestions={sessionQuestionIds.length}
-              currentIndex={currentIndex}
-              interactions={sessionInteractions}
-              questionIds={sessionQuestionIds}
-              questions={questions}
-              onSelectIndex={(idx) => setCurrentIndex(idx)}
-              title="Practice Matrix"
-            />
-          </div>
+          {/* Desktop Right Matrix Navigator — hidden by default, expands on button */}
+          {isDesktopMatrixOpen && (
+            <div id="practice-matrix" className="hidden lg:block lg:col-span-4 space-y-4 animate-in fade-in slide-in-from-right-2 duration-200">
+              <QuestionNavigator
+                totalQuestions={sessionQuestionIds.length}
+                currentIndex={currentIndex}
+                interactions={sessionInteractions}
+                questionIds={sessionQuestionIds}
+                questions={questions}
+                onSelectIndex={(idx) => setCurrentIndex(idx)}
+                title="Practice Matrix"
+              />
+              <button
+                onClick={() => setIsDesktopMatrixOpen(false)}
+                className="w-full py-2 text-[11px] font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] border border-[var(--border)] rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition-colors"
+              >
+                Collapse Matrix
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Matrix Drawer Bottom Sheet */}

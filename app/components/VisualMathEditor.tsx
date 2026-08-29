@@ -148,6 +148,53 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     }
   };
 
+  const handleListEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== 'Enter') return;
+    const el = e.currentTarget;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    if (start !== end) return; // don't hijack when range selected
+
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const line = value.slice(lineStart, start);
+
+    const dotM = line.match(/^(\s*)•\s(.*)$/);
+    const alphaM = line.match(/^(\s*)([A-Z])\.\s(.*)$/);
+
+    if (!dotM && !alphaM) return;
+
+    e.preventDefault();
+    const isAlpha = !!alphaM;
+    const indent = (dotM?.[1] ?? alphaM?.[1] ?? '');
+    const content = (dotM?.[2] ?? alphaM?.[3] ?? '');
+
+    let newText: string;
+    let newCaret: number;
+
+    if (!content.trim()) {
+      // Empty list item -> exit list: strip the marker
+      newText = value.slice(0, lineStart) + indent + value.slice(start);
+      newCaret = lineStart + indent.length;
+    } else if (isAlpha) {
+      const cur = alphaM![2];
+      const next = cur === 'Z' ? 'Z' : String.fromCharCode(cur.charCodeAt(0) + 1);
+      // If at Z stay at Z to avoid wrapping to [; user can fix manually
+      const prefix = `${next}. `;
+      newText = value.slice(0, start) + '\n' + indent + prefix + value.slice(start);
+      newCaret = start + 1 + indent.length + prefix.length;
+    } else {
+      const prefix = '• ';
+      newText = value.slice(0, start) + '\n' + indent + prefix + value.slice(start);
+      newCaret = start + 1 + indent.length + prefix.length;
+    }
+
+    onChange(newText);
+    setCaretPos(newCaret);
+    setTimeout(() => {
+      el.setSelectionRange(newCaret, newCaret);
+    }, 0);
+  };
+
   const caretInMath = isInsideMath(value, caretPos);
   const hasMath = value.includes('$');
 
@@ -325,6 +372,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
             onChange(e.target.value);
           }}
           onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
+          onKeyDown={handleListEnter}
           placeholder={placeholder}
           aria-label={ariaLabel || label}
           className="w-full px-3 py-2.5 bg-transparent text-[var(--foreground)] text-[12px] font-mono focus:outline-none resize-y block"
@@ -399,6 +447,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                     onChange(e.target.value);
                   }}
                   onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
+                  onKeyDown={handleListEnter}
                   placeholder={placeholder}
                   className="w-full flex-1 p-3 bg-[var(--surface-soft)] border border-[var(--border)] rounded-xl text-[13.5px] font-mono text-[var(--foreground)] focus:outline-none focus:border-[var(--brand)] resize-none leading-relaxed"
                 />

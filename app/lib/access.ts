@@ -31,11 +31,14 @@ export function canSeeCourse(user: UserProfile | null, courseId: string): boolea
 
 export function canSeeMockTest(
   user: UserProfile | null,
-  test: Pick<MockTest, 'id' | 'is_free'>,
+  test: Pick<MockTest, 'id' | 'is_free' | 'courseId' | 'courseIds'>,
 ): boolean {
   if (test.is_free) return true;
   if (!user) return false;
   if (unlimited(user)) return true;
+  // Course-gated mock: enrolled in linked course unlocks it without a separate pass
+  const linkedIds = [...(test.courseIds ?? []), ...(test.courseId ? [test.courseId] : [])].filter(Boolean) as string[];
+  if (linkedIds.length > 0 && linkedIds.some((cid) => canSeeCourse(user, cid))) return true;
   return user.access?.unlockedMockTestIds?.includes(test.id) ?? false;
 }
 

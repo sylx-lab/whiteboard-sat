@@ -26,6 +26,7 @@ export default function EditMockTestPage() {
     <MockTestVisualEditor
       initialTest={test}
       allQuestions={store.questions}
+      allCourses={store.courses}
       onCreateQuestion={store.addQuestion}
       onSave={(data) => {
         store.updateMockTest(test.id, data as unknown as Partial<MockTest>);

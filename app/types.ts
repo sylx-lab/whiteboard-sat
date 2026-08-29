@@ -105,6 +105,10 @@ export interface MockTest {
   description: string;
   is_free: boolean;
   difficulty: Difficulty;
+  /** If set, only students enrolled in this course (or premium) can sit; empty = follow is_free/paid pass */
+  courseId?: string | null;
+  /** Multi-course variant — if either is set it gates. Kept nullable for backward compat. */
+  courseIds?: string[];
   totalQuestions: number;
   totalTimeMinutes: number;
   modules: MockTestModule[];
