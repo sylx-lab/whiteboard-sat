@@ -34,6 +34,7 @@ interface PracticeHubProps {
   onLogAttempt: (question: Question, answer: 'A' | 'B' | 'C' | 'D', timeSpent: number) => void;
   onToggleBookmark?: (questionId: string) => void;
   onOpenPricing: () => void;
+  onOpenAuth?: () => void;
 }
 
 type SortOption = 'recommended' | 'difficulty' | 'newest';
@@ -47,9 +48,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   onLogAttempt,
   onToggleBookmark,
   onOpenPricing,
+  onOpenAuth,
 }) => {
-  // High-Level Subject Switcher
-  const [selectedSubject, setSelectedSubject] = useState<Subject>('math');
+  // High-Level Subject Switcher — All first, then Math / English
+  const [selectedSubject, setSelectedSubject] = useState<Subject | 'all'>('all');
 
   // Compact Toolbar Filters
   const [selectedDomain, setSelectedDomain] = useState<Domain | 'all'>('all');
@@ -124,7 +126,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const availableTopics = useMemo(() => {
     const set = new Set<string>();
     questions
-      .filter((q) => q.subject === selectedSubject && hasAccessToQuestion(q))
+      .filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && hasAccessToQuestion(q))
       .forEach((q) => set.add(q.topic));
     return Array.from(set);
   }, [questions, selectedSubject, hasAccessToQuestion]);
@@ -135,8 +137,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       // Hide premium completely for students without access (not even as locked cards)
       if (!hasAccessToQuestion(q)) return false;
 
-      // Subject filter
-      if (q.subject !== selectedSubject) return false;
+      // Subject filter — All shows both Math and Reading & Writing
+      if (selectedSubject !== 'all' && q.subject !== selectedSubject) return false;
 
       // Domain filter
       if (selectedDomain !== 'all' && q.domain !== selectedDomain) return false;
@@ -188,14 +190,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
   // Stats — counts reflect what you can actually access (premium hidden)
   const accessibleForSubject = useMemo(
-    () => questions.filter((q) => q.subject === selectedSubject && hasAccessToQuestion(q)),
+    () => questions.filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && hasAccessToQuestion(q)),
     [questions, selectedSubject, hasAccessToQuestion]
   );
   const subjectTotal = accessibleForSubject.length;
   const subjectFree = accessibleForSubject.filter((q) => q.is_free).length;
-  const subjectDomains = selectedSubject === 'math' ? 4 : 4;
+  const subjectDomains = selectedSubject === 'all' ? 8 : 4;
   const hiddenPremiumCount = useMemo(
-    () => questions.filter((q) => q.subject === selectedSubject && !hasAccessToQuestion(q)).length,
+    () => questions.filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && !hasAccessToQuestion(q)).length,
     [questions, selectedSubject, hasAccessToQuestion]
   );
 
@@ -227,8 +229,12 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     setVisibleCount(PAGE_SIZE);
   }
 
-  // Launch Practice Session
+  // Launch Practice Session — requires account
   const handleStartSession = (startQuestions = filteredQuestions, initialIdx = 0) => {
+    if (!currentUser) {
+      onOpenAuth?.();
+      return;
+    }
     if (startQuestions.length === 0) return;
     const ids = startQuestions.map((q) => q.id);
     setSessionQuestionIds(ids);
@@ -255,19 +261,21 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Timer increment while in active session
-  useEffect(() => {
-    if (!isSessionActive) return;
-    const interval = setInterval(() => {
-      setSessionTimer((t) => t + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isSessionActive]);
-
   const currentSessionQuestion = questions.find((q) => q.id === sessionQuestionIds[currentIndex]);
   const currentInteraction = currentSessionQuestion
     ? sessionInteractions[currentSessionQuestion.id]
     : undefined;
+
+  // Timer increment while in active session — pauses while reviewing explanation (isSubmitted) so checking explanation doesn't inflate time
+  const isTimerPaused = isSessionActive && !!currentInteraction?.isSubmitted;
+  useEffect(() => {
+    if (!isSessionActive) return;
+    if (currentInteraction?.isSubmitted) return;
+    const interval = setInterval(() => {
+      setSessionTimer((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isSessionActive, currentInteraction?.isSubmitted, currentIndex]);
 
   // Question handlers in session
   const handleSelectAnswer = (choiceId: 'A' | 'B' | 'C' | 'D') => {
@@ -322,6 +330,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   };
 
   const handleSubmitAnswer = () => {
+    if (!currentUser) {
+      onOpenAuth?.();
+      return;
+    }
     if (!currentSessionQuestion || !currentInteraction?.selectedAnswer) return;
     const elapsed = Math.max(1, Math.round((getNow() - questionStartMsRef.current) / 1000));
     // Persist per-question time
@@ -376,7 +388,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
             <div className="flex items-center gap-2">
               <div className="text-[12.5px] sm:text-[13px] font-bold text-(--foreground) truncate max-w-35 sm:max-w-none">
-                {selectedSubject === 'math' ? 'Mathematics Drill' : 'Reading & Writing Drill'}
+                {selectedSubject === 'all' ? 'Mixed Drill' : selectedSubject === 'math' ? 'Mathematics Drill' : 'Reading & Writing Drill'}
               </div>
               <span className="text-(--foreground-muted) hidden sm:inline">•</span>
               <span className="text-[11.5px] sm:text-[12px] text-(--foreground-secondary) font-mono">
@@ -386,14 +398,20 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-(--brand-soft) border border-(--border) rounded-lg text-[12px] font-mono text-(--foreground)">
-              <Clock className="w-3.5 h-3.5 text-(--brand-text)" />
+            <div
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 border rounded-lg text-[12px] font-mono ${
+                isTimerPaused ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-(--brand-soft) border-(--border) text-(--foreground)'
+              }`}
+              title={isTimerPaused ? 'Timer paused while reviewing explanation' : 'Time spent solving'}
+            >
+              <Clock className={`w-3.5 h-3.5 ${isTimerPaused ? 'text-amber-600' : 'text-(--brand-text)'}`} />
               <span>
                 {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}
               </span>
+              {isTimerPaused && <span className="ml-1 text-[10px] font-sans font-bold uppercase tracking-wider">Paused</span>}
             </div>
 
-            {selectedSubject === 'math' && (
+            {(selectedSubject === 'math' || selectedSubject === 'all') && (
               <button
                 onClick={() => setIsDesmosOpen(true)}
                 className="px-2.5 sm:px-3 py-1 bg-(--surface) hover:bg-(--brand-soft) text-[11.5px] sm:text-[12px] font-medium text-(--foreground) border border-(--border) rounded-lg transition-colors cursor-pointer active:scale-95"
@@ -428,6 +446,66 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Progress — clear at-a-glance while solving */}
+        {(() => {
+          const total = sessionQuestionIds.length;
+          const answered = Object.values(sessionInteractions).filter((i) => i.isSubmitted).length;
+          const correct = sessionQuestionIds.filter((id) => {
+            const inter = sessionInteractions[id];
+            if (!inter?.isSubmitted || !inter.selectedAnswer) return false;
+            const q = questions.find((qq) => qq.id === id);
+            return q ? inter.selectedAnswer === q.correct_answer : false;
+          }).length;
+          const incorrect = answered - correct;
+          const pct = total ? Math.round((answered / total) * 100) : 0;
+          return (
+            <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 sm:p-4 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                <div className="flex items-center gap-3 font-medium">
+                  <span className="text-[var(--foreground)] font-bold">
+                    Progress {answered}/{total}
+                  </span>
+                  <span className="hidden sm:inline text-[var(--foreground-muted)]">•</span>
+                  <span className="text-emerald-700">{correct} correct</span>
+                  <span className="text-[var(--foreground-muted)]">•</span>
+                  <span className="text-rose-600">{incorrect} incorrect</span>
+                  <span className="text-[var(--foreground-muted)]">•</span>
+                  <span className="text-[var(--foreground-secondary)]">{total - answered} remaining</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-[var(--foreground-secondary)]">{pct}%</span>
+                  <button
+                    onClick={() => setIsDesktopMatrixOpen(true)}
+                    className="hidden lg:inline-flex text-[11px] font-semibold text-[var(--brand-text)] hover:underline"
+                  >
+                    See matrix
+                  </button>
+                  <button
+                    onClick={() => setIsMobileMatrixOpen(true)}
+                    className="lg:hidden text-[11px] font-semibold text-[var(--brand-text)] hover:underline"
+                  >
+                    See matrix
+                  </button>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--surface-soft)] overflow-hidden">
+                <div
+                  className="h-full bg-[var(--brand-cta)] transition-all duration-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              {isTimerPaused && answered < total && (
+                <p className="text-[11px] text-[var(--foreground-secondary)]">Timer paused while you review the explanation.</p>
+              )}
+              {answered === total && total > 0 && (
+                <p className="text-[11px] font-medium text-emerald-700">
+                  All done! Timer stopped at {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}. Review any question or exit.
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Runner Question Area */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
@@ -560,6 +638,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   }
 
   // --- PRACTICE HUB / QUESTION BROWSER VIEW ---
+  // Free questions are visible to guests, but answering requires an account.
   return (
     <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       {/* Backdrop overlay for open dropdowns on touch */}
@@ -610,11 +689,42 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         </button>
       </div>
 
+      {!currentUser && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <Lock className="w-4 h-4 shrink-0 text-amber-700" />
+            <p className="text-[13px] leading-relaxed">
+              Free questions are visible, but you need to <span className="font-semibold">sign in</span> to answer, save progress, and view explanations.
+            </p>
+          </div>
+          <button
+            onClick={() => onOpenAuth?.()}
+            className="shrink-0 px-5 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[12.5px] rounded-xl transition-colors shadow-xs cursor-pointer"
+          >
+            Sign in / Create account
+          </button>
+        </div>
+      )}
+
       {/* ============================================================ */}
       {/* 2. HIGH-LEVEL SUBJECT SWITCHER */}
       {/* ============================================================ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="grid grid-cols-2 sm:inline-flex p-1 rounded-xl bg-(--surface-soft) border border-(--border)/60 shadow-2xs w-full sm:w-auto">
+        <div className="grid grid-cols-3 sm:inline-flex p-1 rounded-xl bg-(--surface-soft) border border-(--border)/60 shadow-2xs w-full sm:w-auto">
+          <button
+            onClick={() => {
+              setSelectedSubject('all');
+              setSelectedDomain('all');
+              setSelectedTopic('all');
+            }}
+            className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
+              selectedSubject === 'all'
+                ? 'bg-(--surface) shadow-xs font-semibold text-(--foreground)'
+                : 'text-(--foreground-secondary) hover:text-(--foreground)'
+            }`}
+          >
+            ALL
+          </button>
           <button
             onClick={() => {
               setSelectedSubject('math');
@@ -702,10 +812,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 </button>
 
                 <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  {selectedSubject === 'math' ? 'Mathematics Domains' : 'Reading & Writing Domains'}
+                  {selectedSubject === 'all' ? 'All Domains' : selectedSubject === 'math' ? 'Mathematics Domains' : 'Reading & Writing Domains'}
                 </div>
 
-                {(selectedSubject === 'math' ? mathDomains : rwDomains).map((dom) => (
+                {(selectedSubject === 'all' ? [...mathDomains, ...rwDomains] : selectedSubject === 'math' ? mathDomains : rwDomains).map((dom) => (
                   <button
                     key={dom}
                     onClick={() => {

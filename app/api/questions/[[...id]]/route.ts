@@ -38,7 +38,7 @@ const routes = crud<Question, QuestionDoc>({
     // Drafts and archived questions are the bank's private workings; the
     // student-facing filters above must never surface them.
     if (!can(user, 'canManagePractice')) filter.status = 'published';
-    // Hide premium completely for guests / free students — not even as locked cards.
+    // Hide premium completely for free students — not even as locked cards.
     // A user with math premium sees math premium but not RW premium, etc.
     if (!can(user, 'canManagePractice')) {
       const hasFull = !!user && (user.role === 'admin' || !!user.access?.fullPremium);

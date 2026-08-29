@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '../services/store';
 import { PracticeHub } from '../features/practice/PracticeHub';
+import { AuthModal } from '../components/AuthModal';
 
 export default function PracticePage() {
   const store = useAppStore();
   const router = useRouter();
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   if (store.isLoading) {
     return (
@@ -17,13 +20,23 @@ export default function PracticePage() {
     );
   }
   return (
-    <PracticeHub
-      questions={store.questions}
-      currentUser={store.currentUser}
-      hasAccessToQuestion={store.hasAccessToQuestion}
-      onLogAttempt={store.logPracticeAttempt}
-      onToggleBookmark={store.toggleBookmark}
-      onOpenPricing={() => router.push('/pricing')}
-    />
+    <>
+      <PracticeHub
+        questions={store.questions}
+        currentUser={store.currentUser}
+        hasAccessToQuestion={store.hasAccessToQuestion}
+        onLogAttempt={store.logPracticeAttempt}
+        onToggleBookmark={store.toggleBookmark}
+        onOpenPricing={() => router.push('/pricing')}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLogin={store.loginWithPhoneOrEmail}
+        onRegister={store.registerUser}
+        onForgotPassword={store.requestPasswordReset}
+      />
+    </>
   );
 }

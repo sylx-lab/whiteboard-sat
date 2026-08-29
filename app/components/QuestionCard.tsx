@@ -403,13 +403,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </div>
           </div>
 
-          {/* Concept Breakdown Rationale */}
-          <div className="space-y-3">
-            <h5 className="text-[12px] font-mono font-bold uppercase tracking-wider text-(--foreground-secondary)">Concept Rationale & Trap Avoidance</h5>
-            <div className="p-5 rounded-xl bg-(--brand-soft) border border-(--border) text-[14px] text-(--foreground) leading-[1.65]">
-              <MathRenderer content={explanationText} />
+          {/* Concept Breakdown Rationale — only if explanation is provided */}
+          {explanationText.trim() && (
+            <div className="space-y-3">
+              <h5 className="text-[12px] font-mono font-bold uppercase tracking-wider text-(--foreground-secondary)">Concept Rationale & Trap Avoidance</h5>
+              <div className="p-5 rounded-xl bg-(--brand-soft) border border-(--border) text-[14px] text-(--foreground) leading-[1.65]">
+                <MathRenderer content={explanationText} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Key Strategy / Shortcut Tip Callout Box */}
           <div className="bg-(--brand-soft) border-l-4 border-(--brand-cta) p-4 rounded-r-xl space-y-1">

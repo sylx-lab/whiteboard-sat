@@ -502,13 +502,12 @@ export const QuestionFormFields: React.FC<{
         </div>
       </EditorSection>
 
-      <EditorSection icon={Lightbulb} title="Explanation" hint="Shown after a student answers">
+      <EditorSection icon={Lightbulb} title="Explanation" hint="Optional — shown after a student answers">
         <VisualMathEditor
           ariaLabel="Explanation"
-          required
           value={form.explanation}
           onChange={(v) => update({ explanation: v })}
-          placeholder="Add 7 to both sides: $3x = 21$. Divide by 3: $x = 7$."
+          placeholder="Optional: Add 7 to both sides: $3x = 21$. Divide by 3: $x = 7$. Leave blank if you only want a video."
           rows={isFull ? 4 : 3}
         />
         <Field label="Instructor video (YouTube link)" hint="Optional — shows in the Instructor Video Breakdown after submission. Paste a YouTube watch or embed URL.">

@@ -245,13 +245,14 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     const interval = setInterval(() => {
       setActiveAttempt((prev) => {
         if (!prev) return null;
+        if (prev.timeRemainingSeconds <= 0) return prev;
         const remaining = Math.max(0, prev.timeRemainingSeconds - 1);
         if (remaining === 0) setTimeout(() => handleSubmitModuleRef.current(), 0);
         return { ...prev, timeRemainingSeconds: remaining };
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeAttempt]);
+  }, [activeAttempt?.id, activeAttempt?.status]);
 
   // Save checkpoint when tab hidden
   const onSaveAttemptRef = React.useRef(onSaveAttempt);
@@ -366,6 +367,26 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             </button>
           </div>
         </header>
+
+        {/* Overall Test Progress — clear at-a-glance */}
+        {(() => {
+          const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
+          const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+          const pct = total ? Math.round((answered / total) * 100) : 0;
+          return (
+            <div className="px-3.5 sm:px-6 lg:px-8 max-w-6xl w-full mx-auto pt-3">
+              <div className="flex items-center justify-between text-[11px] mb-1.5">
+                <span className="font-semibold text-(--foreground) font-mono">
+                  Progress {answered}/{total} answered
+                </span>
+                <span className="font-mono text-(--foreground-secondary)">{pct}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-(--surface-soft) border border-(--border) overflow-hidden">
+                <div className="h-full bg-(--brand-cta) transition-all duration-300" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Test Main Body */}
         <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
