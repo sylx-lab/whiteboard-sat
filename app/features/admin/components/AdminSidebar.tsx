@@ -141,7 +141,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         className={`bg-white border-r border-[#E2E8F0] flex flex-col shrink-0 transition-all duration-200
           fixed inset-y-0 left-0 z-50 w-64 lg:static lg:z-auto lg:translate-x-0
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${isCollapsed ? 'lg:w-[68px]' : 'lg:w-60'}`}
+          ${isCollapsed ? 'lg:w-17' : 'lg:w-60'}`}
       >
         {/* Brand header */}
         <div className="h-14 px-3 flex items-center justify-between border-b border-[#E2E8F0] shrink-0">
@@ -212,13 +212,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         onCloseMobile();
                       }}
                       title={!showLabels ? item.label : undefined}
-                      className={`relative w-full h-10 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-left transition-colors cursor-pointer ${
-                        isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
-                      } ${
-                        isActive
+                      className={`relative w-full h-10 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-left transition-colors cursor-pointer ${isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
+                        } ${isActive
                           ? 'bg-[#F1F8F7] text-[#087C76] font-semibold'
                           : 'text-[#071126] hover:bg-[#F8FBFB]'
-                      }`}
+                        }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#087C76]' : 'text-[#58708A]'}`}
@@ -226,9 +224,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       {showLabels && <span className="flex-1 text-left truncate">{item.label}</span>}
                       {showLabels && item.count !== undefined && (
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold tabular-nums shrink-0 ${
-                            item.urgent ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-[#58708A]'
-                          }`}
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold tabular-nums shrink-0 ${item.urgent ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-[#58708A]'
+                            }`}
                         >
                           {item.count}
                         </span>
@@ -271,9 +268,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={onLogout}
-            className={`w-full h-9 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer ${
-              isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
-            }`}
+            className={`w-full h-9 flex items-center gap-2.5 rounded-[10px] text-[12px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer ${isCollapsed ? 'lg:justify-center lg:px-0 px-2.5' : 'px-2.5'
+              }`}
             title="Log out"
           >
             <LogOut className="w-4 h-4 shrink-0 text-rose-600" />

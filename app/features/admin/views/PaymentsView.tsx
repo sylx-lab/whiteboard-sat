@@ -769,7 +769,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <div className="flex items-center gap-3">
               {savedChannelsSuccess && (
                 <div className="flex items-center gap-1.5 text-emerald-600 text-[13px] font-semibold animate-in fade-in">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                  <Check className="w-4 h-4 stroke-3" />
                   <span>Channels Updated!</span>
                 </div>
               )}
@@ -958,7 +958,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                       >
                         {isSuccess ? (
                           <>
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <Check className="w-3.5 h-3.5 stroke-3" />
                             <span>Saved!</span>
                           </>
                         ) : (

@@ -475,7 +475,7 @@ export const QuestionFormFields: React.FC<{
                       <img
                         src={form.choiceImages[id]}
                         alt={`Figure for choice ${id}`}
-                        className="h-14 w-auto max-w-[140px] rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
+                        className="h-14 w-auto max-w-35 rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] font-semibold text-[#071126]">Option {id} Graph Attached</p>

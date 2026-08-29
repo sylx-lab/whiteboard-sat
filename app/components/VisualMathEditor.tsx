@@ -202,13 +202,13 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     'h-7 px-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer inline-flex items-center gap-1';
 
   const renderToolbar = (isFullModal = false) => (
-    <div className="px-2 py-1.5 border-b border-[var(--border)] bg-[var(--surface-soft)] flex items-center flex-wrap gap-1 select-none">
+    <div className="px-2 py-1.5 border-b border-(--border) bg-(--surface-soft) flex items-center flex-wrap gap-1 select-none">
       <button
         type="button"
         onClick={() => wrapSelection('**', '**')}
         aria-label="Wrap selection in bold"
         title="Bold"
-        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+        className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
       >
         <Bold className="w-3.5 h-3.5" />
       </button>
@@ -217,12 +217,12 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         onClick={() => wrapSelection('*', '*')}
         aria-label="Wrap selection in italic"
         title="Italic"
-        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+        className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
       >
         <Italic className="w-3.5 h-3.5" />
       </button>
 
-      <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+      <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
 
       {/* Bullet Point Buttons — dot and A,B,C */}
       <div className="inline-flex items-center rounded-lg overflow-hidden border border-transparent">
@@ -231,7 +231,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
           onClick={() => insertBullet('dot')}
           title="Insert bullet (•)"
           aria-label="Insert bullet point (dot)"
-          className={`${toolButton} rounded-r-none text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+          className={`${toolButton} rounded-r-none text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
         >
           <List className="w-3.5 h-3.5" />
           <span>•</span>
@@ -241,19 +241,19 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
           onClick={() => insertBullet('alpha')}
           title="Insert A, B, C list — selects multiple lines to convert to A. B. C."
           aria-label="Insert A,B,C list"
-          className={`${toolButton} rounded-l-none border-l border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+          className={`${toolButton} rounded-l-none border-l border-(--border) text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
         >
           <span className="font-mono font-bold text-[11px]">A.</span>
         </button>
       </div>
 
-      <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+      <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
 
       <button
         type="button"
         onClick={() => wrapSelection('$', '$')}
         title="Wrap the selection in inline math — $x$"
-        className={`${toolButton} bg-[var(--brand-soft)] text-[var(--brand-text)] hover:bg-teal-100`}
+        className={`${toolButton} bg-(--brand-soft) text-(--brand-text) hover:bg-teal-100`}
       >
         <Sigma className="w-3.5 h-3.5" />
         Inline
@@ -262,14 +262,14 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         type="button"
         onClick={() => wrapSelection('$$', '$$')}
         title="Wrap the selection in a centred block equation — $$x$$"
-        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+        className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
       >
         Block
       </button>
 
       {!compact && (
         <>
-          <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
+          <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
           {SYMBOL_GROUPS.map((group) => (
             <button
               key={group.id}
@@ -277,17 +277,15 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
               aria-expanded={openGroup === group.id}
               onClick={() => setOpenGroup(openGroup === group.id ? null : group.id)}
               title={`${group.label} symbols`}
-              className={`${toolButton} ${
-                openGroup === group.id
-                  ? 'bg-[var(--surface)] text-[var(--brand-text)] border border-[var(--brand)]'
-                  : 'text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]'
-              }`}
+              className={`${toolButton} ${openGroup === group.id
+                  ? 'bg-(--surface) text-(--brand-text) border border-(--brand)'
+                  : 'text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)'
+                }`}
             >
               {group.label}
               <ChevronDown
-                className={`w-3 h-3 transition-transform ${
-                  openGroup === group.id ? 'rotate-180' : ''
-                }`}
+                className={`w-3 h-3 transition-transform ${openGroup === group.id ? 'rotate-180' : ''
+                  }`}
               />
             </button>
           ))}
@@ -300,9 +298,8 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
           onClick={() => setShowRender(!showRender)}
           aria-pressed={showRender}
           title={showRender ? 'Hide the rendered result' : 'Show the rendered result'}
-          className={`${toolButton} ${
-            showRender ? 'text-[var(--brand-text)]' : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
-          }`}
+          className={`${toolButton} ${showRender ? 'text-(--brand-text)' : 'text-(--foreground-secondary) hover:text-(--foreground)'
+            }`}
         >
           <Eye className="w-3.5 h-3.5" />
           <span>Preview</span>
@@ -313,11 +310,10 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
           onClick={() => setIsFullscreen(!isFullscreen)}
           title={isFullModal ? 'Exit full screen (Esc)' : 'Expand to full screen'}
           aria-label={isFullModal ? 'Exit full screen' : 'Expand to full screen'}
-          className={`${toolButton} ${
-            isFullModal
-              ? 'bg-[var(--surface)] text-[var(--brand-text)] border border-[var(--brand)]'
-              : 'text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]'
-          }`}
+          className={`${toolButton} ${isFullModal
+              ? 'bg-(--surface) text-(--brand-text) border border-(--brand)'
+              : 'text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)'
+            }`}
         >
           {isFullModal ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           <span>{isFullModal ? 'Exit Full Screen' : 'Full Screen'}</span>
@@ -328,14 +324,14 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
 
   return (
     <div className="space-y-1">
-      {label && <label className="block text-[12px] font-semibold text-[var(--foreground)]">{label}</label>}
+      {label && <label className="block text-[12px] font-semibold text-(--foreground)">{label}</label>}
 
-      <div className="bg-[var(--surface)] rounded-[10px] border border-[var(--border)] overflow-hidden focus-within:border-[var(--brand)] transition-colors">
+      <div className="bg-(--surface) rounded-[10px] border border-(--border) overflow-hidden focus-within:border-(--brand) transition-colors">
         {renderToolbar(false)}
 
         {/* Symbol palette — every face is the actual rendered symbol. */}
         {openGroup && (
-          <div className="px-2 py-2 border-b border-[var(--border)] bg-[var(--surface)] animate-in fade-in duration-100">
+          <div className="px-2 py-2 border-b border-(--border) bg-(--surface) animate-in fade-in duration-100">
             <div className="flex flex-wrap gap-1">
               {SYMBOL_GROUPS.find((g) => g.id === openGroup)?.symbols.map((sym) => (
                 <button
@@ -344,7 +340,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                   onClick={() => applyInsertion(sym.insert)}
                   title={sym.title}
                   aria-label={sym.title}
-                  className="min-w-9 h-9 px-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] hover:border-[var(--brand)] text-[var(--foreground)] transition-colors cursor-pointer inline-flex items-center justify-center"
+                  className="min-w-9 h-9 px-2 rounded-lg border border-(--border) bg-(--surface) hover:bg-(--brand-soft) hover:border-(--brand) text-(--foreground) transition-colors cursor-pointer inline-flex items-center justify-center"
                 >
                   {sym.text ? (
                     <span className="text-[11px] font-mono">{sym.text}</span>
@@ -354,7 +350,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-[var(--foreground-secondary)] mt-2">
+            <p className="text-[11px] text-(--foreground-secondary) mt-2">
               {caretInMath
                 ? 'Caret is inside math — symbols insert directly.'
                 : 'Symbols are wrapped in $…$ automatically. Select text first to put it inside the symbol.'}
@@ -375,12 +371,12 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
           onKeyDown={handleListEnter}
           placeholder={placeholder}
           aria-label={ariaLabel || label}
-          className="w-full px-3 py-2.5 bg-transparent text-[var(--foreground)] text-[12px] font-mono focus:outline-none resize-y block"
+          className="w-full px-3 py-2.5 bg-transparent text-(--foreground) text-[12px] font-mono focus:outline-none resize-y block"
         />
 
         {/* Live render of this field, right where it is being typed. */}
         {showRender && (hasMath || value.includes('•') || value.includes('**')) && (
-          <div className="px-3 py-2.5 border-t border-[var(--border)] bg-[var(--surface-soft)] text-[13px] text-[var(--foreground)] leading-relaxed">
+          <div className="px-3 py-2.5 border-t border-(--border) bg-(--surface-soft) text-[13px] text-(--foreground) leading-relaxed">
             <MathRenderer content={value} />
           </div>
         )}
@@ -389,20 +385,20 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
       {/* FULLSCREEN EXPANDED MODAL */}
       {isFullscreen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-          <div className="bg-[var(--surface)] w-full max-w-5xl h-[88vh] rounded-2xl border border-[var(--border)] shadow-2xl flex flex-col overflow-hidden">
-            <div className="p-3 sm:p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
+          <div className="bg-(--surface) w-full max-w-5xl h-[88vh] rounded-2xl border border-(--border) shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-3 sm:p-4 border-b border-(--border) flex items-center justify-between bg-(--surface)">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[14px] text-[var(--foreground)]">
+                <span className="font-bold text-[14px] text-(--foreground)">
                   {label || ariaLabel || 'Full Screen Editor'}
                 </span>
-                <span className="text-[11px] text-[var(--foreground-secondary)] font-mono">
+                <span className="text-[11px] text-(--foreground-secondary) font-mono">
                   ({value.length} characters)
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsFullscreen(false)}
-                className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) rounded-lg transition-colors cursor-pointer"
                 title="Close full screen"
               >
                 <X className="w-5 h-5" />
@@ -412,7 +408,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
             {renderToolbar(true)}
 
             {openGroup && (
-              <div className="px-3 py-2 border-b border-[var(--border)] bg-[var(--surface)] max-h-36 overflow-y-auto">
+              <div className="px-3 py-2 border-b border-(--border) bg-(--surface) max-h-36 overflow-y-auto">
                 <div className="flex flex-wrap gap-1">
                   {SYMBOL_GROUPS.find((g) => g.id === openGroup)?.symbols.map((sym) => (
                     <button
@@ -421,7 +417,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                       onClick={() => applyInsertion(sym.insert)}
                       title={sym.title}
                       aria-label={sym.title}
-                      className="min-w-9 h-9 px-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] hover:border-[var(--brand)] text-[var(--foreground)] transition-colors cursor-pointer inline-flex items-center justify-center"
+                      className="min-w-9 h-9 px-2 rounded-lg border border-(--border) bg-(--surface) hover:bg-(--brand-soft) hover:border-(--brand) text-(--foreground) transition-colors cursor-pointer inline-flex items-center justify-center"
                     >
                       {sym.text ? (
                         <span className="text-[11px] font-mono">{sym.text}</span>
@@ -434,9 +430,9 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
               </div>
             )}
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--border)] overflow-hidden">
-              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-[var(--surface)]">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)] mb-2 block">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-(--border) overflow-hidden">
+              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-(--surface)">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-(--foreground-secondary) mb-2 block">
                   Source Editor
                 </label>
                 <textarea
@@ -449,19 +445,19 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                   onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
                   onKeyDown={handleListEnter}
                   placeholder={placeholder}
-                  className="w-full flex-1 p-3 bg-[var(--surface-soft)] border border-[var(--border)] rounded-xl text-[13.5px] font-mono text-[var(--foreground)] focus:outline-none focus:border-[var(--brand)] resize-none leading-relaxed"
+                  className="w-full flex-1 p-3 bg-(--surface-soft) border border-(--border) rounded-xl text-[13.5px] font-mono text-(--foreground) focus:outline-none focus:border-(--brand) resize-none leading-relaxed"
                 />
               </div>
 
-              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-[var(--brand-soft)]/40">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--brand-text)] mb-2 block">
+              <div className="h-full flex flex-col p-3 sm:p-4 overflow-hidden bg-(--brand-soft)/40">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-(--brand-text) mb-2 block">
                   Live Formatted Output
                 </label>
-                <div className="flex-1 p-4 bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-y-auto text-[14.5px] text-[var(--foreground)] leading-[1.8] font-serif">
+                <div className="flex-1 p-4 bg-(--surface) border border-(--border) rounded-xl overflow-y-auto text-[14.5px] text-(--foreground) leading-[1.8] font-serif">
                   {value.trim() ? (
                     <MathRenderer content={value} />
                   ) : (
-                    <span className="text-[var(--foreground-muted)] italic font-sans text-[13px]">
+                    <span className="text-(--foreground-muted) italic font-sans text-[13px]">
                       Formatted preview will render here...
                     </span>
                   )}
@@ -469,11 +465,11 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
               </div>
             </div>
 
-            <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] flex items-center justify-end">
+            <div className="p-3 border-t border-(--border) bg-(--surface) flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setIsFullscreen(false)}
-                className="px-5 py-2 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs cursor-pointer"
+                className="px-5 py-2 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs cursor-pointer"
               >
                 Done Editing
               </button>

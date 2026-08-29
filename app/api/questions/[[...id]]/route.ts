@@ -38,6 +38,24 @@ const routes = crud<Question, QuestionDoc>({
     // Drafts and archived questions are the bank's private workings; the
     // student-facing filters above must never surface them.
     if (!can(user, 'canManagePractice')) filter.status = 'published';
+    // Hide premium completely for guests / free students — not even as locked cards.
+    // A user with math premium sees math premium but not RW premium, etc.
+    if (!can(user, 'canManagePractice')) {
+      const hasFull = !!user && (user.role === 'admin' || !!user.access?.fullPremium);
+      const hasMath = hasFull || !!user?.access?.premiumMath;
+      const hasRW = hasFull || !!user?.access?.premiumReadingWriting;
+      if (!hasFull) {
+        if (hasMath && hasRW) {
+          // sees all published (free + both premium)
+        } else if (hasMath) {
+          (filter as any).$or = [{ is_free: true }, { is_free: false, subject: 'math' }];
+        } else if (hasRW) {
+          (filter as any).$or = [{ is_free: true }, { is_free: false, subject: 'reading_writing' }];
+        } else {
+          filter.is_free = true;
+        }
+      }
+    }
     return filter as Filter<QuestionDoc>;
   },
 });

@@ -449,7 +449,7 @@ export const MockTestVisualEditor: React.FC<MockTestVisualEditorProps> = ({
                             key={cid}
                             className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full bg-white border border-[#E2E8F0] text-[12px] font-medium text-[#071126] shadow-xs"
                           >
-                            <span className="truncate max-w-[160px]">{c?.title ?? cid}</span>
+                            <span className="truncate max-w-40">{c?.title ?? cid}</span>
                             <button
                               type="button"
                               onClick={() => {
@@ -736,7 +736,7 @@ const ModuleQuestionScreen: React.FC<{
           <select
             value={domainFilter}
             onChange={(e) => setDomainFilter(e.target.value)}
-            className="h-10 px-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] sm:w-[220px] shrink-0"
+            className="h-10 px-3 bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] text-[#071126] focus:outline-none focus:border-[#0D918A] sm:w-55 shrink-0"
           >
             <option value="all">All domains ({pool.length})</option>
             {domainOptions.map((d) => (

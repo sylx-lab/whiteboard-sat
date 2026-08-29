@@ -80,16 +80,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[var(--brand)] border-b border-[rgba(255,255,255,0.15)] ${isScrolled ? 'shadow-md bg-[var(--brand-cta)]' : 'shadow-xs'}`}>
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[70px]">
+    <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-(--brand) border-b border-[rgba(255,255,255,0.15) ${isScrolled ? 'shadow-md bg-(--brand-cta)' : 'shadow-xs'}`}>
+      <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-17.5">
           {/* Zone 1: LEFT Brand Wordmark */}
           <div
             className="flex items-center gap-3 cursor-pointer select-none group"
             onClick={() => onNavigate(currentUser ? 'dashboard' : 'home')}
           >
             {/* Minimal Geometric WB Mark */}
-            <div className="w-8 h-8 rounded-[8px] bg-[var(--surface)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-(--surface) text-(--brand-text) flex items-center justify-center font-bold text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
               WB
             </div>
 
@@ -99,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-bold text-[14.5px] tracking-tight text-white leading-none">
                   WHITE BOARD
                 </span>
-                <span className="text-[10px] font-bold text-[var(--brand-text)] bg-[var(--surface)] px-1.5 py-0.5 rounded-[4px] leading-none">
+                <span className="text-[10px] font-bold text-(--brand-text) bg-(--surface) px-1.5 py-0.5 rounded-sm leading-none">
                   SAT
                 </span>
               </div>
@@ -121,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Home</span>
                   {isLinkActive('home') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Practice</span>
                   {isLinkActive('practice') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -143,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Mock Tests</span>
                   {isLinkActive('mock-tests') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -154,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Courses</span>
                   {isLinkActive('courses') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Leaderboard</span>
                   {isLinkActive('leaderboard') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
 
@@ -176,7 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Pricing</span>
                   {isLinkActive('pricing') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -190,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Overview</span>
                   {currentView === 'admin-dashboard' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -200,7 +200,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Students</span>
                   {currentView === 'admin-students' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -210,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Verifications</span>
                   {currentView === 'admin-purchases' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -220,7 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Question Bank</span>
                   {currentView === 'admin-questions' && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -234,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Dashboard</span>
                   {isLinkActive('dashboard') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -244,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Practice</span>
                   {isLinkActive('practice') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -254,7 +254,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Mock Tests</span>
                   {isLinkActive('mock-tests') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -264,7 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Courses</span>
                   {isLinkActive('courses') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -274,7 +274,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Analytics</span>
                   {isLinkActive('progress') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
                 <button
@@ -284,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <span>Passes</span>
                   {isLinkActive('pricing') && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-[var(--brand-hover)] rounded-full shadow-xs" />
+                    <div className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-(--brand-hover) rounded-full shadow-xs" />
                   )}
                 </button>
               </>
@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {themeDropdownOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-44 bg-[var(--surface)] rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[var(--border)] p-1 z-50 text-[12px] font-medium animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-44 bg-(--surface) rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12) border border-(--border) p-1 z-50 text-[12px] font-medium animate-in fade-in zoom-in-95 duration-100"
                   onMouseLeave={() => setThemeDropdownOpen(false)}
                 >
                   <button
@@ -322,7 +322,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('white');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'white' ? 'bg-[var(--surface-soft)] text-[var(--foreground)] font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'white' ? 'bg-(--surface-soft) text-(--foreground) font-semibold' : 'text-(--foreground-secondary) hover:bg-(--surface-soft)'
                       }`}
                   >
                     <Sun className="w-3.5 h-3.5 text-amber-500" />
@@ -333,7 +333,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('warm');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'warm' ? 'bg-amber-50/60 text-amber-900 font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'warm' ? 'bg-amber-50/60 text-amber-900 font-semibold' : 'text-(--foreground-secondary) hover:bg-(--surface-soft)'
                       }`}
                   >
                     <Eye className="w-3.5 h-3.5 text-amber-700" />
@@ -344,7 +344,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('dark');
                       setThemeDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'dark' ? 'bg-[var(--navy-section)] text-white font-semibold' : 'text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${theme === 'dark' ? 'bg-(--navy-section) text-white font-semibold' : 'text-(--foreground-secondary) hover:bg-(--surface-soft)'
                       }`}
                   >
                     <Moon className="w-3.5 h-3.5 text-indigo-400" />
@@ -361,11 +361,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-[10px] border border-white/18 transition-colors cursor-pointer text-white"
                 >
-                  <div className="w-5 h-5 rounded-[6px] bg-[var(--surface)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[10px]">
+                  <div className="w-5 h-5 rounded-md bg-(--surface) text-(--brand-text) flex items-center justify-center font-bold text-[10px]">
                     {currentUser.name.charAt(0)}
                   </div>
                   <div className="hidden sm:flex flex-col text-left">
-                    <span className="text-[12px] font-semibold leading-tight truncate max-w-[100px] text-white">
+                    <span className="text-[12px] font-semibold leading-tight truncate max-w-25 text-white">
                       {currentUser.name}
                     </span>
                     <span className="text-[9.5px] text-white/70 font-normal tracking-tight">
@@ -377,12 +377,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {userDropdownOpen && (
                   <div
-                    className="absolute right-0 mt-2 w-52 bg-[var(--surface)] rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12)] border border-[var(--border)] p-1.5 z-50 text-[12px] font-medium space-y-1 animate-in fade-in zoom-in-95 duration-100"
+                    className="absolute right-0 mt-2 w-52 bg-(--surface) rounded-xl shadow-[0_4px_20px_-4px_rgba(11,16,32,0.12) border border-(--border) p-1.5 z-50 text-[12px] font-medium space-y-1 animate-in fade-in zoom-in-95 duration-100"
                     onMouseLeave={() => setUserDropdownOpen(false)}
                   >
-                    <div className="px-3 py-2 border-b border-[var(--border)]">
-                      <div className="font-bold text-[var(--foreground)]">{currentUser.name}</div>
-                      <div className="text-[var(--foreground-secondary)] text-[11px] truncate">{currentUser.email || currentUser.phone}</div>
+                    <div className="px-3 py-2 border-b border-(--border)">
+                      <div className="font-bold text-(--foreground)">{currentUser.name}</div>
+                      <div className="text-(--foreground-secondary) text-[11px] truncate">{currentUser.email || currentUser.phone}</div>
                     </div>
 
                     <button
@@ -390,9 +390,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onNavigate('account');
                         setUserDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg text-left transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) rounded-lg text-left transition-colors cursor-pointer"
                     >
-                      <User className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
+                      <User className="w-3.5 h-3.5 text-(--foreground-secondary)" />
                       Profile & Access
                     </button>
 
@@ -401,9 +401,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onNavigate('pricing');
                         setUserDropdownOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[var(--brand-text)] bg-[var(--brand-soft)] hover:bg-teal-50 rounded-lg text-left transition-colors cursor-pointer font-semibold"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-(--brand-text) bg-(--brand-soft) hover:bg-teal-50 rounded-lg text-left transition-colors cursor-pointer font-semibold"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[var(--brand-text)]" />
+                      <Sparkles className="w-3.5 h-3.5 text-(--brand-text)" />
                       Upgrade Pass
                     </button>
 
@@ -413,14 +413,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           onNavigate('admin-dashboard');
                           setUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-[var(--foreground)] hover:bg-[var(--surface-soft)] rounded-lg text-left font-semibold transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-(--foreground) hover:bg-(--surface-soft) rounded-lg text-left font-semibold transition-colors cursor-pointer"
                       >
-                        <Shield className="w-3.5 h-3.5 text-[var(--brand-text)]" />
+                        <Shield className="w-3.5 h-3.5 text-(--brand-text)" />
                         Admin Control
                       </button>
                     )}
 
-                    <div className="border-t border-[var(--border)] pt-1">
+                    <div className="border-t border-(--border) pt-1">
                       <button
                         onClick={() => {
                           onLogout();
@@ -445,10 +445,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
                 <button
                   onClick={onOpenAuth}
-                  className="px-4.5 py-2.5 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
+                  className="px-4.5 py-2.5 bg-(--surface) hover:bg-(--brand-soft) text-(--brand-text) font-semibold text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
                 >
                   <span>Get Started</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[var(--brand-text)] transition-transform duration-150 group-hover:translate-x-0.5" />
+                  <ArrowRight className="w-3.5 h-3.5 text-(--brand-text) transition-transform duration-150 group-hover:translate-x-0.5" />
                 </button>
               </div>
             )}
@@ -468,21 +468,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 top-[70px] z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
+            className="fixed inset-0 top-17.5 z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed inset-x-0 top-[70px] z-40 lg:hidden bg-[var(--surface)] border-b border-[var(--border)] px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-70px)] overflow-y-auto pb-safe">
+          <div className="fixed inset-x-0 top-17.5 z-40 lg:hidden bg-(--surface) border-b border-(--border) px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-70px) overflow-y-auto pb-safe">
             <nav className="flex flex-col space-y-1 text-[13.5px] font-medium">
               <button
                 onClick={() => {
                   onNavigate(currentUser ? 'dashboard' : 'home');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl font-semibold transition-colors flex items-center justify-between ${
-                  isLinkActive(currentUser ? 'dashboard' : 'home')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)]'
-                    : 'text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl font-semibold transition-colors flex items-center justify-between ${isLinkActive(currentUser ? 'dashboard' : 'home')
+                    ? 'bg-(--brand-soft) text-(--brand-text)'
+                    : 'text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>{currentUser ? 'Student Dashboard' : 'Home'}</span>
               </button>
@@ -491,11 +490,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('practice');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('practice')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('practice')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Practice Question Bank</span>
               </button>
@@ -504,11 +502,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('mock-tests');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('mock-tests')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('mock-tests')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Full Mock Tests</span>
               </button>
@@ -517,11 +514,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('courses');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('courses')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('courses')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Masterclass Courses</span>
               </button>
@@ -530,11 +526,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('leaderboard');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('leaderboard')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('leaderboard')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Leaderboard</span>
               </button>
@@ -543,11 +538,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('resources');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('resources')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('resources')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Cheat Sheets & Resources</span>
               </button>
@@ -556,11 +550,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('pricing');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                  isLinkActive('pricing')
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                }`}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('pricing')
+                    ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                    : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                  }`}
               >
                 <span>Pricing & Passes</span>
               </button>
@@ -570,11 +563,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onNavigate('progress');
                     setMobileMenuOpen(false);
                   }}
-                  className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
-                    isLinkActive('progress')
-                      ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
-                      : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
-                  }`}
+                  className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('progress')
+                      ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                      : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                    }`}
                 >
                   <span>Performance Analytics</span>
                 </button>
@@ -586,7 +578,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onNavigate('admin-dashboard');
                     setMobileMenuOpen(false);
                   }}
-                  className="px-3.5 py-2.5 text-left rounded-xl text-[var(--brand-text)] font-semibold hover:bg-[var(--brand-soft)] transition-colors flex items-center gap-2"
+                  className="px-3.5 py-2.5 text-left rounded-xl text-(--brand-text) font-semibold hover:bg-(--brand-soft) transition-colors flex items-center gap-2"
                 >
                   <Shield className="w-4 h-4" />
                   <span>Admin Control Console</span>
@@ -594,7 +586,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
 
               {currentUser && (
-                <div className="pt-2 border-t border-[var(--border)]">
+                <div className="pt-2 border-t border-(--border)">
                   <button
                     onClick={() => {
                       onLogout();
@@ -609,8 +601,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
 
               {/* Mobile Theme Selector */}
-              <div className="pt-3 border-t border-[var(--border)]">
-                <span className="px-3 text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-wider block mb-2">
+              <div className="pt-3 border-t border-(--border)">
+                <span className="px-3 text-[11px] font-semibold text-(--foreground-muted) uppercase tracking-wider block mb-2">
                   Color Theme
                 </span>
                 <div className="grid grid-cols-3 gap-2 px-1">
@@ -619,11 +611,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('white');
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
-                      theme === 'white'
-                        ? 'bg-[var(--surface-soft)] border-[var(--brand)] text-[var(--foreground)] font-semibold shadow-xs'
-                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                    }`}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${theme === 'white'
+                        ? 'bg-(--surface-soft) border-(--brand) text-(--foreground) font-semibold shadow-xs'
+                        : 'border-(--border) text-(--foreground-secondary) hover:bg-(--surface-soft)'
+                      }`}
                   >
                     <Sun className="w-4 h-4 text-amber-500 mb-1" />
                     <span>Light</span>
@@ -633,11 +624,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('warm');
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
-                      theme === 'warm'
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${theme === 'warm'
                         ? 'bg-amber-50/70 border-amber-600 text-amber-950 font-semibold shadow-xs'
-                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                    }`}
+                        : 'border-(--border) text-(--foreground-secondary) hover:bg-(--surface-soft)'
+                      }`}
                   >
                     <Eye className="w-4 h-4 text-amber-700 mb-1" />
                     <span>Comfort</span>
@@ -647,11 +637,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onSetTheme('dark');
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
-                      theme === 'dark'
-                        ? 'bg-[var(--navy-section)] border-[var(--brand)] text-white font-semibold shadow-xs'
-                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                    }`}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${theme === 'dark'
+                        ? 'bg-(--navy-section) border-(--brand) text-white font-semibold shadow-xs'
+                        : 'border-(--border) text-(--foreground-secondary) hover:bg-(--surface-soft)'
+                      }`}
                   >
                     <Moon className="w-4 h-4 text-indigo-400 mb-1" />
                     <span>Dark</span>

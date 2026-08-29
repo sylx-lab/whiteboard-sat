@@ -9,7 +9,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const gridId = useId();
   return (
-    <footer className="relative bg-[var(--brand-hover)] text-white border-t border-white/15 overflow-hidden">
+    <footer className="relative bg-(--brand-hover) text-white border-t border-white/15 overflow-hidden">
       {/* Subtle Premium Architectural Grid (60px, 4% opacity, thin 1px lines) */}
       <svg 
         className="absolute inset-0 w-full h-full pointer-events-none select-none" 
@@ -35,12 +35,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <rect width="100%" height="100%" fill={`url(#${gridId})`} />
       </svg>
 
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10 space-y-16">
+      <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10 space-y-16">
         {/* Top Brand Statement & Editorial Action */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end pb-12 border-b border-white/15">
           <div className="lg:col-span-8 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-white text-[var(--brand-hover)] font-mono font-bold text-xs flex items-center justify-center tracking-wider shadow-xs">
+              <div className="w-7 h-7 rounded-md bg-white text-(--brand-hover) font-mono font-bold text-xs flex items-center justify-center tracking-wider shadow-xs">
                 WB
               </div>
               <span className="text-[12px] font-mono font-bold uppercase tracking-widest text-teal-200">
@@ -65,10 +65,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 onNavigate('practice');
               }}
-              className="px-6 py-3 bg-white hover:bg-teal-50 text-[var(--brand-hover)] font-bold text-[13.5px] rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              className="px-6 py-3 bg-white hover:bg-teal-50 text-(--brand-hover) font-bold text-[13.5px] rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >
               <span>Start Practicing</span>
-              <ArrowRight className="w-4 h-4 text-[var(--brand-hover)]" />
+              <ArrowRight className="w-4 h-4 text-(--brand-hover)" />
             </button>
 
             <button
