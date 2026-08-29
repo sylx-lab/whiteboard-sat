@@ -10,7 +10,10 @@ import { AwsClient } from 'aws4fetch';
 
 /** Read at call time, not module load, so a missing config is a 503 rather than a boot crash. */
 const config = () => {
-  const accountId = process.env.R2_ACCOUNT_ID;
+  const accountId =
+    process.env.R2_ACCOUNT_ID ||
+    process.env.R2_ENDPOINTS?.match(/https:\/\/([a-f0-9]+)\.r2\.cloudflarestorage\.com/i)?.[1] ||
+    process.env.R2_ENDPOINT?.match(/https:\/\/([a-f0-9]+)\.r2\.cloudflarestorage\.com/i)?.[1];
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
   const bucket = process.env.R2_BUCKET;
