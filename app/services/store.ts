@@ -30,6 +30,7 @@ const BLANK_ACCESS: UserProfile['access'] = {
   premiumReadingWriting: false,
   redbookPractice: false,
   enrolledCourseIds: [],
+  unlockedMockTestIds: [],
   fullPremium: false,
 };
 
@@ -503,6 +504,20 @@ export function useAppStore() {
     });
   };
 
+  const toggleMockTestAccess = (userId: string, mockTestId: string) => {
+    const current = accessOf(userId);
+    const unlocked = current.unlockedMockTestIds || [];
+    const hasAccess = unlocked.includes(mockTestId);
+    return patchUser(userId, {
+      access: {
+        ...current,
+        unlockedMockTestIds: hasAccess
+          ? unlocked.filter((id) => id !== mockTestId)
+          : [...unlocked, mockTestId],
+      },
+    });
+  };
+
   const setUserRole = (userId: string, role: UserProfile['role']) => patchUser(userId, { role });
 
   const setUserPermissions = (userId: string, updates: Partial<AdminPermission>) =>
@@ -704,6 +719,7 @@ export function useAppStore() {
     applyTopicUpdates,
     // Access, roles & staff
     toggleCourseEnrollment,
+    toggleMockTestAccess,
     setUserRole,
     setUserPermissions,
     createStaffUser,

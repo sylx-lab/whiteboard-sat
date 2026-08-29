@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import {
   applyPlanGrants,
+  canSeeMockTest,
   canSeeQuestion,
   redactMockTest,
   redactQuestion,
@@ -47,6 +48,26 @@ test('free questions are visible signed out; admins see everything', () => {
   assert.equal(canSeeQuestion(null, { is_free: true, subject: 'math' }), true);
   const admin: UserProfile = { ...PERSON, role: 'admin', access: NOTHING };
   assert.equal(canSeeQuestion(admin, { is_free: false, subject: 'reading_writing' }), true);
+});
+
+test('mock test access: free is public, premium requires specific unlock or full pass', () => {
+  const freeMock = { id: 'mock-diag-1', is_free: true };
+  const premMock1 = { id: 'mock-full-1', is_free: false };
+  const premMock2 = { id: 'mock-full-2', is_free: false };
+
+  assert.equal(canSeeMockTest(null, freeMock), true);
+  assert.equal(canSeeMockTest(null, premMock1), false);
+  assert.equal(canSeeMockTest(student({}), premMock1), false);
+
+  // Granular mock test unlock
+  const studentWithMock1 = student({ unlockedMockTestIds: ['mock-full-1'] });
+  assert.equal(canSeeMockTest(studentWithMock1, premMock1), true);
+  assert.equal(canSeeMockTest(studentWithMock1, premMock2), false);
+
+  // Full pass or Admin
+  assert.equal(canSeeMockTest(student({ fullPremium: true }), premMock2), true);
+  const admin: UserProfile = { ...PERSON, role: 'admin', access: NOTHING };
+  assert.equal(canSeeMockTest(admin, premMock2), true);
 });
 
 test('redaction leaves nothing worth paying for', () => {

@@ -210,6 +210,7 @@ export interface AccessGrants {
   premiumReadingWriting: boolean;
   redbookPractice: boolean;
   enrolledCourseIds: string[];
+  unlockedMockTestIds?: string[];
   fullPremium: boolean;
 }
 

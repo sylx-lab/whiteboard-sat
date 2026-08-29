@@ -22,10 +22,12 @@ function PersonEditor() {
     <PersonAccessEditor
       person={person}
       courses={store.courses}
+      mockTests={store.mockTests}
       payments={store.payments}
       actingUser={store.currentUser}
       onUpdateAccess={store.updateUserAccess}
       onToggleCourse={store.toggleCourseEnrollment}
+      onToggleMockTest={store.toggleMockTestAccess}
       onSetRole={store.setUserRole}
       onSetPermissions={store.setUserPermissions}
       onToggleStatus={store.toggleUserStatus}

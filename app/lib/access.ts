@@ -29,8 +29,14 @@ export function canSeeCourse(user: UserProfile | null, courseId: string): boolea
   return user.access.enrolledCourseIds.includes(courseId);
 }
 
-export function canSeeMockTest(user: UserProfile | null, test: Pick<MockTest, 'is_free'>): boolean {
-  return test.is_free || unlimited(user);
+export function canSeeMockTest(
+  user: UserProfile | null,
+  test: Pick<MockTest, 'id' | 'is_free'>,
+): boolean {
+  if (test.is_free) return true;
+  if (!user) return false;
+  if (unlimited(user)) return true;
+  return user.access?.unlockedMockTestIds?.includes(test.id) ?? false;
 }
 
 export function canSeeResource(user: UserProfile | null, r: Pick<ResourceItem, 'is_free'>): boolean {
@@ -102,7 +108,11 @@ export function applyPlanGrants(
     };
   }
 
-  const next: AccessGrants = { ...access, enrolledCourseIds: [...access.enrolledCourseIds] };
+  const next: AccessGrants = {
+    ...access,
+    enrolledCourseIds: [...access.enrolledCourseIds],
+    unlockedMockTestIds: access.unlockedMockTestIds ? [...access.unlockedMockTestIds] : [],
+  };
   if (g.premiumMath) {
     next.premiumMath = true;
     next.redbookPractice = true;

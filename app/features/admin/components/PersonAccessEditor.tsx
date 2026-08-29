@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   UserProfile,
   Course,
+  MockTest,
   PaymentSubmission,
   AdminPermission,
 } from '../../../types';
@@ -14,18 +15,20 @@ import {
   permissionsFor,
   grantedCount,
 } from '../lib/permissions';
-import { Check, ShieldCheck, KeyRound, GraduationCap, UserCog, Receipt } from 'lucide-react';
+import { Check, ShieldCheck, KeyRound, GraduationCap, Award, UserCog, Receipt } from 'lucide-react';
 import { EditorTopBar, EditorSection, Field, inputClass, editorPrimaryButtonClass } from './EditorShell';
 import { Pill, ToggleRow, Button } from './ui';
 
 interface PersonAccessEditorProps {
   person: UserProfile;
   courses: Course[];
+  mockTests: MockTest[];
   payments: PaymentSubmission[];
   /** The admin doing the editing — used to stop them removing their own access. */
   actingUser: UserProfile | null;
   onUpdateAccess: (userId: string, updates: Partial<UserProfile['access']>) => void;
   onToggleCourse: (userId: string, courseId: string) => void;
+  onToggleMockTest: (userId: string, mockTestId: string) => void;
   onSetRole: (userId: string, role: UserProfile['role']) => void;
   onSetPermissions: (userId: string, updates: Partial<AdminPermission>) => void;
   onToggleStatus: (userId: string) => void;
@@ -41,10 +44,12 @@ const ROLE_LABEL: Record<UserProfile['role'], string> = {
 export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   person,
   courses,
+  mockTests,
   payments,
   actingUser,
   onUpdateAccess,
   onToggleCourse,
+  onToggleMockTest,
   onSetRole,
   onSetPermissions,
   onToggleStatus,
@@ -53,7 +58,7 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   const router = useRouter();
 
   const access = person.access;
-  // A full pass covers the individual subject passes, so those render locked-on
+  // A full pass covers the individual subject passes and all mock tests, so those render locked-on
   // rather than pretending they can be turned off independently.
   const coveredByFullPass = access.fullPremium;
   const isActive = person.status !== 'suspended' && !person.isSuspended;
@@ -63,6 +68,10 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
 
   const setPass = (key: keyof UserProfile['access'], value: boolean) =>
     onUpdateAccess(person.id, { [key]: value } as Partial<UserProfile['access']>);
+
+  const unlockedMockCount = (access.unlockedMockTestIds || []).filter((id) =>
+    mockTests.some((m) => m.id === id)
+  ).length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#071126] flex flex-col">
@@ -124,32 +133,32 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
             </div>
           </EditorSection>
 
-          <EditorSection icon={KeyRound} title="Passes" hint="Applies to practice and mock tests">
+          <EditorSection icon={KeyRound} title="Passes" hint="Global question bank and feature passes">
             <ToggleRow
               label="Full master pass"
-              hint="Everything: all questions, all mock tests, and every course."
+              hint="Unlocks everything: all practice questions, all courses, and all mock tests."
               checked={access.fullPremium}
               onChange={(next) => setPass('fullPremium', next)}
             />
             <ToggleRow
-              label="Math pass"
-              hint="All Math questions and Math mock sections."
+              label="Math question bank"
+              hint="Unlocks all Math practice questions and solutions."
               checked={access.premiumMath || coveredByFullPass}
               disabled={coveredByFullPass}
               lockedReason={coveredByFullPass ? 'Included in the full master pass.' : undefined}
               onChange={(next) => setPass('premiumMath', next)}
             />
             <ToggleRow
-              label="Reading & Writing pass"
-              hint="All verbal questions and verbal mock sections."
+              label="Reading & Writing question bank"
+              hint="Unlocks all Reading & Writing practice questions and solutions."
               checked={access.premiumReadingWriting || coveredByFullPass}
               disabled={coveredByFullPass}
               lockedReason={coveredByFullPass ? 'Included in the full master pass.' : undefined}
               onChange={(next) => setPass('premiumReadingWriting', next)}
             />
             <ToggleRow
-              label="Redbook practice"
-              hint="The Redbook question set."
+              label="Supplemental question sets"
+              hint="Unlocks extra curated practice question sets and problem banks."
               checked={access.redbookPractice || coveredByFullPass}
               disabled={coveredByFullPass}
               lockedReason={coveredByFullPass ? 'Included in the full master pass.' : undefined}
@@ -158,11 +167,49 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
           </EditorSection>
 
           <EditorSection
+            icon={Award}
+            title="Mock test access"
+            hint={
+              coveredByFullPass
+                ? 'All mock tests via full master pass'
+                : `${unlockedMockCount} of ${mockTests.length} unlocked`
+            }
+          >
+            {mockTests.length === 0 ? (
+              <p className="text-[13px] text-[#58708A]">No mock tests created yet.</p>
+            ) : (
+              mockTests.map((mock) => {
+                const isUnlocked =
+                  mock.is_free ||
+                  coveredByFullPass ||
+                  (access.unlockedMockTestIds?.includes(mock.id) ?? false);
+                const isLockedReason = mock.is_free
+                  ? 'Free diagnostic test for all students.'
+                  : coveredByFullPass
+                  ? 'Included in the full master pass.'
+                  : undefined;
+
+                return (
+                  <ToggleRow
+                    key={mock.id}
+                    label={mock.title}
+                    hint={`${mock.totalQuestions} questions · ${mock.totalTimeMinutes} mins · ${mock.difficulty} · ${mock.is_free ? 'Free Diagnostic' : 'Premium'}`}
+                    checked={isUnlocked}
+                    disabled={mock.is_free || coveredByFullPass}
+                    lockedReason={isLockedReason}
+                    onChange={() => onToggleMockTest(person.id, mock.id)}
+                  />
+                );
+              })
+            )}
+          </EditorSection>
+
+          <EditorSection
             icon={GraduationCap}
             title="Course enrolment"
             hint={
               coveredByFullPass
-                ? 'All courses via the full pass'
+                ? 'All courses via the full master pass'
                 : `${access.enrolledCourseIds.length} of ${courses.length}`
             }
           >
