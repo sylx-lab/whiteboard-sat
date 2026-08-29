@@ -90,8 +90,9 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     const firstPlayableIdx = test.modules.findIndex((m) => m.questions.length > 0);
     const startModIdx = firstPlayableIdx >= 0 ? firstPlayableIdx : 0;
     const firstModule = test.modules[startModIdx] || test.modules[0];
+    const uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const newAttempt: MockTestAttempt = {
-      id: `m-att-${test.id}-${currentUser?.id || 'guest'}`,
+      id: `m-att-${test.id}-${uniqueSuffix}`,
       userId: currentUser?.id || 'guest',
       testId: test.id,
       testTitle: test.title,
@@ -117,20 +118,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     }
   };
 
-  // Countdown timer for active module
-  useEffect(() => {
-    if (!activeAttempt || activeAttempt.status !== 'in_progress') return;
-
-    const interval = setInterval(() => {
-      setActiveAttempt((prev) => {
-        if (!prev) return null;
-        const remaining = Math.max(0, prev.timeRemainingSeconds - 1);
-        return { ...prev, timeRemainingSeconds: remaining };
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [activeAttempt?.id, activeAttempt?.status]);
+  // placeholder — real timer is defined after handleSubmitModule to avoid hoist race
 
   // Handle Answer Selection in Active Test
   const handleSelectTestAnswer = (choiceId: 'A' | 'B' | 'C' | 'D') => {
@@ -239,6 +227,29 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       setSelectedResultAttempt(scored ?? { ...activeAttempt, status: 'completed' as const });
     }
   };
+
+  // Countdown — auto-submits module when time hits 0
+  useEffect(() => {
+    if (!activeAttempt || activeAttempt.status !== 'in_progress') return;
+    const interval = setInterval(() => {
+      setActiveAttempt((prev) => {
+        if (!prev) return null;
+        const remaining = Math.max(0, prev.timeRemainingSeconds - 1);
+        if (remaining === 0) setTimeout(() => handleSubmitModule(), 0);
+        return { ...prev, timeRemainingSeconds: remaining };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeAttempt?.id, activeAttempt?.status]);
+
+  // Save checkpoint when tab hidden
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden && activeAttempt) onSaveAttempt(activeAttempt);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [activeAttempt]);
 
   // An in-progress attempt saved before the test was edited can point past the end of
   // the current modules. Resolving these up front means a stale attempt falls through
@@ -555,7 +566,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="p-3 bg-[var(--surface-soft)] rounded-xl border border-[var(--border)] space-y-1 text-[12px] text-[var(--foreground-secondary)]">
                   <div className="flex justify-between">
                     <span>Total Structure:</span>
-                    <strong className="text-[var(--foreground)]">4 Modules (2 RW + 2 Math)</strong>
+                    <strong className="text-[var(--foreground)]">{test.modules.length} Modules ({test.modules.filter(m=>m.section==='reading_writing').length} RW + {test.modules.filter(m=>m.section==='math').length} Math)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Duration:</span>

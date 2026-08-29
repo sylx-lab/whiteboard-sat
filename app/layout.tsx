@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "./components/AppShell";
+import { AppStoreProvider } from "./services/store";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,7 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <AppShell>{children}</AppShell>
+        <AppStoreProvider>
+          <AppShell>{children}</AppShell>
+        </AppStoreProvider>
       </body>
     </html>
   );

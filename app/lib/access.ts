@@ -53,6 +53,7 @@ export function redactQuestion(q: Question): Question {
     ...q,
     question_text: '',
     stimulus: undefined,
+    imageUrl: undefined,
     choices: [],
     answer_choices: [],
     // Not the real answer. Nothing can be submitted while locked, and shipping
@@ -95,9 +96,17 @@ export function redactResource(r: ResourceItem): ResourceItem {
 export function applyPlanGrants(
   access: AccessGrants,
   plan: ProductPlan,
-  allCourseIds: string[],
+  allCourseIdsOrCourses: string[] | Course[],
 ): AccessGrants {
   const g = plan.grants;
+  // Normalize to ids and infer subject-based enrolment when Course objects are available
+  const allCourseIds = (allCourseIdsOrCourses as unknown[]).map((c) => typeof c === 'string' ? c as string : (c as Course).id) as string[];
+  // Derive ids per subject when full course objects are available
+  const asCourses = allCourseIdsOrCourses as Course[];
+  const hasObjects = asCourses.length > 0 && typeof asCourses[0] === 'object' && (asCourses[0] as Course).subject !== undefined;
+  const mathIds = hasObjects ? (asCourses as Course[]).filter(c => c.subject === 'math' || c.subject === 'both').map(c => c.id) : ['c-math-800'];
+  const rwIds = hasObjects ? (asCourses as Course[]).filter(c => c.subject === 'reading_writing' || c.subject === 'both').map(c => c.id) : ['c-rw-750'];
+
   if (g.allCourses || g.fullPremium) {
     return {
       premiumMath: true,
@@ -116,11 +125,11 @@ export function applyPlanGrants(
   if (g.premiumMath) {
     next.premiumMath = true;
     next.redbookPractice = true;
-    if (!next.enrolledCourseIds.includes('c-math-800')) next.enrolledCourseIds.push('c-math-800');
+    for (const id of mathIds) if (!next.enrolledCourseIds.includes(id)) next.enrolledCourseIds.push(id);
   }
   if (g.premiumReadingWriting) {
     next.premiumReadingWriting = true;
-    if (!next.enrolledCourseIds.includes('c-rw-750')) next.enrolledCourseIds.push('c-rw-750');
+    for (const id of rwIds) if (!next.enrolledCourseIds.includes(id)) next.enrolledCourseIds.push(id);
   }
   return next;
 }

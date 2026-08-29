@@ -9,6 +9,9 @@ export default function CoursesPage() {
   const store = useAppStore();
   const router = useRouter();
 
+  if (store.isLoading) {
+    return <div className="max-w-[1240px] mx-auto px-4 py-10 animate-pulse"><div className="h-32 bg-[var(--surface-soft)] rounded-xl" /></div>;
+  }
   return (
     <CoursesHub
       courses={store.courses}

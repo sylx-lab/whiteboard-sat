@@ -91,10 +91,13 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     }, 0);
   };
 
-  const insertBullet = () => {
+  const insertBullet = (style: 'dot' | 'alpha' = 'dot') => {
     const el = activeRef.current;
+    const isAlpha = style === 'alpha';
+    const prefixFor = (i: number) => (isAlpha ? `${String.fromCharCode(65 + (i % 26))}. ` : '• ');
+
     if (!el) {
-      onChange(value ? `${value}\n• ` : '• ');
+      onChange(value ? `${value}\n${prefixFor(0)}` : prefixFor(0));
       return;
     }
     const start = el.selectionStart;
@@ -104,13 +107,39 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     const after = value.slice(end);
 
     if (selection) {
+      const hasAlpha = /^[A-Z]\.\s/.test(selection.split('\n')[0] ?? '');
+      const hasDot = selection.split('\n')[0]?.startsWith('• ') ?? false;
+      // If selection already looks like same style, strip it (toggle off)
+      if ((isAlpha && hasAlpha) || (!isAlpha && hasDot)) {
+        const stripped = selection
+          .split('\n')
+          .map((line) => line.replace(/^([•]\s|[A-Z]\.\s)/, ''))
+          .join('\n');
+        onChange(before + stripped + after);
+        return;
+      }
       const bulleted = selection
         .split('\n')
-        .map((line) => (line.startsWith('• ') ? line : `• ${line}`))
+        .map((line, i) => {
+          if (!line.trim()) return line;
+          // remove other style then apply
+          const clean = line.replace(/^([•]\s|[A-Z]\.\s)/, '');
+          return `${prefixFor(i)}${clean}`;
+        })
         .join('\n');
       onChange(before + bulleted + after);
     } else {
-      const insertion = '• ';
+      // No selection — continue letter sequence if previous line is A., B. etc
+      let insertion = prefixFor(0);
+      if (isAlpha) {
+        const upto = value.slice(0, start);
+        const lastLine = upto.split('\n').pop() ?? '';
+        const m = lastLine.match(/^([A-Z])\.\s/);
+        if (m) {
+          const nextCode = m[1].charCodeAt(0) + 1;
+          if (nextCode <= 90) insertion = `${String.fromCharCode(nextCode)}. `;
+        }
+      }
       onChange(before + insertion + after);
       setTimeout(() => {
         el.focus();
@@ -148,17 +177,28 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
 
       <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
 
-      {/* Bullet Point Button */}
-      <button
-        type="button"
-        onClick={insertBullet}
-        title="Insert bullet point (•)"
-        aria-label="Insert bullet point"
-        className={`${toolButton} text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
-      >
-        <List className="w-3.5 h-3.5" />
-        <span>Bullet</span>
-      </button>
+      {/* Bullet Point Buttons — dot and A,B,C */}
+      <div className="inline-flex items-center rounded-lg overflow-hidden border border-transparent">
+        <button
+          type="button"
+          onClick={() => insertBullet('dot')}
+          title="Insert bullet (•)"
+          aria-label="Insert bullet point (dot)"
+          className={`${toolButton} rounded-r-none text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+        >
+          <List className="w-3.5 h-3.5" />
+          <span>•</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => insertBullet('alpha')}
+          title="Insert A, B, C list — selects multiple lines to convert to A. B. C."
+          aria-label="Insert A,B,C list"
+          className={`${toolButton} rounded-l-none border-l border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--foreground)]`}
+        >
+          <span className="font-mono font-bold text-[11px]">A.</span>
+        </button>
+      </div>
 
       <span className="w-px h-4 bg-[var(--border)] mx-1" aria-hidden="true" />
 

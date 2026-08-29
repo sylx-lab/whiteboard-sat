@@ -45,7 +45,9 @@ export async function POST(request: Request) {
     return bad('productId, referenceNumber and senderPhoneNumber are required');
   }
 
-  const plan = INITIAL_PLANS.find((p) => p.id === body.productId);
+  // Plans are DB-driven (editable in admin) with seed fallback
+  const planDoc = await (await collections.plans()).findOne({ _id: String(body.productId) });
+  const plan = planDoc ? hydrate.plan(planDoc as any) : INITIAL_PLANS.find((p) => p.id === body.productId);
   const course = plan
     ? null
     : await (await collections.courses()).findOne({ _id: String(body.productId) });
@@ -112,12 +114,12 @@ async function grantFor(userId: string, productId: string) {
   const target = await users.findOne({ _id: userId });
   if (!target) return;
 
-  const plan = INITIAL_PLANS.find((p) => p.id === productId);
+  const planDoc = await (await collections.plans()).findOne({ _id: String(productId) });
+  const plan = planDoc ? hydrate.plan(planDoc as any) : INITIAL_PLANS.find((p) => p.id === productId);
   if (plan) {
-    const ids = (await (await collections.courses()).find({}).project({ _id: 1 }).toArray()).map(
-      (c) => String(c._id),
-    );
-    await users.updateOne({ _id: userId }, { $set: { access: applyPlanGrants(target.access, plan, ids) } });
+    const courses = await (await collections.courses()).find({}).toArray();
+    const hydratedCourses = courses.map((d) => hydrate.course(d as any));
+    await users.updateOne({ _id: userId }, { $set: { access: applyPlanGrants(target.access, plan, hydratedCourses) } });
     return;
   }
 

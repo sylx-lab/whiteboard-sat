@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+'use client';
+
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import {
   UserProfile,
@@ -80,7 +82,7 @@ function saveToStorage<T>(key: string, data: T) {
   }
 }
 
-export function useAppStore() {
+function useAppStoreInternal() {
   // Theme
   const [theme, setThemeState] = useState<AppTheme>('white');
 
@@ -440,6 +442,13 @@ export function useAppStore() {
     if (user?.courseProgress) setCourseProgress(user.courseProgress);
   };
 
+  const toggleBookmark = async (questionId: string) => {
+    const { user } = await api.patch<{ user: MeUser | null }>('/me', {
+      bookmarkToggle: questionId,
+    });
+    if (user) setCurrentUser(user as UserProfile);
+  };
+
   // --- PAYMENTS & MANUAL VERIFICATION ---
   /**
    * `amount` is accepted for the existing call signature and then ignored: the
@@ -492,7 +501,7 @@ export function useAppStore() {
     const current = accessOf(userId);
     const access =
       'grants' in grantsOrPlan
-        ? applyPlanGrants(current, grantsOrPlan, courses.map((c) => c.id))
+        ? applyPlanGrants(current, grantsOrPlan, courses)
         : { ...current, ...grantsOrPlan };
     return patchUser(userId, { access });
   };
@@ -659,7 +668,8 @@ export function useAppStore() {
   };
 
   const updatePlan = async (updatedPlan: ProductPlan): Promise<ProductPlan[]> => {
-    setPlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
+    const optimistic = plans.map((p) => (p.id === updatedPlan.id ? updatedPlan : p));
+    setPlans(optimistic);
     const res = await fetch('/api/plans', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -670,7 +680,7 @@ export function useAppStore() {
       setPlans(data.items);
       return data.items;
     }
-    return plans;
+    return optimistic;
   };
 
   const addPlan = async (newPlan: Partial<ProductPlan> & { name: string; price: number }): Promise<ProductPlan[]> => {
@@ -684,11 +694,16 @@ export function useAppStore() {
       setPlans(data.items);
       return data.items;
     }
-    return plans;
+    // fallback: append locally with generated id
+    const temp: ProductPlan = { id: `plan-${Date.now()}`, slug: newPlan.name.toLowerCase().replace(/\s+/g, '-'), description: newPlan.description ?? '', period: 'One-time access', grants: {}, features: newPlan.features ?? [], ...newPlan } as ProductPlan;
+    const next = [...plans, temp];
+    setPlans(next);
+    return next;
   };
 
   const deletePlan = async (planId: string): Promise<ProductPlan[]> => {
-    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    const optimistic = plans.filter((p) => p.id !== planId);
+    setPlans(optimistic);
     const res = await fetch(`/api/plans?id=${encodeURIComponent(planId)}`, {
       method: 'DELETE',
     });
@@ -697,7 +712,7 @@ export function useAppStore() {
       setPlans(data.items);
       return data.items;
     }
-    return plans;
+    return optimistic;
   };
 
   return {
@@ -737,6 +752,7 @@ export function useAppStore() {
     finalizeMockTestAttempt: finalizeMockTest,
     toggleLessonComplete,
     toggleLessonCompleted: toggleLessonComplete,
+    toggleBookmark,
     submitPayment,
     verifyPayment,
     rejectPayment,
@@ -782,4 +798,21 @@ export function useAppStore() {
     totalTimeSpentMinutes,
     domainStats,
   };
+}
+
+type AppStoreValue = ReturnType<typeof useAppStoreInternal>;
+const AppStoreContext = createContext<AppStoreValue | null>(null);
+
+export function AppStoreProvider({ children }: { children: React.ReactNode }) {
+  const value = useAppStoreInternal();
+  return React.createElement(AppStoreContext.Provider, { value }, children) as unknown as React.ReactElement;
+}
+
+// Shared hook — returns the Provider's value when inside <AppStoreProvider>, otherwise falls back to an isolated instance (for gradual migration / tests).
+export function useAppStore(): AppStoreValue {
+  const ctx = useContext(AppStoreContext);
+  if (ctx) return ctx;
+  // Fallback for callers outside the Provider (e.g. isolated tests). This keeps backwards compat.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useAppStoreInternal();
 }

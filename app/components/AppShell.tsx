@@ -43,8 +43,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const handleNavigate = (view: NavView) => {
     switch (view) {
       case 'home':
-      case 'about':
         router.push('/');
+        break;
+      case 'about':
+        router.push('/#about');
         break;
       case 'practice':
         router.push('/practice');
@@ -58,8 +60,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       case 'courses':
       case 'my-courses':
       case 'course-detail':
-      case 'resources':
         router.push('/courses');
+        break;
+      case 'resources':
+        router.push('/resources');
         break;
       case 'dashboard':
       case 'account':
@@ -72,10 +76,16 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         router.push('/pricing');
         break;
       case 'admin-dashboard':
-      case 'admin-students':
-      case 'admin-questions':
-      case 'admin-purchases':
         router.push('/admin');
+        break;
+      case 'admin-students':
+        router.push('/admin?tab=candidates');
+        break;
+      case 'admin-questions':
+        router.push('/admin?tab=questions');
+        break;
+      case 'admin-purchases':
+        router.push('/admin?tab=payments');
         break;
       default:
         router.push('/');

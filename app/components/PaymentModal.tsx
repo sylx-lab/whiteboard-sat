@@ -36,6 +36,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [isSubmittedSuccess, setIsSubmittedSuccess] = useState(false);
 
+  React.useEffect(() => {
+    if (currentUser?.phone) setSenderPhone(currentUser.phone);
+  }, [currentUser?.phone]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setReferenceNumber('');
+      setNotes('');
+      setIsSubmittedSuccess(false);
+      setCopiedAccount(false);
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !plan) return null;
 
   const sets = paymentSettings || DEFAULT_PAYMENT_SETTINGS;
@@ -56,8 +76,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     'Direct Gateway': 'Direct digital payment channel.',
   };
 
-  const handleCopyAccount = () => {
-    navigator.clipboard.writeText(paymentAccounts[paymentMethod] || '');
+  const handleCopyAccount = async () => {
+    const text = paymentAccounts[paymentMethod] || '';
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      }
+    } catch {}
     setCopiedAccount(true);
     setTimeout(() => setCopiedAccount(false), 2000);
   };
@@ -81,8 +108,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150" onClick={onClose} role="dialog" aria-modal="true" aria-label="Payment verification">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-xl border border-[var(--border)] w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>

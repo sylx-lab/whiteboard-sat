@@ -60,12 +60,12 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
         <div className="flex items-center gap-4 text-[12.5px] font-medium text-[var(--foreground-secondary)] pt-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[var(--brand)]" />
-            <span>3 Programs</span>
+            <span>{courses.length} Programs</span>
           </div>
           <span className="text-[var(--foreground-muted)]">•</span>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[var(--brand)]" />
-            <span>100+ Lessons</span>
+            <span>{courses.reduce((s,c)=>s+(c.lessons?.length||c.lessonsCount||0),0)} Lessons</span>
           </div>
           <span className="text-[var(--foreground-muted)]">•</span>
           <div className="flex items-center gap-2">

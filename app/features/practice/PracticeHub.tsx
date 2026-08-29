@@ -32,6 +32,7 @@ interface PracticeHubProps {
   currentUser: UserProfile | null;
   hasAccessToQuestion: (q: Question) => boolean;
   onLogAttempt: (question: Question, answer: 'A' | 'B' | 'C' | 'D', timeSpent: number) => void;
+  onToggleBookmark?: (questionId: string) => void;
   onOpenPricing: () => void;
 }
 
@@ -42,6 +43,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   currentUser,
   hasAccessToQuestion,
   onLogAttempt,
+  onToggleBookmark,
   onOpenPricing,
 }) => {
   // High-Level Subject Switcher
@@ -53,6 +55,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const [selectedAccess, setSelectedAccess] = useState<'all' | 'free' | 'premium'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recommended');
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Filter Dropdown Open States
   const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
@@ -71,6 +75,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionInteractions, setSessionInteractions] = useState<Record<string, QuestionInteractionState>>({});
   const [sessionTimer, setSessionTimer] = useState(0);
+  const [questionStartMs, setQuestionStartMs] = useState<number>(Date.now());
   const [isCrossOutMode, setIsCrossOutMode] = useState(false);
   const [isMobileMatrixOpen, setIsMobileMatrixOpen] = useState(false);
 
@@ -148,14 +153,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       if (selectedTopic !== 'all' && q.topic !== selectedTopic) return false;
       if (selectedSource !== 'all' && q.source !== selectedSource) return false;
 
-      // Search
+      // Search — includes stimulus so Reading passages are findable
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const matchCode = q.code.toLowerCase().includes(query);
         const matchTopic = q.topic.toLowerCase().includes(query);
         const matchSubtopic = q.subtopic.toLowerCase().includes(query);
         const matchText = q.question_text.toLowerCase().includes(query);
-        if (!matchCode && !matchTopic && !matchSubtopic && !matchText) return false;
+        const matchStimulus = (q.stimulus ?? '').toLowerCase().includes(query);
+        if (!matchCode && !matchTopic && !matchSubtopic && !matchText && !matchStimulus) return false;
       }
 
       return true;
@@ -209,6 +215,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     setSortBy('recommended');
   };
 
+  // Reset pagination when filters change
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedDomain, selectedDifficulty, selectedAccess, selectedTopic, selectedSource, searchQuery, sortBy, selectedSubject]);
+
   // Launch Practice Session
   const handleStartSession = (startQuestions = filteredQuestions, initialIdx = 0) => {
     if (startQuestions.length === 0) return;
@@ -216,6 +226,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     setSessionQuestionIds(ids);
     setCurrentIndex(initialIdx);
 
+    const bookmarked = new Set(currentUser?.bookmarkedQuestionIds ?? []);
     const initialInteractions: Record<string, QuestionInteractionState> = {};
     ids.forEach((id) => {
       initialInteractions[id] = {
@@ -223,7 +234,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         selectedAnswer: null,
         isSubmitted: false,
         isMarkedForReview: false,
-        isBookmarked: false,
+        isBookmarked: bookmarked.has(id),
         crossedOutChoices: [],
         timeSpentSeconds: 0,
       };
@@ -235,14 +246,22 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Timer increment while in active session
+  // Timer increment while in active session — per-question start tracking
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isSessionActive) return;
+    setQuestionStartMs(Date.now());
     const interval = setInterval(() => {
       setSessionTimer((t) => t + 1);
     }, 1000);
     return () => clearInterval(interval);
   }, [isSessionActive]);
+
+  // Reset per-question timer when index changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (isSessionActive) setQuestionStartMs(Date.now());
+  }, [currentIndex, isSessionActive]);
 
   const currentSessionQuestion = questions.find((q) => q.id === sessionQuestionIds[currentIndex]);
   const currentInteraction = currentSessionQuestion
@@ -279,13 +298,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
   const handleToggleBookmark = () => {
     if (!currentSessionQuestion) return;
+    const qid = currentSessionQuestion.id;
     setSessionInteractions((prev) => ({
       ...prev,
-      [currentSessionQuestion.id]: {
-        ...prev[currentSessionQuestion.id],
-        isBookmarked: !prev[currentSessionQuestion.id]?.isBookmarked,
+      [qid]: {
+        ...prev[qid],
+        isBookmarked: !prev[qid]?.isBookmarked,
       },
     }));
+    if (currentUser) onToggleBookmark?.(qid);
   };
 
   const handleToggleMarkForReview = () => {
@@ -301,14 +322,18 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
   const handleSubmitAnswer = () => {
     if (!currentSessionQuestion || !currentInteraction?.selectedAnswer) return;
+    // eslint-disable-next-line react-hooks/purity
+    const elapsed = Math.max(1, Math.round((Date.now() - questionStartMs) / 1000));
+    // Persist per-question time
     setSessionInteractions((prev) => ({
       ...prev,
       [currentSessionQuestion.id]: {
         ...prev[currentSessionQuestion.id],
         isSubmitted: true,
+        timeSpentSeconds: (prev[currentSessionQuestion.id]?.timeSpentSeconds || 0) + elapsed,
       },
     }));
-    onLogAttempt(currentSessionQuestion, currentInteraction.selectedAnswer, sessionTimer);
+    onLogAttempt(currentSessionQuestion, currentInteraction.selectedAnswer, elapsed);
   };
 
   const handleRetryProblem = () => {
@@ -863,7 +888,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredQuestions.map((q, idx) => {
+          {(() => {
+            const visible = filteredQuestions.slice(0, visibleCount);
+            return (
+              <>
+                {visible.map((q, idx) => {
             const hasAccess = hasAccessToQuestion(q);
 
             return (
@@ -937,6 +966,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               </div>
             );
           })}
+                {filteredQuestions.length > visible.length && (
+                  <div className="flex justify-center pt-2">
+                    <button
+                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                      className="px-5 py-2 bg-[var(--surface)] hover:bg-[var(--brand-soft)] border border-[var(--border)] rounded-xl text-[12px] font-semibold text-[var(--foreground)] transition-colors"
+                    >
+                      Load more ({filteredQuestions.length - visible.length} remaining)
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

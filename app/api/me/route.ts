@@ -35,6 +35,16 @@ export async function PATCH(request: Request) {
       : [...done, toggle.lessonId];
   }
 
+  // { bookmarkToggle: questionId }
+  if (typeof body.bookmarkToggle === 'string' && body.bookmarkToggle.trim()) {
+    const qid = body.bookmarkToggle.trim();
+    const doc = await users.findOne({ _id: user.id });
+    const bookmarks = (doc as any)?.bookmarkedQuestionIds ?? [];
+    set.bookmarkedQuestionIds = bookmarks.includes(qid)
+      ? bookmarks.filter((id: string) => id !== qid)
+      : [...bookmarks, qid];
+  }
+
   if (!Object.keys(set).length) return bad('Nothing to change');
   await users.updateOne({ _id: user.id }, { $set: set });
 

@@ -299,6 +299,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
                 className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
                 title="Theme Settings"
+                aria-label="Theme Settings"
+                aria-expanded={themeDropdownOpen}
+                aria-haspopup="menu"
               >
                 {theme === 'warm' ? (
                   <Eye className="w-5 h-5 text-amber-200" />

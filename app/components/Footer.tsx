@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { NavView } from './Navbar';
 
@@ -7,6 +7,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const gridId = useId();
   return (
     <footer className="relative bg-[var(--brand-hover)] text-white border-t border-white/15 overflow-hidden">
       {/* Subtle Premium Architectural Grid (60px, 4% opacity, thin 1px lines) */}
@@ -17,7 +18,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       >
         <defs>
           <pattern 
-            id="sat-arch-grid" 
+            id={gridId} 
             width="60" 
             height="60" 
             patternUnits="userSpaceOnUse"
@@ -31,7 +32,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#sat-arch-grid)" />
+        <rect width="100%" height="100%" fill={`url(#${gridId})`} />
       </svg>
 
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10 space-y-16">

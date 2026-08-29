@@ -6,7 +6,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { UserProfile, Course, PracticeAttempt, Domain } from '../../types';
-import { formatDomainName } from '../../lib/utils';
+import { estimateSATScore, formatDomainName } from '../../lib/utils';
 import { NavView } from '../../components/Navbar';
 
 interface StudentDashboardProps {
@@ -77,9 +77,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   let projectedRangeText = 'Calibrating after 1st drill';
   if (totalQuestionsAttempted > 0) {
-    const estimatedMath = mathAcc !== null ? Math.round(200 + mathAcc * 600) : 500;
-    const estimatedRW = rwAcc !== null ? Math.round(200 + rwAcc * 600) : 500;
-    const estTotal = Math.min(1600, Math.max(400, Math.round((estimatedMath + estimatedRW) / 10) * 10));
+    const { totalScore: estTotal } = estimateSATScore(mathCorrect, mathTotal, rwCorrect, rwTotal);
     const low = Math.max(400, Math.round((estTotal - 30) / 10) * 10);
     const high = Math.min(1600, Math.round((estTotal + 30) / 10) * 10);
     projectedRangeText = `${low}–${high}`;

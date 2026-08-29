@@ -184,6 +184,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           src={question.imageUrl}
           alt="Figure for this question"
           className="max-h-80 w-auto max-w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       )}
 
@@ -219,6 +220,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           return (
             <div
               key={choice.id}
+              role="button"
+              tabIndex={isSubmitted || isCrossed ? -1 : 0}
+              aria-label={`Choice ${choice.id}`}
+              aria-disabled={isSubmitted || isCrossed}
               onClick={() => {
                 if (isSubmitted) return;
                 if (isCrossed) return;
@@ -226,6 +231,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   onToggleCrossOut(choice.id);
                 } else {
                   onSelectAnswer(choice.id);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (isSubmitted || isCrossed) return;
+                  if (isCrossOutModeActive) onToggleCrossOut(choice.id);
+                  else onSelectAnswer(choice.id);
                 }
               }}
               className={`group/choice relative flex items-center justify-between min-h-[54px] sm:min-h-[64px] px-3.5 sm:px-5 py-3 rounded-[12px] border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] touch-manipulation ${cardStyle}`}
@@ -256,7 +269,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     <img
                       src={choice.imageUrl}
                       alt={`Figure for choice ${choice.id}`}
-                      className="max-h-48 w-auto rounded-lg border border-[var(--border)] bg-white object-contain p-1.5 shadow-2xs"
+                      className="max-h-48 w-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] object-contain p-1.5 shadow-2xs"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   )}
                   {choice.text && <MathRenderer content={choice.text} />}

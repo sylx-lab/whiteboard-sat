@@ -14,7 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { PracticeAttempt, MockTestAttempt, Domain, UserProfile } from '../../types';
-import { formatDomainName } from '../../lib/utils';
+import { estimateSATScore, formatDomainName } from '../../lib/utils';
 import { NavView } from '../../components/Navbar';
 
 interface ProgressAnalyticsProps {
@@ -43,26 +43,24 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
     return true;
   });
 
-  // Calculate estimated SAT score from practice accuracy
+  // Calculate estimated SAT score from practice accuracy — no fake data when empty
+  const hasAttempts = practiceAttempts.length > 0;
   const mathStats = domainStats.filter((d) =>
     ['algebra', 'advanced_math', 'problem_solving_data_analysis', 'geometry_trigonometry'].includes(d.domain)
   );
   const mathTotal = mathStats.reduce((acc, d) => acc + d.total, 0);
   const mathCorrect = mathStats.reduce((acc, d) => acc + d.correct, 0);
-  const mathAcc = mathTotal > 0 ? mathCorrect / mathTotal : 0.8;
-  const estimatedMath = Math.round(200 + mathAcc * 600);
-
   const rwStats = domainStats.filter((d) =>
     ['information_ideas', 'craft_structure', 'expression_ideas', 'standard_english_conventions'].includes(d.domain)
   );
   const rwTotal = rwStats.reduce((acc, d) => acc + d.total, 0);
   const rwCorrect = rwStats.reduce((acc, d) => acc + d.correct, 0);
-  const rwAcc = rwTotal > 0 ? rwCorrect / rwTotal : 0.75;
-  const estimatedRW = Math.round(200 + rwAcc * 600);
-
-  const estimatedTotal = Math.min(1600, Math.max(400, Math.round((estimatedMath + estimatedRW) / 10) * 10));
+  const est = hasAttempts ? estimateSATScore(mathCorrect, mathTotal, rwCorrect, rwTotal) : null;
+  const estimatedMath = est?.mathScore ?? 0;
+  const estimatedRW = est?.rwScore ?? 0;
+  const estimatedTotal = est?.totalScore ?? 0;
   const targetScore = currentUser?.targetScore || 1550;
-  const pointsToTarget = Math.max(0, targetScore - estimatedTotal);
+  const pointsToTarget = hasAttempts ? Math.max(0, targetScore - estimatedTotal) : 0;
 
   // Sorted domain stats for Mastery & Insights
   const sortedDomains = [...domainStats].sort((a, b) => b.accuracy - a.accuracy);
@@ -122,7 +120,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
           <div className="space-y-2">
             <div className="flex items-baseline gap-3">
               <span className="text-5xl sm:text-6xl font-extrabold font-mono tracking-tight text-white">
-                {estimatedTotal}
+                {hasAttempts ? estimatedTotal : '—'}
               </span>
               <span className="text-lg font-mono text-[var(--foreground-muted)]">/ 1600</span>
             </div>
@@ -135,11 +133,11 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
           <div className="pt-4 border-t border-[var(--border-strong)]/80 grid grid-cols-2 gap-4 text-[12px]">
             <div className="bg-slate-900/60 p-3 rounded-[10px] border border-[var(--border-strong)]">
               <span className="text-[var(--foreground-muted)] block text-[10px] font-semibold uppercase tracking-wider">Mathematics</span>
-              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedMath} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
+              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{hasAttempts ? estimatedMath : '—'} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
             </div>
             <div className="bg-slate-900/60 p-3 rounded-[10px] border border-[var(--border-strong)]">
               <span className="text-[var(--foreground-muted)] block text-[10px] font-semibold uppercase tracking-wider">Reading & Writing</span>
-              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{estimatedRW} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
+              <div className="text-[16px] font-bold text-white font-mono mt-0.5">{hasAttempts ? estimatedRW : '—'} <span className="text-xs text-[var(--foreground-muted)] font-normal">/800</span></div>
             </div>
           </div>
         </div>
@@ -214,14 +212,14 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
 
         <div className="space-y-3">
           <div className="flex justify-between text-[13px] font-semibold text-[var(--foreground)] font-mono">
-            <span>Current: {estimatedTotal}</span>
+            <span>Current: {hasAttempts ? estimatedTotal : '—'}</span>
             <span>Target: {targetScore}</span>
           </div>
 
           <div className="relative w-full h-3 rounded-full bg-[var(--border)] overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full rounded-full bg-[var(--brand-cta)] transition-all duration-600"
-              style={{ width: `${Math.min(100, Math.max(5, ((estimatedTotal - 400) / (targetScore - 400)) * 100))}%` }}
+              style={{ width: `${hasAttempts ? Math.min(100, Math.max(5, ((estimatedTotal - 400) / (targetScore - 400)) * 100)) : 4}%` }}
             />
           </div>
 
