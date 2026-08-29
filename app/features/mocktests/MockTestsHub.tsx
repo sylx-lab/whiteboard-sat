@@ -337,6 +337,24 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             </button>
 
             <button
+              onClick={async () => {
+                const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
+                const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                if (!confirm(`End test now and submit? ${answered}/${total} answered. Unanswered will be marked wrong.`)) return;
+                onSaveAttempt(activeAttempt);
+                const scored = await onFinalizeTest(activeAttempt.id);
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+                setActiveAttempt(null);
+                setActiveTest(null);
+                setSelectedResultAttempt(scored ?? { ...activeAttempt, status: 'completed' as const });
+              }}
+              className="px-2.5 sm:px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold rounded-lg border border-rose-700 transition-colors active:scale-95"
+              title="Submit test now — you don't need to finish all questions or wait for timer"
+            >
+              End Test
+            </button>
+
+            <button
               onClick={() => {
                 if (activeAttempt) onSaveAttempt(activeAttempt);
                 setActiveAttempt(null);
@@ -455,6 +473,22 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   ? 'Proceed to Next Module'
                   : 'Submit Test for Scoring'}
               </button>
+              <button
+                onClick={async () => {
+                  const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
+                  const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                  if (!confirm(`End test now? ${answered}/${total} answered. Unanswered will be marked wrong.`)) return;
+                  onSaveAttempt(activeAttempt);
+                  const scored = await onFinalizeTest(activeAttempt.id);
+                  confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+                  setActiveAttempt(null);
+                  setActiveTest(null);
+                  setSelectedResultAttempt(scored ?? { ...activeAttempt, status: 'completed' as const });
+                }}
+                className="w-full py-2 border border-rose-200 text-rose-700 hover:bg-rose-50 font-medium rounded-lg transition-colors text-[11px] cursor-pointer"
+              >
+                End Test Now
+              </button>
             </div>
           </div>
         </div>
@@ -505,6 +539,23 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   {activeAttempt.currentModuleIndex < activeTest.modules.length - 1
                     ? 'Proceed to Next Module'
                     : 'Submit Test for Scoring'}
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsMobileExamMatrixOpen(false);
+                    const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
+                    const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                    if (!confirm(`End test now? ${answered}/${total} answered.`)) return;
+                    onSaveAttempt(activeAttempt);
+                    const scored = await onFinalizeTest(activeAttempt.id);
+                    confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+                    setActiveAttempt(null);
+                    setActiveTest(null);
+                    setSelectedResultAttempt(scored ?? { ...activeAttempt, status: 'completed' as const });
+                  }}
+                  className="w-full py-2 border border-rose-200 text-rose-700 hover:bg-rose-50 font-medium rounded-lg transition-colors text-[11px] cursor-pointer"
+                >
+                  End Test Now
                 </button>
               </div>
             </div>

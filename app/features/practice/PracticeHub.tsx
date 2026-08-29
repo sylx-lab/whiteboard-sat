@@ -69,7 +69,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
   // Advanced Drawer Filters
   const [selectedTopic, setSelectedTopic] = useState<string>('all');
-  const [selectedSource, setSelectedSource] = useState<string>('all');
 
   // Active Practice Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -121,7 +120,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     'standard_english_conventions',
   ];
 
-  // Extract unique topics & sources for advanced drawer — only what you can actually access
+  // Extract unique topics for advanced drawer — only what you can actually access
   const availableTopics = useMemo(() => {
     const set = new Set<string>();
     questions
@@ -129,14 +128,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       .forEach((q) => set.add(q.topic));
     return Array.from(set);
   }, [questions, selectedSubject, hasAccessToQuestion]);
-
-  const availableSources = useMemo(() => {
-    const set = new Set<string>();
-    questions.filter((q) => hasAccessToQuestion(q)).forEach((q) => {
-      if (q.source) set.add(q.source);
-    });
-    return Array.from(set);
-  }, [questions, hasAccessToQuestion]);
 
   // Filtered & Sorted Question List — premium hidden unless you have access
   const filteredQuestions = useMemo(() => {
@@ -159,7 +150,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
       // Advanced filters
       if (selectedTopic !== 'all' && q.topic !== selectedTopic) return false;
-      if (selectedSource !== 'all' && q.source !== selectedSource) return false;
 
       // Search — includes stimulus so Reading passages are findable
       if (searchQuery.trim()) {
@@ -191,7 +181,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     selectedDifficulty,
     selectedAccess,
     selectedTopic,
-    selectedSource,
     searchQuery,
     sortBy,
     hasAccessToQuestion,
@@ -217,23 +206,21 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     if (selectedDifficulty !== 'all') count++;
     if (selectedAccess !== 'all') count++;
     if (selectedTopic !== 'all') count++;
-    if (selectedSource !== 'all') count++;
     if (searchQuery.trim()) count++;
     return count;
-  }, [selectedDomain, selectedDifficulty, selectedAccess, selectedTopic, selectedSource, searchQuery]);
+  }, [selectedDomain, selectedDifficulty, selectedAccess, selectedTopic, searchQuery]);
 
   const resetAllFilters = () => {
     setSelectedDomain('all');
     setSelectedDifficulty('all');
     setSelectedAccess('all');
     setSelectedTopic('all');
-    setSelectedSource('all');
     setSearchQuery('');
     setSortBy('recommended');
   };
 
   // Reset pagination when filters change (React pattern for state adjustment during render)
-  const filterKey = `${selectedSubject}:${selectedDomain}:${selectedDifficulty}:${selectedAccess}:${selectedTopic}:${selectedSource}:${searchQuery}:${sortBy}`;
+  const filterKey = `${selectedSubject}:${selectedDomain}:${selectedDifficulty}:${selectedAccess}:${selectedTopic}:${searchQuery}:${sortBy}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -833,7 +820,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => setMoreFiltersOpen(true)}
             className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
-              selectedTopic !== 'all' || selectedSource !== 'all'
+              selectedTopic !== 'all'
                 ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
                 : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
             }`}
@@ -1070,25 +1057,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 </select>
               </div>
 
-              {/* Source Selector */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  Question Source
-                </label>
-                <select
-                  value={selectedSource}
-                  onChange={(e) => setSelectedSource(e.target.value)}
-                  className="w-full p-2.5 border border-(--border) rounded-lg text-[12px] bg-(--surface) text-(--foreground) focus:outline-none focus:border-(--brand)"
-                >
-                  <option value="all">All Sources</option>
-                  {availableSources.map((src) => (
-                    <option key={src} value={src}>
-                      {src}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Difficulty Quick Filter */}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
@@ -1152,7 +1120,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               <button
                 onClick={() => {
                   setSelectedTopic('all');
-                  setSelectedSource('all');
                   setSelectedDifficulty('all');
                   setSelectedAccess('all');
                 }}
