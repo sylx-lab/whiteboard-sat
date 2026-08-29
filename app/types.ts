@@ -272,3 +272,32 @@ export type AuthResult =
   | { ok: false; error: string };
 
 export type AppTheme = 'white' | 'warm' | 'dark';
+
+export interface PaymentMethodConfig {
+  enabled: boolean;
+  accountNumber: string;
+  accountType: 'Personal' | 'Merchant' | 'Agent';
+  instructions?: string;
+}
+
+export interface BankTransferConfig {
+  enabled: boolean;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  branch?: string;
+  routingNumber?: string;
+  instructions?: string;
+}
+
+export interface PaymentSettings {
+  id: string;
+  bkash: PaymentMethodConfig;
+  nagad: PaymentMethodConfig;
+  rocket?: PaymentMethodConfig;
+  bankTransfer?: BankTransferConfig;
+  supportPhone?: string;
+  supportEmail?: string;
+  updatedAt?: string;
+}
+

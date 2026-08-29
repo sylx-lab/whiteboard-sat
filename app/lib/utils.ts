@@ -59,14 +59,16 @@ export function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function getDifficultyColor(difficulty: Difficulty): { bg: string; text: string; border: string } {
-  switch (difficulty) {
+export function getDifficultyColor(difficulty?: Difficulty | string | null): { bg: string; text: string; border: string } {
+  const norm = (difficulty || '').toLowerCase();
+  switch (norm) {
     case 'easy':
       return { bg: 'bg-emerald-50 text-emerald-700', text: 'text-emerald-700', border: 'border-emerald-200' };
-    case 'medium':
-      return { bg: 'bg-amber-50 text-amber-700', text: 'text-amber-700', border: 'border-amber-200' };
     case 'hard':
       return { bg: 'bg-rose-50 text-rose-700', text: 'text-rose-700', border: 'border-rose-200' };
+    case 'medium':
+    default:
+      return { bg: 'bg-amber-50 text-amber-700', text: 'text-amber-700', border: 'border-amber-200' };
   }
 }
 

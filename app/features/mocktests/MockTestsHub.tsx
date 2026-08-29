@@ -50,6 +50,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   const [activeTest, setActiveTest] = useState<MockTest | null>(null);
   const [selectedResultAttempt, setSelectedResultAttempt] = useState<MockTestAttempt | null>(null);
   const [isCrossOutMode, setIsCrossOutMode] = useState(false);
+  const [isMobileExamMatrixOpen, setIsMobileExamMatrixOpen] = useState(false);
 
   // Modals
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
@@ -124,14 +125,12 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       setActiveAttempt((prev) => {
         if (!prev) return null;
         const remaining = Math.max(0, prev.timeRemainingSeconds - 1);
-        const updated = { ...prev, timeRemainingSeconds: remaining };
-        onSaveAttempt(updated);
-        return updated;
+        return { ...prev, timeRemainingSeconds: remaining };
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeAttempt?.id]);
+  }, [activeAttempt?.id, activeAttempt?.status]);
 
   // Handle Answer Selection in Active Test
   const handleSelectTestAnswer = (choiceId: 'A' | 'B' | 'C' | 'D') => {
@@ -262,19 +261,19 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     return (
       <div className="fixed inset-0 z-50 bg-[var(--surface)] flex flex-col overflow-hidden select-none">
         {/* Exam Top Header */}
-        <header className="bg-[var(--navy-section)] text-white px-6 py-3.5 flex items-center justify-between border-b border-[var(--border-strong)]">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-md bg-[var(--brand-cta)] flex items-center justify-center font-bold text-[11px]">
+        <header className="bg-[var(--navy-section)] text-white px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between border-b border-[var(--border-strong)] pt-safe">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-7 h-7 rounded-md bg-[var(--brand-cta)] flex items-center justify-center font-bold text-[11px] shrink-0">
               WB
             </div>
-            <div>
-              <div className="font-semibold text-[13px] text-white leading-tight">{activeTest.title}</div>
-              <div className="text-[11px] text-[var(--brand-text)] font-medium">{currentModule.title}</div>
+            <div className="min-w-0">
+              <div className="font-semibold text-[12.5px] sm:text-[13px] text-white leading-tight truncate">{activeTest.title}</div>
+              <div className="text-[10.5px] sm:text-[11px] text-[var(--brand-text)] font-medium truncate">{currentModule.title}</div>
             </div>
           </div>
 
           {/* Module Timer */}
-          <div className="flex items-center gap-2 px-3.5 py-1 rounded-lg bg-slate-900/80 border border-[var(--border-strong)] font-mono text-[13px] font-semibold">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 rounded-lg bg-slate-900/80 border border-[var(--border-strong)] font-mono text-[12px] sm:text-[13px] font-semibold shrink-0 mx-2">
             <Clock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
             <span className={activeAttempt.timeRemainingSeconds < 120 ? 'text-rose-400 animate-pulse' : 'text-white'}>
               {timeMins}:{timeSecs.toString().padStart(2, '0')}
@@ -282,19 +281,19 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
           </div>
 
           {/* Tools & Exit */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {currentModule.section === 'math' && (
               <>
                 <button
                   onClick={() => setIsDesmosOpen(true)}
-                  className="px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors"
+                  className="px-2 sm:px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors active:scale-95"
                 >
                   <Calculator className="w-3 h-3 text-[var(--brand-text)]" />
                   <span className="hidden sm:inline">Desmos</span>
                 </button>
                 <button
                   onClick={() => setIsFormulasOpen(true)}
-                  className="px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors"
+                  className="px-2 sm:px-2.5 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-secondary)] text-[11px] font-medium rounded-lg flex items-center gap-1 border border-[var(--border-strong)] transition-colors active:scale-95"
                 >
                   <BookOpen className="w-3 h-3 text-[var(--foreground-muted)]" />
                   <span className="hidden sm:inline">Formulas</span>
@@ -302,12 +301,21 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               </>
             )}
 
+            {/* Mobile Matrix Drawer Button */}
+            <button
+              onClick={() => setIsMobileExamMatrixOpen(true)}
+              className="lg:hidden px-2 sm:px-2.5 py-1 bg-[var(--brand-cta)] text-white text-[11px] font-semibold rounded-lg transition-colors active:scale-95"
+            >
+              Matrix ({activeAttempt.currentQuestionIndex + 1}/{moduleQuestionIds.length})
+            </button>
+
             <button
               onClick={() => {
+                if (activeAttempt) onSaveAttempt(activeAttempt);
                 setActiveAttempt(null);
                 setActiveTest(null);
               }}
-              className="px-3 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-muted)] text-[11px] font-medium rounded-lg border border-[var(--border-strong)] transition-colors"
+              className="px-2.5 sm:px-3 py-1 bg-[var(--navy-section)] hover:bg-[var(--border-strong)] text-[var(--foreground-muted)] text-[11px] font-medium rounded-lg border border-[var(--border-strong)] transition-colors active:scale-95"
             >
               Pause & Exit
             </button>
@@ -315,7 +323,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         </header>
 
         {/* Test Main Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
           <div className="lg:col-span-8 space-y-4">
             <QuestionCard
               question={currentQ}
@@ -332,7 +340,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             />
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
+            <div className="flex items-center justify-between p-3.5 sm:p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
               <button
                 disabled={activeAttempt.currentQuestionIndex === 0}
                 onClick={() =>
@@ -340,10 +348,11 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                     prev ? { ...prev, currentQuestionIndex: Math.max(0, prev.currentQuestionIndex - 1) } : null
                   )
                 }
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${activeAttempt.currentQuestionIndex === 0
+                className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                  activeAttempt.currentQuestionIndex === 0
                     ? 'text-[var(--foreground-muted)] cursor-not-allowed'
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] border border-[var(--border)]'
-                  }`}
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] border border-[var(--border)] cursor-pointer active:scale-95'
+                }`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
@@ -359,13 +368,13 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                     setActiveAttempt((prev) =>
                       prev
                         ? {
-                          ...prev,
-                          currentQuestionIndex: Math.min(moduleQuestionIds.length - 1, prev.currentQuestionIndex + 1),
-                        }
+                            ...prev,
+                            currentQuestionIndex: Math.min(moduleQuestionIds.length - 1, prev.currentQuestionIndex + 1),
+                          }
                         : null
                     )
                   }
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-medium bg-[var(--navy-section)] hover:bg-[var(--navy-section)] text-white shadow-xs transition-colors"
+                  className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-lg text-[12px] font-medium bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white shadow-xs transition-colors cursor-pointer active:scale-95"
                 >
                   <span>Next Question</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -373,7 +382,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               ) : (
                 <button
                   onClick={handleSubmitModule}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
+                  className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-lg text-[12px] font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer active:scale-95"
                 >
                   <span>
                     {activeAttempt.currentModuleIndex < activeTest.modules.length - 1
@@ -386,8 +395,8 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             </div>
           </div>
 
-          {/* Module Question Palette */}
-          <div className="lg:col-span-4 space-y-4">
+          {/* Desktop Module Question Palette */}
+          <div className="hidden lg:block lg:col-span-4 space-y-4">
             <QuestionNavigator
               totalQuestions={moduleQuestionIds.length}
               currentIndex={activeAttempt.currentQuestionIndex}
@@ -413,7 +422,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               </div>
               <button
                 onClick={handleSubmitModule}
-                className="w-full py-2.5 bg-[var(--navy-section)] hover:bg-[var(--navy-section)] text-white font-medium rounded-lg transition-colors text-[12px]"
+                className="w-full py-2.5 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white font-medium rounded-lg transition-colors text-[12px] cursor-pointer active:scale-95"
               >
                 {activeAttempt.currentModuleIndex < activeTest.modules.length - 1
                   ? 'Proceed to Next Module'
@@ -422,6 +431,58 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Mobile Matrix Drawer Bottom Sheet */}
+        {isMobileExamMatrixOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end animate-in fade-in duration-150">
+            <div className="w-full bg-[var(--surface)] rounded-t-2xl max-h-[85vh] flex flex-col p-5 space-y-4 border-t border-[var(--border)] shadow-2xl overflow-y-auto animate-in slide-in-from-bottom duration-200 pb-safe">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[var(--brand-cta)]" />
+                  <span className="font-bold text-[13px] text-[var(--foreground)] uppercase tracking-wider">{currentModule.title} Palette</span>
+                </div>
+                <button
+                  onClick={() => setIsMobileExamMatrixOpen(false)}
+                  className="p-1 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <QuestionNavigator
+                totalQuestions={moduleQuestionIds.length}
+                currentIndex={activeAttempt.currentQuestionIndex}
+                interactions={activeAttempt.interactions}
+                questionIds={moduleQuestionIds}
+                onSelectIndex={(idx) => {
+                  setActiveAttempt((prev) => (prev ? { ...prev, currentQuestionIndex: idx } : null));
+                  setIsMobileExamMatrixOpen(false);
+                }}
+                title={`${currentModule.title} Questions`}
+              />
+
+              <div className="pt-3 border-t border-[var(--border)] space-y-2">
+                <div className="flex justify-between text-[12px] text-[var(--foreground-secondary)]">
+                  <span>Answered items:</span>
+                  <strong className="font-mono text-[var(--brand-text)]">
+                    {moduleQuestionIds.filter((id) => activeAttempt.interactions[id]?.selectedAnswer).length} / {moduleQuestionIds.length}
+                  </strong>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsMobileExamMatrixOpen(false);
+                    handleSubmitModule();
+                  }}
+                  className="w-full py-2.5 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white font-medium rounded-lg transition-colors text-[12px] cursor-pointer active:scale-95"
+                >
+                  {activeAttempt.currentModuleIndex < activeTest.modules.length - 1
+                    ? 'Proceed to Next Module'
+                    : 'Submit Test for Scoring'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <DesmosModal isOpen={isDesmosOpen} onClose={() => setIsDesmosOpen(false)} />
         <FormulaReferenceModal isOpen={isFormulasOpen} onClose={() => setIsFormulasOpen(false)} />

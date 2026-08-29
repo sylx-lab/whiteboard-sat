@@ -84,7 +84,11 @@ export async function POST(request: Request, ctx: Ctx) {
       passwordHash: await hashPassword(password),
     });
     await users.insertOne(doc);
-    if (doc.email) await emailVerification(doc, request);
+    if (doc.email) {
+      await emailVerification(doc, request).catch((err) => {
+        console.warn('[auth] Verification email dispatch note:', err);
+      });
+    }
     await setAuthCookie(doc);
     return Response.json({ user: publicUser(doc) }, { status: 201 });
   }

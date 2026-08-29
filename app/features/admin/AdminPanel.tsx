@@ -10,6 +10,8 @@ import {
   ResourceItem,
   MockTest,
   AdminPermission,
+  PaymentSettings,
+  ProductPlan,
 } from '../../types';
 import { Shield } from 'lucide-react';
 import { AdminSidebar, AdminSubPage, ADMIN_SUB_PAGES } from './components/AdminSidebar';
@@ -36,8 +38,12 @@ export interface AdminPanelProps {
   courses: Course[];
   resources: ResourceItem[];
   mockTests: MockTest[];
+  paymentSettings?: PaymentSettings;
+  plans?: ProductPlan[];
   onVerifyPayment: (paymentId: string) => void;
   onRejectPayment: (paymentId: string) => void;
+  onUpdatePaymentSettings?: (settings: PaymentSettings) => Promise<PaymentSettings>;
+  onUpdatePlan?: (plan: ProductPlan) => Promise<ProductPlan[]>;
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
   /** The bank's JSON import adds straight from the list view. */
@@ -84,8 +90,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   courses,
   resources,
   mockTests,
+  paymentSettings,
+  plans,
   onVerifyPayment,
   onRejectPayment,
+  onUpdatePaymentSettings,
+  onUpdatePlan,
   onUpdateUserAccess,
   onToggleUserStatus,
   onAddQuestion,
@@ -211,9 +221,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {activeSubPage === 'payments' && (
             <PaymentsView
               payments={payments}
+              paymentSettings={paymentSettings}
+              plans={plans}
               onVerifyPayment={onVerifyPayment}
               onRejectPayment={onRejectPayment}
               onInspectPayment={setInspectingPayment}
+              onUpdatePaymentSettings={onUpdatePaymentSettings}
+              onUpdatePlan={onUpdatePlan}
             />
           )}
 

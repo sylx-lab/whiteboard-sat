@@ -79,13 +79,19 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
       <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
         {courses.map((course, index) => {
           const isEnrolled = hasAccessToCourse(course.id);
+          const lessonsList = course.lessons || [];
           const completedLessonIds = courseProgress[course.id] || [];
           const progressPercent =
-            course.lessons.length > 0
-              ? Math.round((completedLessonIds.length / course.lessons.length) * 100)
+            lessonsList.length > 0
+              ? Math.round((completedLessonIds.length / lessonsList.length) * 100)
               : 0;
           const isFlagship = course.id === 'c-full-1550';
           const cardIndexStr = `0${index + 1}`;
+          const instructor = course.instructorName || 'White Board Faculty';
+          const instructorTitle = course.instructorTitle || 'SAT Master Instructor';
+          const featuresList = course.features || [];
+          const price = course.price ?? 0;
+          const originalPrice = course.originalPrice ?? 0;
 
           return (
             <div
@@ -115,12 +121,12 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                           : 'bg-[var(--surface-soft)] text-[var(--foreground)]'
                       }`}
                   >
-                    {isFlagship ? 'BEST VALUE' : course.badge || course.level}
+                    {isFlagship ? 'BEST VALUE' : course.badge || course.level || 'COMPREHENSIVE'}
                   </span>
 
                   <div className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--foreground-secondary)]">
                     <Clock className="w-3.5 h-3.5 text-[var(--brand-text)] stroke-[1.75]" />
-                    <span>{course.totalHours} Hours</span>
+                    <span>{course.totalHours || 20} Hours</span>
                   </div>
                 </div>
 
@@ -137,23 +143,23 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 {/* Instructor */}
                 <div className="flex items-center gap-3 pt-1">
                   <div className="w-9 h-9 rounded-full bg-[var(--brand-soft)] text-[var(--brand-text)] flex items-center justify-center font-bold text-[13.5px] border border-teal-200 shrink-0">
-                    {course.instructorName.charAt(0)}
+                    {instructor.charAt(0)}
                   </div>
                   <div>
                     <div className="font-semibold text-[var(--foreground)] text-[14px] leading-tight">
-                      {course.instructorName}
+                      {instructor}
                     </div>
-                    <div className="text-[12.5px] text-[var(--foreground-secondary)]">{course.instructorTitle}</div>
+                    <div className="text-[12.5px] text-[var(--foreground-secondary)]">{instructorTitle}</div>
                   </div>
                 </div>
 
                 {/* Enrolled Progress State */}
-                {isEnrolled && course.lessons.length > 0 && (
+                {isEnrolled && lessonsList.length > 0 && (
                   <div className="p-3.5 bg-[var(--surface)] rounded-xl border border-[var(--border)] space-y-2 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px] font-bold text-[var(--foreground)] uppercase tracking-wider">
                       <span>Continue Learning</span>
                       <span className="font-mono text-[var(--brand-text)]">
-                        Lesson {completedLessonIds.length + 1} of {course.lessons.length} ({progressPercent}%)
+                        Lesson {completedLessonIds.length + 1} of {lessonsList.length} ({progressPercent}%)
                       </span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-[var(--surface-soft)] overflow-hidden">
@@ -167,7 +173,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
 
                 {/* Key Benefits (max 3) */}
                 <div className="space-y-3 pt-1">
-                  {course.features.slice(0, 3).map((feat, idx) => (
+                  {featuresList.slice(0, 3).map((feat, idx) => (
                     <div key={idx} className="flex items-start gap-2.5 text-[14.5px] text-[var(--foreground-secondary)] leading-[1.45]">
                       <div className="w-4.5 h-4.5 rounded-full bg-[var(--brand)] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                         <Check className="w-3 h-3 stroke-[2.5]" />
@@ -183,11 +189,13 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
                     <span className="text-[28px] font-extrabold text-[var(--foreground)] tracking-tight font-mono">
-                      ৳{course.price.toLocaleString()}
+                      ৳{price.toLocaleString()}
                     </span>
-                    <span className="text-[13px] text-[var(--foreground-secondary)] line-through font-mono">
-                      ৳{course.originalPrice.toLocaleString()}
-                    </span>
+                    {originalPrice > 0 && (
+                      <span className="text-[13px] text-[var(--foreground-secondary)] line-through font-mono">
+                        ৳{originalPrice.toLocaleString()}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--brand-text)]">
                     ONE-TIME ACCESS
@@ -237,7 +245,9 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                 </div>
                 <div>
                   <h3 className="font-bold text-[14px] text-[var(--foreground)] leading-tight">{selectedCourse.title}</h3>
-                  <p className="text-[11px] text-[var(--foreground-secondary)]">{selectedCourse.instructorName} • {selectedCourse.lessonsCount} Modules</p>
+                  <p className="text-[11px] text-[var(--foreground-secondary)]">
+                    {selectedCourse.instructorName || 'White Board Faculty'} • {selectedCourse.lessonsCount || selectedCourse.lessons?.length || 0} Modules
+                  </p>
                 </div>
               </div>
               <button
@@ -249,9 +259,9 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
             </div>
 
             {/* Course Classroom Workspace */}
-            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12">
               {/* Left Main Player / Content View */}
-              <div className="lg:col-span-8 p-6 overflow-y-auto space-y-6 border-r border-[var(--border)]">
+              <div className="lg:col-span-8 p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6 border-b lg:border-b-0 lg:border-r border-[var(--border)]">
                 {activeLesson ? (
                   <div className="space-y-4">
                     {/* Simulated Video Player */}

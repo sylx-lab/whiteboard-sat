@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Clock,
 } from 'lucide-react';
-import { Question, QuestionInteractionState } from '../types';
+import { Question, QuestionInteractionState, AnswerChoice } from '../types';
 import { MathRenderer } from './MathRenderer';
 import { formatDomainName, getDifficultyColor } from '../lib/utils';
 
@@ -62,13 +62,78 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const isMarkedForReview = interactionState?.isMarkedForReview || false;
   const crossedOutChoices = interactionState?.crossedOutChoices || [];
 
-  const isCorrectSelection = isSubmitted && selectedAnswer === question.correct_answer;
+  // Normalize question text, stimulus, correct answer, and explanation across all schema formats
+  const questionText =
+    question.question_text ||
+    (question as any).questionText ||
+    (question as any).text ||
+    (question as any).prompt ||
+    (question as any).content ||
+    (question as any).question ||
+    '';
+
+  const stimulusText =
+    question.stimulus ||
+    (question as any).passage ||
+    (question as any).context ||
+    '';
+
+  const correctAnswer =
+    question.correct_answer ||
+    (question as any).correctAnswer ||
+    (question as any).correct ||
+    '';
+
+  const explanationText =
+    question.explanation ||
+    (question as any).solution ||
+    '';
+
+  const normalizedChoices: AnswerChoice[] = React.useMemo(() => {
+    const raw =
+      question.choices ||
+      question.answer_choices ||
+      (question as any).options ||
+      (question as any).answers;
+
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map((choice: any, index: number) => {
+        if (typeof choice === 'string') {
+          const letters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
+          return { id: letters[index] || 'A', text: choice };
+        }
+        return {
+          id: (choice.id || choice.key || choice.label || choice.letter || ['A', 'B', 'C', 'D'][index] || 'A') as 'A' | 'B' | 'C' | 'D',
+          text: choice.text ?? choice.value ?? choice.content ?? choice.option ?? '',
+        };
+      });
+    }
+    if (typeof raw === 'object') {
+      return (['A', 'B', 'C', 'D'] as const)
+        .filter((id) => (raw as Record<string, string>)[id] !== undefined)
+        .map((id) => ({
+          id,
+          text: String((raw as Record<string, string>)[id] || ''),
+        }));
+    }
+    return [];
+  }, [question]);
+
+  const isCorrectSelection = isSubmitted && selectedAnswer === correctAnswer;
 
   const diffStyle = getDifficultyColor(question.difficulty);
 
+  const [mobileReadingTab, setMobileReadingTab] = React.useState<'question' | 'passage'>('question');
+
+  // Reset to question tab when question changes
+  React.useEffect(() => {
+    setMobileReadingTab('question');
+  }, [question.id]);
+
   if (isLocked) {
     return (
-      <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-8 text-center space-y-5 shadow-xs">
+      <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-6 sm:p-8 text-center space-y-5 shadow-xs">
         <div className="w-12 h-12 bg-teal-50 rounded-[12px] flex items-center justify-center mx-auto text-[var(--brand-text)] border border-teal-100">
           <Lock className="w-5 h-5" />
         </div>
@@ -86,7 +151,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
         <button
           onClick={onUnlock}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white text-[13px] font-semibold rounded-[10px] transition-colors shadow-xs cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white text-[13px] font-semibold rounded-[10px] transition-colors shadow-xs cursor-pointer active:scale-[0.98]"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Unlock Full Question Bank
@@ -103,21 +168,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <img
           src={question.imageUrl}
           alt="Figure for this question"
-          className="max-h-80 w-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] object-contain"
+          className="max-h-80 w-auto max-w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] object-contain"
         />
       )}
 
       {/* Question Text */}
-      <div className="text-[17px] sm:text-[18px] text-[var(--foreground)] font-normal leading-[1.65]">
-        <MathRenderer content={question.question_text} />
+      <div className="text-[16px] sm:text-[18px] text-[var(--foreground)] font-normal leading-[1.65] break-words">
+        <MathRenderer content={questionText} />
       </div>
 
       {/* Answer Choices */}
       <div className="space-y-3 pt-2">
-        {(question.answer_choices || question.choices || []).map((choice) => {
+        {normalizedChoices.map((choice) => {
           const isSelected = selectedAnswer === choice.id;
           const isCrossed = crossedOutChoices.includes(choice.id);
-          const isCorrectChoice = choice.id === question.correct_answer;
+          const isCorrectChoice = choice.id === correctAnswer;
           const isUserWrongSelection = isSubmitted && isSelected && !isCorrectChoice;
 
           let cardStyle = 'bg-[var(--surface)] border-[var(--border)] hover:border-[var(--brand-cta)]/60 hover:bg-[var(--brand-soft)] text-[var(--foreground)]';
@@ -148,13 +213,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   onSelectAnswer(choice.id);
                 }
               }}
-              className={`group/choice relative flex items-center justify-between min-h-[58px] sm:min-h-[64px] px-4 sm:px-5 py-3 rounded-[12px] border transition-all duration-150 cursor-pointer select-none ${cardStyle}`}
+              className={`group/choice relative flex items-center justify-between min-h-[54px] sm:min-h-[64px] px-3.5 sm:px-5 py-3 rounded-[12px] border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] touch-manipulation ${cardStyle}`}
             >
               {/* Left & Center Main Area */}
-              <div className="flex items-center flex-1 mr-3">
+              <div className="flex items-center flex-1 mr-2 sm:mr-3 min-w-0">
                 {/* Choice Identifier */}
                 <div
-                  className={`w-7 h-7 rounded-[8px] flex items-center justify-center font-bold text-[12px] shrink-0 mr-4 transition-colors ${isSubmitted && isCorrectChoice
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-[8px] flex items-center justify-center font-bold text-[12px] shrink-0 mr-3 sm:mr-4 transition-colors ${
+                    isSubmitted && isCorrectChoice
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : isSubmitted && isUserWrongSelection
                         ? 'bg-rose-600 text-white shadow-xs'
@@ -163,19 +229,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                           : isCrossed
                             ? 'bg-[var(--border)] text-[var(--foreground-muted)] line-through'
                             : 'bg-[var(--surface-soft)] text-[var(--foreground)]'
-                    }`}
+                  }`}
                 >
                   {choice.id}
                 </div>
 
                 {/* Choice Text */}
-                <div className={`flex-1 text-[15px] font-normal leading-[1.55] ${isCrossed ? 'line-through' : ''}`}>
+                <div className={`flex-1 text-[14.5px] sm:text-[15px] font-normal leading-[1.55] break-words min-w-0 ${isCrossed ? 'line-through' : ''}`}>
                   <MathRenderer content={choice.text} />
                 </div>
               </div>
 
               {/* Right End: Strikethrough ABC Button & Indicators */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {!isSubmitted && (
                   <button
                     type="button"
@@ -183,12 +249,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       e.stopPropagation();
                       onToggleCrossOut(choice.id);
                     }}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center font-mono text-xs font-bold transition-all cursor-pointer ${isCrossed
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center font-mono text-xs font-bold transition-all cursor-pointer touch-manipulation active:scale-90 ${
+                      isCrossed
                         ? 'bg-[var(--navy-section)] text-white border-[var(--foreground)] shadow-sm'
                         : isCrossOutModeActive
                           ? 'bg-[var(--surface)] text-[var(--foreground)] border-[var(--border-strong)] hover:bg-[var(--surface-soft)] shadow-2xs'
-                          : 'bg-[var(--surface)] text-[var(--foreground-muted)] border-[var(--border)] opacity-0 group-hover/choice:opacity-100 hover:text-[var(--foreground)] hover:border-[var(--border-strong)] shadow-2xs'
-                      }`}
+                          : 'bg-[var(--surface)] text-[var(--foreground-muted)] border-[var(--border)] opacity-85 sm:opacity-0 sm:group-hover/choice:opacity-100 hover:text-[var(--foreground)] hover:border-[var(--border-strong)] shadow-2xs'
+                    }`}
                     title={`Eliminate option ${choice.id}`}
                   >
                     <span className="relative inline-block">
@@ -199,14 +266,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 )}
 
                 {isSubmitted && isCorrectChoice && (
-                  <div className="text-emerald-700 font-bold text-[12px] flex items-center gap-1.5 ml-2 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <div className="text-emerald-700 font-bold text-[12px] flex items-center gap-1.5 ml-1 sm:ml-2 bg-emerald-100/80 px-2 sm:px-2.5 py-1 rounded-lg">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span className="hidden sm:inline">Correct Answer</span>
                   </div>
                 )}
                 {isSubmitted && isUserWrongSelection && (
-                  <div className="text-rose-700 font-bold text-[12px] flex items-center gap-1.5 ml-2 bg-rose-100/80 px-2.5 py-1 rounded-lg">
-                    <XCircle className="w-4 h-4 text-rose-600" />
+                  <div className="text-rose-700 font-bold text-[12px] flex items-center gap-1.5 ml-1 sm:ml-2 bg-rose-100/80 px-2 sm:px-2.5 py-1 rounded-lg">
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                     <span className="hidden sm:inline">Your Selection</span>
                   </div>
                 )}
@@ -218,10 +285,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {/* Instant Validation Alert Banner */}
       {isSubmitted && (
-        <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in duration-200 ${isCorrectSelection
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-            : 'bg-rose-50 border-rose-200 text-rose-900'
-          }`}>
+        <div
+          className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in duration-200 ${
+            isCorrectSelection
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : 'bg-rose-50 border-rose-200 text-rose-900'
+          }`}
+        >
           {isCorrectSelection ? (
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           ) : (
@@ -243,10 +313,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <button
             onClick={onSubmitAnswer}
             disabled={!selectedAnswer}
-            className={`px-6 py-3.5 rounded-xl font-semibold text-[13.5px] transition-colors flex items-center gap-2 cursor-pointer ${selectedAnswer
+            className={`px-6 py-3.5 rounded-xl font-semibold text-[13.5px] transition-colors flex items-center gap-2 cursor-pointer ${
+              selectedAnswer
                 ? 'bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white shadow-xs'
                 : 'bg-[var(--surface-soft)] text-[var(--foreground-muted)] cursor-not-allowed border border-[var(--border)]'
-              }`}
+            }`}
           >
             <span>Check Answer & Explanation</span>
           </button>
@@ -293,8 +364,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <span className="px-2.5 py-1 rounded-lg bg-[var(--surface)] text-[var(--brand-text)] font-semibold text-[11px] border border-teal-200">
                 {formatDomainName(question.domain)}
               </span>
-              <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${diffStyle.bg} ${diffStyle.border}`}>
-                {question.difficulty?.toUpperCase()}
+              <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${diffStyle?.bg || 'bg-amber-50 text-amber-700'} ${diffStyle?.border || 'border-amber-200'}`}>
+                {question.difficulty?.toUpperCase() || 'MEDIUM'}
               </span>
             </div>
           </div>
@@ -303,7 +374,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <div className="space-y-3">
             <h5 className="text-[12px] font-mono font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">Concept Rationale & Trap Avoidance</h5>
             <div className="p-5 rounded-xl bg-[var(--brand-soft)] border border-[var(--border)] text-[14px] text-[var(--foreground)] leading-[1.65]">
-              <MathRenderer content={question.explanation} />
+              <MathRenderer content={explanationText} />
             </div>
           </div>
 
@@ -374,55 +445,56 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   return (
     <div className="bg-[var(--surface)] rounded-[16px] border border-[var(--border)] shadow-xs overflow-hidden transition-all">
       {/* Question Header & Meta Bar */}
-      <div className="px-6 py-3.5 bg-[var(--brand-soft)] border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 text-[12px]">
-        <div className="flex items-center gap-2.5">
-          <span className="font-mono font-bold text-[var(--foreground)] bg-[var(--surface)] px-2.5 py-1 rounded-[8px] border border-[var(--border)] shadow-2xs">
+      <div className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 bg-[var(--brand-soft)] border-b border-[var(--border)] flex items-center justify-between gap-2 text-[12px]">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <span className="font-mono font-bold text-[var(--foreground)] bg-[var(--surface)] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-[8px] border border-[var(--border)] shadow-2xs text-[11px] sm:text-xs shrink-0">
             {question.code}
           </span>
-          <span className="font-semibold text-[var(--foreground)]">
+          <span className="font-semibold text-[var(--foreground)] truncate text-[11.5px] sm:text-[12px]">
             {formatDomainName(question.domain)}
           </span>
-          <span className="text-[var(--foreground-muted)]">•</span>
-          <span className="text-[var(--foreground-secondary)] hidden sm:inline">{question.topic}</span>
-          <span className={`px-2 py-0.5 rounded-[6px] text-[11px] font-semibold border ${diffStyle.bg} ${diffStyle.border}`}>
+          <span className="text-[var(--foreground-muted)] hidden sm:inline">•</span>
+          <span className="text-[var(--foreground-secondary)] hidden md:inline truncate">{question.topic}</span>
+          <span className={`px-2 py-0.5 rounded-[6px] text-[10.5px] sm:text-[11px] font-semibold border shrink-0 ${diffStyle?.bg || 'bg-amber-50 text-amber-700'} ${diffStyle?.border || 'border-amber-200'}`}>
             {question.difficulty?.toUpperCase() || 'MEDIUM'}
           </span>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {question.subject === 'math' && onOpenDesmos && (
             <button
               onClick={onOpenDesmos}
-              className="h-9 px-3 flex items-center gap-1.5 text-[var(--foreground)] hover:text-[var(--brand-text)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] border border-[var(--border)] rounded-[8px] transition-colors font-medium text-[12px] cursor-pointer"
+              className="hidden sm:flex h-8 sm:h-9 px-2.5 sm:px-3 items-center gap-1 sm:gap-1.5 text-[var(--foreground)] hover:text-[var(--brand-text)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] border border-[var(--border)] rounded-[8px] transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Desmos Graphing Calculator"
             >
               <Calculator className="w-3.5 h-3.5 text-[var(--brand-text)]" />
-              <span className="hidden sm:inline">Desmos</span>
+              <span className="hidden md:inline">Desmos</span>
             </button>
           )}
 
           {question.subject === 'math' && onOpenFormulas && (
             <button
               onClick={onOpenFormulas}
-              className="h-9 px-3 flex items-center gap-1.5 text-[var(--foreground)] hover:text-[var(--brand-text)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] border border-[var(--border)] rounded-[8px] transition-colors font-medium text-[12px] cursor-pointer"
+              className="hidden sm:flex h-8 sm:h-9 px-2.5 sm:px-3 items-center gap-1 sm:gap-1.5 text-[var(--foreground)] hover:text-[var(--brand-text)] bg-[var(--surface)] hover:bg-[var(--brand-soft)] border border-[var(--border)] rounded-[8px] transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Formula Reference Sheet"
             >
               <BookOpen className="w-3.5 h-3.5 text-[var(--brand-text)]" />
-              <span className="hidden sm:inline">Formulas</span>
+              <span className="hidden md:inline">Formulas</span>
             </button>
           )}
 
           {/* ABC Elimination Toggle Button */}
           <button
             onClick={onToggleCrossOutMode}
-            className={`h-9 px-3.5 flex items-center gap-1.5 rounded-[8px] border transition-colors font-semibold text-[12px] cursor-pointer ${isCrossOutModeActive
+            className={`h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 sm:gap-1.5 rounded-[8px] border transition-colors font-semibold text-[11px] sm:text-[12px] cursor-pointer active:scale-95 ${
+              isCrossOutModeActive
                 ? 'bg-[var(--brand-cta)] text-white border-[var(--brand-cta)] shadow-xs'
                 : 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--brand-soft)] border-[var(--border)]'
-              }`}
+            }`}
             title="Toggle Bluebook ABC answer elimination mode"
           >
-            <span className="font-mono font-bold tracking-tight relative inline-block">
+            <span className="font-mono font-bold tracking-tight relative inline-block text-[11px] sm:text-xs">
               ABC
               <span className="absolute inset-x-[-1px] top-1/2 h-[1.5px] bg-current -translate-y-1/2 pointer-events-none" />
             </span>
@@ -431,10 +503,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           <button
             onClick={onToggleMarkForReview}
-            className={`h-9 px-3 flex items-center gap-1.5 rounded-[8px] border transition-colors cursor-pointer ${isMarkedForReview
+            className={`h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-[8px] border transition-colors cursor-pointer active:scale-95 ${
+              isMarkedForReview
                 ? 'bg-amber-50 text-amber-700 border-amber-300'
                 : 'bg-[var(--surface)] text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] border-[var(--border)]'
-              }`}
+            }`}
             title={isMarkedForReview ? 'Marked for review' : 'Mark for review'}
           >
             <Flag className={`w-3.5 h-3.5 ${isMarkedForReview ? 'fill-amber-500 text-amber-500' : ''}`} />
@@ -443,10 +516,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           <button
             onClick={onToggleBookmark}
-            className={`h-9 px-3 flex items-center gap-1.5 rounded-[8px] border transition-colors cursor-pointer ${isBookmarked
+            className={`h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-[8px] border transition-colors cursor-pointer active:scale-95 ${
+              isBookmarked
                 ? 'bg-teal-50 text-[var(--brand-text)] border-teal-200'
                 : 'bg-[var(--surface)] text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] border-[var(--border)]'
-              }`}
+            }`}
             title={isBookmarked ? 'Bookmarked' : 'Bookmark question'}
           >
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-[var(--brand-text)] text-[var(--brand-text)]' : ''}`} />
@@ -456,29 +530,96 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       </div>
 
       {/* Bluebook Split-Pane Layout (When Passage / Stimulus Exists) */}
-      {question.stimulus ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)] min-h-[500px]">
-          {/* Left Column: Reading Passage (Stimulus) */}
-          <div className="lg:col-span-6 p-6 sm:p-8 bg-[var(--brand-soft)]/60 overflow-y-auto max-h-[750px]">
-            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--foreground-secondary)] mb-4">
-              Reading Passage / Source Context
-            </div>
-            <div className="text-[15px] text-[var(--foreground)] font-serif leading-[1.8] space-y-4">
-              <MathRenderer content={question.stimulus} />
+      {stimulusText ? (
+        <div>
+          {/* Mobile Tab Control for Reading & Writing (Passage vs Question) */}
+          <div className="lg:hidden p-3 bg-[var(--surface-soft)] border-b border-[var(--border)] flex items-center justify-between gap-2">
+            <div className="inline-flex w-full p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setMobileReadingTab('passage')}
+                className={`flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-all cursor-pointer text-center ${
+                  mobileReadingTab === 'passage'
+                    ? 'bg-[var(--brand-cta)] text-white shadow-xs'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                Reading Passage
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileReadingTab('question')}
+                className={`flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-all cursor-pointer text-center ${
+                  mobileReadingTab === 'question'
+                    ? 'bg-[var(--brand-cta)] text-white shadow-xs'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                Question & Choices
+              </button>
             </div>
           </div>
 
-          {/* Right Column: Question & Choices */}
-          <div className="lg:col-span-6 p-6 sm:p-8 overflow-y-auto max-h-[750px]">
-            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--brand-text)] mb-2">
-              Question Prompt
+          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)] min-h-[500px]">
+            {/* Left Column: Reading Passage (Stimulus) */}
+            <div
+              className={`lg:col-span-6 p-5 sm:p-8 bg-[var(--brand-soft)]/60 overflow-y-auto max-h-[750px] ${
+                mobileReadingTab === 'passage' ? 'block' : 'hidden lg:block'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">
+                  Reading Passage / Source Context
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileReadingTab('question')}
+                  className="lg:hidden text-[11px] font-bold text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Go to Question</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="text-[15px] sm:text-[15.5px] text-[var(--foreground)] font-serif leading-[1.8] space-y-4">
+                <MathRenderer content={stimulusText} />
+              </div>
+              <div className="pt-6 lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileReadingTab('question')}
+                  className="w-full py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-[0.98]"
+                >
+                  <span>Continue to Question & Options</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            {renderContentBody()}
+
+            {/* Right Column: Question & Choices */}
+            <div
+              className={`lg:col-span-6 p-5 sm:p-8 overflow-y-auto max-h-[750px] ${
+                mobileReadingTab === 'question' ? 'block' : 'hidden lg:block'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--brand-text)]">
+                  Question Prompt
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileReadingTab('passage')}
+                  className="lg:hidden text-[11px] font-bold text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer bg-[var(--brand-soft)] px-2.5 py-1 rounded-lg border border-teal-200/60"
+                >
+                  <span>&larr; View Passage</span>
+                </button>
+              </div>
+              {renderContentBody()}
+            </div>
           </div>
         </div>
       ) : (
         /* Standard Single Column Layout for Math & Non-Passage Items */
-        <div className="p-6 sm:p-8">
+        <div className="p-5 sm:p-8">
           {renderContentBody()}
         </div>
       )}

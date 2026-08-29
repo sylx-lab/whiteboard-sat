@@ -395,34 +395,36 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             No practice logs recorded for this filter. Start solving practice questions to build your analytics profile.
           </div>
         ) : (
-          <div className="divide-y divide-[var(--border)] overflow-x-auto">
-            <div className="py-2.5 grid grid-cols-6 text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)] px-3 font-mono">
-              <span className="col-span-2">Activity / Question</span>
-              <span>Result</span>
-              <span>Selected Option</span>
-              <span>Time Spent</span>
-              <span className="text-right">Date</span>
-            </div>
-            {filteredHistory.slice(0, 15).map((att) => (
-              <div key={att.id} className="py-3.5 grid grid-cols-6 items-center px-3 text-[13px] hover:bg-[var(--surface-soft)] transition-colors rounded-[8px]">
-                <div className="col-span-2 flex items-center gap-3">
-                  {att.isCorrect ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  )}
-                  <span className="font-semibold text-[var(--foreground)] font-mono">Question #{att.questionId}</span>
-                </div>
-                <div>
-                  <span className={`inline-flex px-2 py-0.5 rounded-[6px] text-[11px] font-semibold ${att.isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                    {att.isCorrect ? 'Correct' : 'Incorrect'}
-                  </span>
-                </div>
-                <div className="font-mono text-[var(--foreground)] font-medium">Option {att.selectedAnswer}</div>
-                <div className="font-mono text-[var(--foreground-secondary)]">{att.timeSpentSeconds}s</div>
-                <div className="font-mono text-[var(--foreground-secondary)] text-right">{new Date(att.timestamp).toLocaleDateString()}</div>
+          <div className="overflow-x-auto -mx-1 sm:mx-0">
+            <div className="divide-y divide-[var(--border)] min-w-[580px]">
+              <div className="py-2.5 grid grid-cols-6 text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-secondary)] px-3 font-mono">
+                <span className="col-span-2">Activity / Question</span>
+                <span>Result</span>
+                <span>Selected Option</span>
+                <span>Time Spent</span>
+                <span className="text-right">Date</span>
               </div>
-            ))}
+              {filteredHistory.slice(0, 15).map((att) => (
+                <div key={att.id} className="py-3.5 grid grid-cols-6 items-center px-3 text-[13px] hover:bg-[var(--surface-soft)] transition-colors rounded-[8px]">
+                  <div className="col-span-2 flex items-center gap-3">
+                    {att.isCorrect ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    )}
+                    <span className="font-semibold text-[var(--foreground)] font-mono">Question #{att.questionId}</span>
+                  </div>
+                  <div>
+                    <span className={`inline-flex px-2 py-0.5 rounded-[6px] text-[11px] font-semibold ${att.isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                      {att.isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                  </div>
+                  <div className="font-mono text-[var(--foreground)] font-medium">Option {att.selectedAnswer}</div>
+                  <div className="font-mono text-[var(--foreground-secondary)]">{att.timeSpentSeconds}s</div>
+                  <div className="font-mono text-[var(--foreground-secondary)] text-right">{new Date(att.timestamp).toLocaleDateString()}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

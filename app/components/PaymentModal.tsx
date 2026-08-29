@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, Copy, Clock, ArrowRight, AlertCircle } from 'lucide-react';
-import { ProductPlan, UserProfile, PaymentSubmission } from '../types';
+import { X, CheckCircle2, Copy, Clock, ArrowRight, AlertCircle, PhoneCall } from 'lucide-react';
+import { ProductPlan, UserProfile, PaymentSubmission, PaymentSettings } from '../types';
+import { DEFAULT_PAYMENT_SETTINGS } from '../data/seedData';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: ProductPlan | null;
   currentUser: UserProfile | null;
+  paymentSettings?: PaymentSettings;
   onSubmitPayment: (
     productId: string,
     amount: number,
@@ -23,6 +25,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   plan,
   currentUser,
+  paymentSettings = DEFAULT_PAYMENT_SETTINGS,
   onSubmitPayment,
   onOpenAuth,
 }) => {
@@ -35,12 +38,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!isOpen || !plan) return null;
 
-  const paymentAccounts = {
-    bKash: '01712-345678 (Merchant / Send Money)',
-    Nagad: '01800-999999 (Personal / Send Money)',
-    'Bank Transfer': 'City Bank PLC | Acc: 12093847561 | White Board EdTech',
-    'Credit Card': 'Manual Gateway Portal Reference',
+  const sets = paymentSettings || DEFAULT_PAYMENT_SETTINGS;
+
+  const paymentAccounts: Record<string, string> = {
+    bKash: `${sets.bkash?.accountNumber || '01712-345678'} (${sets.bkash?.accountType || 'Merchant'})`,
+    Nagad: `${sets.nagad?.accountNumber || '01800-999999'} (${sets.nagad?.accountType || 'Personal'})`,
+    'Bank Transfer': `${sets.bankTransfer?.bankName || 'City Bank PLC'} | Acc: ${sets.bankTransfer?.accountNumber || '12093847561'} | ${sets.bankTransfer?.accountName || 'White Board EdTech'}`,
+    'Credit Card': 'Direct Gateway Portal',
     'Direct Gateway': 'Direct Digital Channel',
+  };
+
+  const paymentInstructions: Record<string, string> = {
+    bKash: sets.bkash?.instructions || 'Use bKash app -> Payment/Send Money -> Use reference as your phone number',
+    Nagad: sets.nagad?.instructions || 'Use Nagad app -> Send Money -> Use reference as your phone number',
+    'Bank Transfer': sets.bankTransfer?.instructions || 'Transfer via online banking / BEFTN / NPSB and submit the transaction reference code.',
+    'Credit Card': 'Follow the instructions on the gateway page.',
+    'Direct Gateway': 'Direct digital payment channel.',
   };
 
   const handleCopyAccount = () => {
@@ -160,24 +173,36 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
 
             {/* Payment Instructions Box */}
-            <div className="p-3.5 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] space-y-1.5">
-              <div className="text-[11px] font-bold text-[var(--foreground)]">Send Payment Instructions:</div>
-              <p className="text-[11px] text-[var(--foreground-secondary)] leading-relaxed">
+            <div className="p-3.5 bg-[var(--brand-soft)] rounded-xl border border-[var(--border)] space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-bold text-[var(--foreground)]">Send Payment Instructions:</div>
+                {sets.supportPhone && (
+                  <span className="text-[10px] text-[var(--foreground-secondary)] font-medium">
+                    Help: {sets.supportPhone}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11.5px] text-[var(--foreground-secondary)] leading-relaxed">
                 Please transfer exactly <strong className="text-[var(--foreground)]">৳{plan.price.toLocaleString()}</strong> to the official account:
               </p>
-              <div className="flex items-center justify-between p-2 bg-[var(--surface)] rounded-lg border border-[var(--border)] font-mono text-[11px]">
-                <span className="text-[var(--foreground)] font-medium truncate max-w-[240px]">
+              <div className="flex items-center justify-between p-2.5 bg-[var(--surface)] rounded-lg border border-[var(--border)] font-mono text-[12px]">
+                <span className="text-[var(--foreground)] font-semibold truncate max-w-[280px]">
                   {paymentAccounts[paymentMethod]}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyAccount}
-                  className="p-1 text-[var(--foreground-secondary)] hover:text-[var(--brand-text)] hover:bg-[var(--brand-soft)] rounded cursor-pointer transition-colors"
-                  title="Copy number"
+                  className="p-1.5 text-[var(--foreground-secondary)] hover:text-[var(--brand-text)] hover:bg-[var(--brand-soft)] rounded cursor-pointer transition-colors"
+                  title="Copy account number"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className="w-4 h-4" />
                 </button>
               </div>
+              {paymentInstructions[paymentMethod] && (
+                <div className="text-[11px] text-[var(--foreground-secondary)] italic bg-[var(--surface)]/60 p-2 rounded border border-[var(--border)]/50">
+                  📌 {paymentInstructions[paymentMethod]}
+                </div>
+              )}
               {copiedAccount && (
                 <div className="text-[10px] text-emerald-600 font-medium">Copied to clipboard!</div>
               )}

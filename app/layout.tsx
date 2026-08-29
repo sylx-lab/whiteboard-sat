@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "./components/AppShell";
@@ -12,6 +12,17 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0D918A" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1020" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "White Board SAT | Digital SAT Prep & Practice",
@@ -56,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <script
+          id="theme-preload"
           dangerouslySetInnerHTML={{ __html: applyThemeBeforePaint }}
           suppressHydrationWarning
         />

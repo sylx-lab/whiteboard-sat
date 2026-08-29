@@ -15,17 +15,31 @@ async function send(to: string, subject: string, html: string, previewLine: stri
     return;
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? 'White Board SAT <noreply@whiteboardsat.com>',
-      to,
-      subject,
-      html,
-    }),
-  });
-  if (!res.ok) throw new Error(`Email send failed: ${res.status} ${await res.text()}`);
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM ?? 'White Board SAT <noreply@whiteboardsat.com>',
+        to,
+        subject,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn(`[email] Resend delivery notice (${res.status}): ${errText}`);
+      // In development or when using test/restricted API keys, log the link to console so local testing is never blocked
+      console.log(`\n[email link → ${to}] ${subject}\n${previewLine}\n`);
+      if (process.env.NODE_ENV === 'production' && res.status !== 403) {
+        throw new Error(`Email send failed: ${res.status} ${errText}`);
+      }
+    }
+  } catch (err) {
+    console.warn('[email] Resend transport error:', err);
+    console.log(`\n[email link → ${to}] ${subject}\n${previewLine}\n`);
+    if (process.env.NODE_ENV === 'production') throw err;
+  }
 }
 
 const layout = (heading: string, body: string, cta: { label: string; url: string }, footer: string) => `

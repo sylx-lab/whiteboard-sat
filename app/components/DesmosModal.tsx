@@ -100,30 +100,30 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
   const active = CALCULATORS[kind];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white shrink-0">
-              <Calculator className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border)] w-full max-w-4xl h-[94dvh] sm:h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-3.5 sm:px-6 py-2.5 sm:py-4 border-b border-[var(--border)] flex items-center justify-between gap-2 sm:gap-3 bg-[var(--surface)]">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white shrink-0">
+              <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-[var(--foreground)] text-[14px] truncate">Desmos calculator</h3>
-              <p className="text-[12px] text-[var(--foreground-secondary)] truncate">
+              <h3 className="font-bold text-[var(--foreground)] text-[13px] sm:text-[14px] truncate">Desmos calculator</h3>
+              <p className="text-[11px] sm:text-[12px] text-[var(--foreground-secondary)] truncate hidden sm:block">
                 The same one the Digital SAT provides
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex rounded-[10px] bg-[var(--surface-soft)] p-0.5 text-[12px] font-semibold">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex rounded-[10px] bg-[var(--surface-soft)] p-0.5 text-[11.5px] sm:text-[12px] font-semibold">
               {(Object.keys(CALCULATORS) as CalculatorKind[]).map((key) => (
                 <button
                   key={key}
                   onClick={() => setKind(key)}
-                  className={`px-3 h-8 rounded-lg transition-colors cursor-pointer ${
+                  className={`px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg transition-colors cursor-pointer ${
                     kind === key
-                      ? 'bg-[var(--surface)] text-[var(--brand-text)] shadow-xs'
+                      ? 'bg-[var(--surface)] text-[var(--brand-text)] shadow-xs font-bold'
                       : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
                   }`}
                 >

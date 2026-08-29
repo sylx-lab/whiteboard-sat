@@ -11,6 +11,8 @@ import type {
   Question,
   ResourceItem,
   UserProfile,
+  PaymentSettings,
+  ProductPlan,
 } from '../types.ts';
 
 /**
@@ -33,6 +35,8 @@ export type MockAttemptDoc = Doc<MockTestAttempt>;
 export type PracticeAttemptDoc = Doc<Omit<PracticeAttempt, 'timestamp'>>;
 export type PaymentDoc = Doc<Omit<PaymentSubmission, 'createdAt' | 'productTitle'>>;
 export type PracticeSessionDoc = Doc<PracticeSession>;
+export type PaymentSettingsDoc = Doc<PaymentSettings>;
+export type PlanDoc = Doc<ProductPlan>;
 /**
  * courseProgress was its own localStorage key; it is 1:1 with a user, so it embeds.
  * `passwordHash` is DB-only and never leaves the server; see publicUser().
@@ -81,6 +85,8 @@ export const hydrate = {
     const p = fromDoc(d) as Omit<PaymentSubmission, 'createdAt' | 'productTitle'>;
     return { ...p, createdAt: p.submittedAt, productTitle: p.productName };
   },
+  paymentSettings: (d: PaymentSettingsDoc): PaymentSettings => fromDoc(d) as PaymentSettings,
+  plan: (d: PlanDoc): ProductPlan => fromDoc(d) as ProductPlan,
   /** publicUser + the `status` mirror of isSuspended. Never returns passwordHash. */
   user: (d: UserDoc): UserProfile => {
     const u = publicUser(d);
@@ -99,6 +105,8 @@ export const dehydrate = {
   practiceAttempt: ({ timestamp: _t, ...a }: PracticeAttempt): PracticeAttemptDoc => toDoc(a),
   practiceSession: (s: PracticeSession): PracticeSessionDoc => toDoc(s),
   payment: ({ createdAt: _c, productTitle: _pt, ...p }: PaymentSubmission): PaymentDoc => toDoc(p),
+  paymentSettings: (s: PaymentSettings): PaymentSettingsDoc => toDoc(s),
+  plan: (p: ProductPlan): PlanDoc => toDoc(p),
 };
 
 // ponytail: no Mongoose. types.ts is already the schema, and the unique
@@ -133,6 +141,8 @@ export const collections = {
   practiceAttempts: async () => (await db()).collection<PracticeAttemptDoc>('practiceAttempts'),
   payments: async () => (await db()).collection<PaymentDoc>('payments'),
   practiceSessions: async () => (await db()).collection<PracticeSessionDoc>('practiceSessions'),
+  paymentSettings: async () => (await db()).collection<PaymentSettingsDoc>('paymentSettings'),
+  plans: async () => (await db()).collection<PlanDoc>('plans'),
 };
 
 /**

@@ -72,12 +72,20 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const [sessionInteractions, setSessionInteractions] = useState<Record<string, QuestionInteractionState>>({});
   const [sessionTimer, setSessionTimer] = useState(0);
   const [isCrossOutMode, setIsCrossOutMode] = useState(false);
+  const [isMobileMatrixOpen, setIsMobileMatrixOpen] = useState(false);
 
   // Reference Modals
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
   const [isFormulasOpen, setIsFormulasOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const closeAllDropdowns = () => {
+    setDomainDropdownOpen(false);
+    setDifficultyDropdownOpen(false);
+    setAccessDropdownOpen(false);
+    setSortDropdownOpen(false);
+  };
 
   // Keyboard shortcut: ⌘K or Ctrl+K to focus search
   useEffect(() => {
@@ -325,29 +333,31 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     const isLocked = !hasAccessToQuestion(currentSessionQuestion);
 
     return (
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
+      <div className="max-w-[1240px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-6 animate-in fade-in duration-200">
         {/* Session Top Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-[var(--border)]">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3">
             <button
               onClick={() => setIsSessionActive(false)}
-              className="flex items-center gap-1 text-[12px] font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--brand-soft)] transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-[12px] font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] px-2.5 sm:px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--brand-soft)] transition-colors cursor-pointer active:scale-95"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>Exit Practice</span>
             </button>
 
-            <div className="text-[13px] font-bold text-[var(--foreground)]">
-              {selectedSubject === 'math' ? 'Mathematics Drill' : 'Reading & Writing Drill'}
+            <div className="flex items-center gap-2">
+              <div className="text-[12.5px] sm:text-[13px] font-bold text-[var(--foreground)] truncate max-w-[140px] sm:max-w-none">
+                {selectedSubject === 'math' ? 'Mathematics Drill' : 'Reading & Writing Drill'}
+              </div>
+              <span className="text-[var(--foreground-muted)] hidden sm:inline">•</span>
+              <span className="text-[11.5px] sm:text-[12px] text-[var(--foreground-secondary)] font-mono">
+                Item {currentIndex + 1} of {sessionQuestionIds.length}
+              </span>
             </div>
-            <span className="text-[var(--foreground-muted)]">•</span>
-            <span className="text-[12px] text-[var(--foreground-secondary)] font-mono">
-              Item {currentIndex + 1} of {sessionQuestionIds.length}
-            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-[var(--brand-soft)] border border-[var(--border)] rounded-lg text-[12px] font-mono text-[var(--foreground)]">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-[var(--brand-soft)] border border-[var(--border)] rounded-lg text-[12px] font-mono text-[var(--foreground)]">
               <Clock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
               <span>
                 {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}
@@ -357,24 +367,32 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {selectedSubject === 'math' && (
               <button
                 onClick={() => setIsDesmosOpen(true)}
-                className="px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer"
+                className="px-2.5 sm:px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[11.5px] sm:text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer active:scale-95"
               >
-                Desmos Calculator
+                Desmos
               </button>
             )}
 
             <button
               onClick={() => setIsFormulasOpen(true)}
-              className="px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 sm:px-3 py-1 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[11.5px] sm:text-[12px] font-medium text-[var(--foreground)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer active:scale-95"
             >
               Formulas
+            </button>
+
+            {/* Mobile Navigator Matrix Toggle Button */}
+            <button
+              onClick={() => setIsMobileMatrixOpen(true)}
+              className="lg:hidden px-2.5 sm:px-3 py-1 bg-[var(--brand-cta)] text-white text-[11.5px] sm:text-[12px] font-medium rounded-lg shadow-xs cursor-pointer active:scale-95"
+            >
+              Matrix ({currentIndex + 1}/{sessionQuestionIds.length})
             </button>
           </div>
         </div>
 
         {/* Runner Question Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-8 space-y-5 sm:space-y-6">
             <QuestionCard
               question={currentSessionQuestion}
               interactionState={currentInteraction}
@@ -395,14 +413,18 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             />
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
+            <div className="flex items-center justify-between p-3.5 sm:p-4 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
               <button
                 disabled={currentIndex === 0}
-                onClick={() => setCurrentIndex((idx) => Math.max(0, idx - 1))}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${currentIndex === 0
+                onClick={() => {
+                  setCurrentIndex((idx) => Math.max(0, idx - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[12px] font-medium transition-colors ${
+                  currentIndex === 0
                     ? 'text-[var(--foreground-muted)] cursor-not-allowed'
-                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] border border-[var(--border)] cursor-pointer'
-                  }`}
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--brand-soft)] border border-[var(--border)] cursor-pointer active:scale-95'
+                }`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
@@ -414,11 +436,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
               <button
                 disabled={currentIndex === sessionQuestionIds.length - 1}
-                onClick={() => setCurrentIndex((idx) => Math.min(sessionQuestionIds.length - 1, idx + 1))}
-                className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-[12px] font-semibold transition-colors ${currentIndex === sessionQuestionIds.length - 1
+                onClick={() => {
+                  setCurrentIndex((idx) => Math.min(sessionQuestionIds.length - 1, idx + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[12px] font-semibold transition-colors ${
+                  currentIndex === sessionQuestionIds.length - 1
                     ? 'text-[var(--foreground-muted)] cursor-not-allowed'
-                    : 'bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white shadow-xs cursor-pointer'
-                  }`}
+                    : 'bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white shadow-xs cursor-pointer active:scale-95'
+                }`}
               >
                 <span>Next Question</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -426,8 +452,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             </div>
           </div>
 
-          {/* Right Matrix Navigator */}
-          <div className="lg:col-span-4 space-y-4">
+          {/* Desktop Right Matrix Navigator */}
+          <div className="hidden lg:block lg:col-span-4 space-y-4">
             <QuestionNavigator
               totalQuestions={sessionQuestionIds.length}
               currentIndex={currentIndex}
@@ -440,6 +466,40 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </div>
         </div>
 
+        {/* Mobile Matrix Drawer Bottom Sheet */}
+        {isMobileMatrixOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end animate-in fade-in duration-150">
+            <div className="w-full bg-[var(--surface)] rounded-t-2xl max-h-[80vh] flex flex-col p-5 space-y-4 border-t border-[var(--border)] shadow-2xl overflow-y-auto animate-in slide-in-from-bottom duration-200 pb-safe">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[var(--brand-cta)]" />
+                  <span className="font-bold text-[13px] text-[var(--foreground)] uppercase tracking-wider">Practice Matrix</span>
+                </div>
+                <button
+                  onClick={() => setIsMobileMatrixOpen(false)}
+                  className="p-1 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <QuestionNavigator
+                totalQuestions={sessionQuestionIds.length}
+                currentIndex={currentIndex}
+                interactions={sessionInteractions}
+                questionIds={sessionQuestionIds}
+                questions={questions}
+                onSelectIndex={(idx) => {
+                  setCurrentIndex(idx);
+                  setIsMobileMatrixOpen(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="Select Item to Jump"
+              />
+            </div>
+          </div>
+        )}
+
         <DesmosModal isOpen={isDesmosOpen} onClose={() => setIsDesmosOpen(false)} />
         <FormulaReferenceModal isOpen={isFormulasOpen} onClose={() => setIsFormulasOpen(false)} />
       </div>
@@ -448,24 +508,29 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
   // --- PRACTICE HUB / QUESTION BROWSER VIEW ---
   return (
-    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 animate-in fade-in duration-200">
+    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+      {/* Backdrop overlay for open dropdowns on touch */}
+      {(domainDropdownOpen || difficultyDropdownOpen || accessDropdownOpen || sortDropdownOpen) && (
+        <div className="fixed inset-0 z-40 bg-transparent" onClick={closeAllDropdowns} />
+      )}
+
       {/* ============================================================ */}
       {/* 1. PRACTICE HEADER & INTRO */}
       {/* ============================================================ */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[var(--border)]">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 sm:gap-6 pb-5 sm:pb-6 border-b border-[var(--border)]">
         <div className="space-y-2">
           <div className="text-[11px] font-bold tracking-wider text-[var(--brand-text)] uppercase font-mono">
             PRACTICE LIBRARY
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
             Precision Question Bank
           </h1>
-          <p className="text-[14px] text-[var(--foreground-secondary)] max-w-xl leading-relaxed">
+          <p className="text-[13.5px] sm:text-[14px] text-[var(--foreground-secondary)] max-w-xl leading-relaxed">
             Practice the skills that matter most, with calibrated difficulty and step-by-step solutions.
           </p>
 
           {/* Small subtle statistics */}
-          <div className="flex items-center gap-3 pt-1 text-[12px] font-mono">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 text-[11.5px] sm:text-[12px] font-mono">
             <span className="font-bold text-[var(--foreground)]">{subjectTotal} Questions</span>
             <span className="text-[var(--foreground-muted)]">•</span>
             <span className="text-[var(--brand-text)] font-semibold">{subjectFree} Free</span>
@@ -477,7 +542,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         <button
           onClick={() => handleStartSession()}
           disabled={filteredQuestions.length === 0}
-          className="btn-action px-6 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer shrink-0 group"
+          className="btn-action w-full sm:w-auto px-6 py-3 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white font-semibold text-[13px] rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 group active:scale-[0.98]"
         >
           <span>Start Practice · {filteredQuestions.length} Questions</span>
           <ArrowRight className="w-4 h-4" />
@@ -487,18 +552,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* ============================================================ */}
       {/* 2. HIGH-LEVEL SUBJECT SWITCHER */}
       {/* ============================================================ */}
-      <div className="flex items-center justify-between">
-        <div className="inline-flex p-1 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)]/60 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="grid grid-cols-2 sm:inline-flex p-1 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)]/60 shadow-2xs w-full sm:w-auto">
           <button
             onClick={() => {
               setSelectedSubject('math');
               setSelectedDomain('all');
               setSelectedTopic('all');
             }}
-            className={`px-5 py-2 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${selectedSubject === 'math'
+            className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
+              selectedSubject === 'math'
                 ? 'bg-[var(--surface)] shadow-xs font-semibold text-[var(--foreground)]'
                 : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
-              }`}
+            }`}
           >
             MATHEMATICS
           </button>
@@ -508,10 +574,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               setSelectedDomain('all');
               setSelectedTopic('all');
             }}
-            className={`px-5 py-2 rounded-lg text-[13px] font-bold transition-all cursor-pointer ${selectedSubject === 'reading_writing'
+            className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
+              selectedSubject === 'reading_writing'
                 ? 'bg-[var(--surface)] shadow-xs font-semibold text-[var(--foreground)]'
                 : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)]'
-              }`}
+            }`}
           >
             READING & WRITING
           </button>
@@ -520,7 +587,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         {activeFiltersCount > 0 && (
           <button
             onClick={resetAllFilters}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--brand-text)] hover:text-[var(--brand-text)] hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--brand-text)] hover:text-[var(--brand-text)] hover:underline cursor-pointer self-start sm:self-auto"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''}</span>
@@ -533,7 +600,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* ============================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
         {/* Left Filter Dropdowns */}
-        <div className="lg:col-span-8 flex flex-wrap items-center gap-2.5">
+        <div className="lg:col-span-8 flex flex-wrap items-center gap-2">
           {/* Domain Dropdown */}
           <div className="relative">
             <button
@@ -542,29 +609,32 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setDifficultyDropdownOpen(false);
                 setAccessDropdownOpen(false);
               }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedDomain !== 'all'
+              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
+                selectedDomain !== 'all'
                   ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
                   : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
-                }`}
+              }`}
             >
-              <span>
+              <span className="truncate max-w-[130px]">
                 {selectedDomain === 'all' ? 'Domain' : formatDomainName(selectedDomain)}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)] shrink-0" />
             </button>
 
             {domainDropdownOpen && (
               <div
-                className="absolute left-0 mt-1.5 w-72 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-                onMouseLeave={() => setDomainDropdownOpen(false)}
+                className="absolute left-0 mt-1.5 w-72 max-w-[calc(100vw-2rem)] bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
               >
                 <button
                   onClick={() => {
                     setSelectedDomain('all');
                     setDomainDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === 'all' ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
-                    }`}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+                    selectedDomain === 'all'
+                      ? 'bg-teal-50 text-[var(--brand-text)] font-semibold'
+                      : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
+                  }`}
                 >
                   <span>All Domains</span>
                   {selectedDomain === 'all' && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
@@ -581,11 +651,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedDomain(dom);
                       setDomainDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedDomain === dom ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
-                      }`}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+                      selectedDomain === dom
+                        ? 'bg-teal-50 text-[var(--brand-text)] font-semibold'
+                        : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
+                    }`}
                   >
-                    <span>{formatDomainName(dom)}</span>
-                    {selectedDomain === dom && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
+                    <span className="truncate mr-2">{formatDomainName(dom)}</span>
+                    {selectedDomain === dom && <Check className="w-3.5 h-3.5 text-[var(--brand-text)] shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -600,21 +673,21 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setDomainDropdownOpen(false);
                 setAccessDropdownOpen(false);
               }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedDifficulty !== 'all'
+              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
+                selectedDifficulty !== 'all'
                   ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
                   : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
-                }`}
+              }`}
             >
               <span className="capitalize">
                 {selectedDifficulty === 'all' ? 'Difficulty' : selectedDifficulty}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)] shrink-0" />
             </button>
 
             {difficultyDropdownOpen && (
               <div
                 className="absolute left-0 mt-1.5 w-44 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-                onMouseLeave={() => setDifficultyDropdownOpen(false)}
               >
                 {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
                   <button
@@ -623,8 +696,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedDifficulty(diff);
                       setDifficultyDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${selectedDifficulty === diff ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
-                      }`}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${
+                      selectedDifficulty === diff
+                        ? 'bg-teal-50 text-[var(--brand-text)] font-semibold'
+                        : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
+                    }`}
                   >
                     <span>{diff === 'all' ? 'All Difficulties' : diff}</span>
                     {selectedDifficulty === diff && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
@@ -642,21 +718,21 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 setDomainDropdownOpen(false);
                 setDifficultyDropdownOpen(false);
               }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer ${selectedAccess !== 'all'
+              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
+                selectedAccess !== 'all'
                   ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
                   : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
-                }`}
+              }`}
             >
               <span>
                 {selectedAccess === 'all' ? 'Access' : selectedAccess === 'free' ? 'Free Only' : 'Premium Only'}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--foreground-secondary)] shrink-0" />
             </button>
 
             {accessDropdownOpen && (
               <div
                 className="absolute left-0 mt-1.5 w-44 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-                onMouseLeave={() => setAccessDropdownOpen(false)}
               >
                 {(['all', 'free', 'premium'] as const).map((acc) => (
                   <button
@@ -665,8 +741,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       setSelectedAccess(acc);
                       setAccessDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${selectedAccess === acc ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
-                      }`}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+                      selectedAccess === acc
+                        ? 'bg-teal-50 text-[var(--brand-text)] font-semibold'
+                        : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
+                    }`}
                   >
                     <span>{acc === 'all' ? 'All Access' : acc === 'free' ? 'Free Only' : 'Premium Only'}</span>
                     {selectedAccess === acc && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
@@ -679,10 +758,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           {/* More Filters Drawer Button */}
           <button
             onClick={() => setMoreFiltersOpen(true)}
-            className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${selectedTopic !== 'all' || selectedSource !== 'all'
+            className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
+              selectedTopic !== 'all' || selectedSource !== 'all'
                 ? 'bg-teal-50 border-[var(--brand)] text-[var(--brand-text)] font-semibold'
                 : 'bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--brand-soft)] text-[var(--foreground)]'
-              }`}
+            }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--foreground-secondary)]" />
             <span>More Filters</span>
@@ -697,28 +777,37 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search questions, topics or question ID..."
+            placeholder="Search questions, topics or ID..."
             className="w-full h-10 pl-9 pr-14 border border-[var(--border)] rounded-[10px] text-[12px] focus:outline-none focus:border-[var(--brand)] bg-[var(--surface)] transition-colors shadow-none text-[var(--foreground)]"
           />
-          <div className="absolute right-2.5 top-2.5 pointer-events-none px-1.5 py-0.5 rounded bg-[var(--surface-soft)] text-[10px] font-mono text-[var(--foreground-secondary)] border border-[var(--border)]">
-            ⌘K
-          </div>
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-2.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] p-0.5 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <div className="hidden sm:block absolute right-2.5 top-2.5 pointer-events-none px-1.5 py-0.5 rounded bg-[var(--surface-soft)] text-[10px] font-mono text-[var(--foreground-secondary)] border border-[var(--border)]">
+              ⌘K
+            </div>
+          )}
         </div>
       </div>
 
       {/* ============================================================ */}
       {/* 4. RESULTS HEADER */}
       {/* ============================================================ */}
-      <div className="flex items-center justify-between text-[13px] text-[var(--foreground-secondary)] pt-2">
+      <div className="flex items-center justify-between text-[13px] text-[var(--foreground-secondary)] pt-1 sm:pt-2">
         <div className="font-medium text-[var(--foreground)]">
-          {filteredQuestions.length} questions found
+          {filteredQuestions.length} question{filteredQuestions.length === 1 ? '' : 's'} found
         </div>
 
         {/* Sort Dropdown */}
         <div className="relative">
           <button
             onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--foreground)] hover:text-[var(--brand-text)] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--foreground)] hover:text-[var(--brand-text)] transition-colors cursor-pointer active:scale-95"
           >
             <span className="text-[var(--foreground-secondary)]">Sort:</span>
             <span className="font-semibold capitalize">{sortBy}</span>
@@ -728,7 +817,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           {sortDropdownOpen && (
             <div
               className="absolute right-0 mt-1.5 w-40 bg-[var(--surface)] rounded-xl shadow-lg border border-[var(--border)] p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-              onMouseLeave={() => setSortDropdownOpen(false)}
             >
               {(['recommended', 'difficulty', 'newest'] as const).map((opt) => (
                 <button
@@ -737,8 +825,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     setSortBy(opt);
                     setSortDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${sortBy === opt ? 'bg-teal-50 text-[var(--brand-text)] font-semibold' : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
-                    }`}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${
+                    sortBy === opt
+                      ? 'bg-teal-50 text-[var(--brand-text)] font-semibold'
+                      : 'text-[var(--foreground)] hover:bg-[var(--brand-soft)]'
+                  }`}
                 >
                   <span>{opt}</span>
                   {sortBy === opt && <Check className="w-3.5 h-3.5 text-[var(--brand-text)]" />}
@@ -753,7 +844,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* 5. QUESTION LIST */}
       {/* ============================================================ */}
       {filteredQuestions.length === 0 ? (
-        <div className="p-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)] text-center space-y-4">
+        <div className="p-10 sm:p-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)] text-center space-y-4">
           <div className="w-12 h-12 rounded-xl bg-[var(--brand-soft)] text-[var(--foreground-secondary)] flex items-center justify-center mx-auto border border-[var(--border)]">
             <Search className="w-6 h-6" />
           </div>
@@ -765,7 +856,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </div>
           <button
             onClick={resetAllFilters}
-            className="px-4 py-2 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white text-[12px] font-medium rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white text-[12px] font-medium rounded-lg transition-colors cursor-pointer active:scale-95"
           >
             Reset All Filters
           </button>
@@ -778,11 +869,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             return (
               <div
                 key={q.id}
-                className="group p-5 bg-[var(--surface)] rounded-[14px] border border-[var(--border)] hover:border-[var(--brand)]/50 hover:-translate-y-[1px] hover:shadow-xs transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-5"
+                className="group p-4 sm:p-5 bg-[var(--surface)] rounded-[14px] border border-[var(--border)] hover:border-[var(--brand)]/50 hover:-translate-y-[1px] hover:shadow-xs transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5"
               >
                 {/* Left: ID & Metadata */}
-                <div className="space-y-2 flex-1">
-                  <div className="flex flex-wrap items-center gap-2.5 text-[11px]">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
                     <span className="font-mono font-bold text-[var(--foreground)] bg-[var(--brand-soft)] px-2 py-0.5 rounded border border-[var(--border)]">
                       {q.code}
                     </span>
@@ -793,12 +884,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
                     {/* Semantic Difficulty */}
                     <span
-                      className={`font-semibold capitalize ${q.difficulty === 'easy'
+                      className={`font-semibold capitalize ${
+                        q.difficulty === 'easy'
                           ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200'
                           : q.difficulty === 'medium'
                             ? 'text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200'
                             : 'text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200'
-                        }`}
+                      }`}
                     >
                       {q.difficulty}
                     </span>
@@ -817,17 +909,17 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   </div>
 
                   {/* Question Preview Text */}
-                  <div className="text-[13.5px] text-[var(--foreground)] font-normal leading-relaxed line-clamp-2">
+                  <div className="text-[13.5px] text-[var(--foreground)] font-normal leading-relaxed line-clamp-2 break-words">
                     <MathRenderer content={q.question_text} />
                   </div>
                 </div>
 
                 {/* Right: Action */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3 shrink-0 self-end md:self-center w-full md:w-auto">
                   {hasAccess ? (
                     <button
                       onClick={() => handleStartSession(filteredQuestions, idx)}
-                      className="px-5 py-2.5 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white font-medium text-[12px] rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer group/btn"
+                      className="w-full md:w-auto px-5 py-2.5 bg-[var(--navy-section)] hover:bg-[var(--brand-cta)] text-white font-medium text-[12px] rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer group/btn active:scale-95"
                     >
                       <span>Practice</span>
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
@@ -835,7 +927,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   ) : (
                     <button
                       onClick={onOpenPricing}
-                      className="px-4 py-2.5 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold text-[12px] rounded-lg border border-[var(--border)] transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="w-full md:w-auto px-4 py-2.5 bg-[var(--surface)] hover:bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold text-[12px] rounded-lg border border-[var(--border)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                     >
                       <Lock className="w-3.5 h-3.5 text-[var(--brand-text)]" />
                       <span>Unlock Premium</span>
@@ -852,8 +944,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* 6. ADVANCED FILTER SIDE DRAWER */}
       {/* ============================================================ */}
       {moreFiltersOpen && (
-        <div className="fixed inset-0 z-50 bg-black/25 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-[var(--surface)] h-full p-6 space-y-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 bg-black/35 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-[var(--surface)] h-full p-5 sm:p-6 space-y-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200 pb-safe">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                 <div className="flex items-center gap-2">
@@ -918,10 +1010,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                       onClick={() =>
                         setSelectedDifficulty(selectedDifficulty === diff ? 'all' : diff)
                       }
-                      className={`py-2 rounded-lg text-[12px] font-medium border capitalize transition-colors cursor-pointer ${selectedDifficulty === diff
+                      className={`py-2 rounded-lg text-[12px] font-medium border capitalize transition-colors cursor-pointer active:scale-95 ${
+                        selectedDifficulty === diff
                           ? 'bg-[var(--brand-cta)] text-white border-[var(--brand-cta)] font-bold'
                           : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
-                        }`}
+                      }`}
                     >
                       {diff}
                     </button>
@@ -939,10 +1032,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     onClick={() =>
                       setSelectedAccess(selectedAccess === 'free' ? 'all' : 'free')
                     }
-                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer ${selectedAccess === 'free'
+                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer active:scale-95 ${
+                      selectedAccess === 'free'
                         ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
                         : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
-                      }`}
+                    }`}
                   >
                     Free Only
                   </button>
@@ -950,10 +1044,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     onClick={() =>
                       setSelectedAccess(selectedAccess === 'premium' ? 'all' : 'premium')
                     }
-                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer ${selectedAccess === 'premium'
+                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer active:scale-95 ${
+                      selectedAccess === 'premium'
                         ? 'bg-[var(--brand-cta)] text-white border-[var(--brand-cta)] font-bold'
                         : 'bg-[var(--brand-soft)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface-soft)]'
-                      }`}
+                    }`}
                   >
                     Premium Only
                   </button>
@@ -970,13 +1065,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   setSelectedDifficulty('all');
                   setSelectedAccess('all');
                 }}
-                className="flex-1 py-2.5 bg-[var(--surface-soft)] hover:bg-[var(--border)] text-[var(--foreground)] text-[13px] font-medium rounded-lg transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-[var(--surface-soft)] hover:bg-[var(--border)] text-[var(--foreground)] text-[13px] font-medium rounded-lg transition-colors cursor-pointer active:scale-95"
               >
                 Clear Filters
               </button>
               <button
                 onClick={() => setMoreFiltersOpen(false)}
-                className="flex-1 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white text-[13px] font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
+                className="flex-1 py-2.5 bg-[var(--brand-cta)] hover:bg-[var(--brand-hover)] text-white text-[13px] font-semibold rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
               >
                 Apply Filters
               </button>

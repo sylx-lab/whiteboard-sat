@@ -133,18 +133,41 @@
     --shadow-modal: 0 12px 32px -4px rgba(0, 0, 0, 0.7);
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--background);
     color: var(--foreground);
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
   }
 
   /* Global Focus Ring */
   :focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--brand);
+  }
+
+  /* Safe Area Insets for Mobile Notches & Gesture Home Bars */
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .pt-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  }
+
+  .pl-safe {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  .pr-safe {
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
   }
 
   /*
@@ -164,7 +187,7 @@
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars & Momentum Touch Scrolling */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -200,7 +223,7 @@
   background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--brand) 8%, transparent) 0%, transparent 70%);
 }
 
-/* KaTeX Display Alignment Mandate */
+/* KaTeX Display Alignment & Mobile Touch Scroll Mandate */
 .katex-display {
   text-align: left !important;
   margin-left: 0 !important;
@@ -209,6 +232,12 @@
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.katex {
+  max-width: 100%;
 }
 
 /* Button & Arrow Micro-Interactions */

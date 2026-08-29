@@ -41,6 +41,7 @@ export default function PricingPage() {
         }}
         plan={selectedPlan}
         currentUser={store.currentUser}
+        paymentSettings={store.paymentSettings}
         onSubmitPayment={store.submitPayment}
         onOpenAuth={() => {
           setIsPaymentOpen(false);

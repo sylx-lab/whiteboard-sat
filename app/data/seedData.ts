@@ -1,4 +1,37 @@
-import type { Question, Course, ResourceItem, ProductPlan, MockTest } from '../types';
+import type { Question, Course, ResourceItem, ProductPlan, MockTest, PaymentSettings } from '../types';
+
+export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
+  id: 'payment_settings',
+  bkash: {
+    enabled: true,
+    accountNumber: process.env.NEXT_PUBLIC_BKASH_NUMBER || '01712-345678',
+    accountType: 'Merchant',
+    instructions: 'Use bKash app / *247# -> Payment / Send Money -> Use reference as your phone number',
+  },
+  nagad: {
+    enabled: true,
+    accountNumber: process.env.NEXT_PUBLIC_NAGAD_NUMBER || '01800-999999',
+    accountType: 'Personal',
+    instructions: 'Use Nagad app / *167# -> Send Money -> Use reference as your phone number',
+  },
+  rocket: {
+    enabled: true,
+    accountNumber: process.env.NEXT_PUBLIC_ROCKET_NUMBER || '01911-223344-5',
+    accountType: 'Personal',
+    instructions: 'Use Rocket app / *322# -> Send Money / Payment',
+  },
+  bankTransfer: {
+    enabled: true,
+    bankName: 'City Bank PLC',
+    accountName: 'White Board EdTech Ltd',
+    accountNumber: '12093847561',
+    branch: 'Gulshan Branch, Dhaka',
+    routingNumber: '225261458',
+    instructions: 'Transfer via online banking / BEFTN / NPSB and submit the transaction reference ID.',
+  },
+  supportPhone: '+880 1712-345678',
+  supportEmail: 'support@whiteboardsat.com',
+};
 
 export const INITIAL_QUESTIONS: Question[] = [
   // --- MATH: ALGEBRA ---

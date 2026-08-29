@@ -14,10 +14,10 @@ import {
   AppTheme,
   AdminPermission,
   AuthResult,
+  PaymentSettings,
 } from '../types';
-// Plans are the real catalog and have no collection of their own — the payments
-// route prices a purchase from this same list. Everything else now comes from /api.
-import { INITIAL_PLANS } from '../data/seedData';
+// Plans and payment settings are dynamic and loaded from /api with seedData fallbacks.
+import { INITIAL_PLANS, DEFAULT_PAYMENT_SETTINGS } from '../data/seedData';
 import { ALL_DOMAINS } from '../lib/utils';
 import { canSeeCourse, canSeeMockTest, canSeeQuestion, applyPlanGrants } from '../lib/access';
 import { can } from '../features/admin/lib/permissions';
@@ -52,6 +52,8 @@ const STORAGE_KEYS = {
   MOCK_ATTEMPTS: 'wbsat_mock_attempts',
   PRACTICE_ATTEMPTS: 'wbsat_practice_attempts',
   PAYMENTS: 'wbsat_payments',
+  PAYMENT_SETTINGS: 'wbsat_payment_settings',
+  PLANS: 'wbsat_plans',
   COURSE_PROGRESS: 'wbsat_course_progress',
   THEME: 'wbsat_theme',
 };
@@ -79,57 +81,37 @@ function saveToStorage<T>(key: string, data: T) {
 
 export function useAppStore() {
   // Theme
-  const [theme, setThemeState] = useState<AppTheme>(() => loadFromStorage(STORAGE_KEYS.THEME, 'white'));
+  const [theme, setThemeState] = useState<AppTheme>('white');
 
   // User
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() =>
-    loadFromStorage<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null)
-  );
-  const [allUsers, setAllUsers] = useState<UserProfile[]>(() =>
-    loadFromStorage<UserProfile[]>(STORAGE_KEYS.ALL_USERS, [])
-  );
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
 
   // Questions
-  const [questions, setQuestions] = useState<Question[]>(() =>
-    loadFromStorage<Question[]>(STORAGE_KEYS.QUESTIONS, [])
-  );
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   // Courses
-  const [courses, setCourses] = useState<Course[]>(() =>
-    loadFromStorage<Course[]>(STORAGE_KEYS.COURSES, [])
-  );
+  const [courses, setCourses] = useState<Course[]>([]);
 
   // Resources
-  const [resources, setResources] = useState<ResourceItem[]>(() =>
-    loadFromStorage<ResourceItem[]>(STORAGE_KEYS.RESOURCES, [])
-  );
+  const [resources, setResources] = useState<ResourceItem[]>([]);
 
   // Mock Tests
-  const [mockTests, setMockTests] = useState<MockTest[]>(() =>
-    loadFromStorage<MockTest[]>(STORAGE_KEYS.MOCK_TESTS, [])
-  );
+  const [mockTests, setMockTests] = useState<MockTest[]>([]);
 
   // Attempts
-  const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>(() =>
-    loadFromStorage<PracticeAttempt[]>(STORAGE_KEYS.PRACTICE_ATTEMPTS, [])
-  );
-
-  const [mockAttempts, setMockAttempts] = useState<MockTestAttempt[]>(() =>
-    loadFromStorage<MockTestAttempt[]>(STORAGE_KEYS.MOCK_ATTEMPTS, [])
-  );
+  const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>([]);
+  const [mockAttempts, setMockAttempts] = useState<MockTestAttempt[]>([]);
 
   // Payments
-  const [payments, setPayments] = useState<PaymentSubmission[]>(() =>
-    loadFromStorage<PaymentSubmission[]>(STORAGE_KEYS.PAYMENTS, [])
-  );
+  const [payments, setPayments] = useState<PaymentSubmission[]>([]);
+
+  // Plans & Payment Settings (Dynamic)
+  const [plans, setPlans] = useState<ProductPlan[]>(INITIAL_PLANS);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
 
   // Course Progress
-  const [courseProgress, setCourseProgress] = useState<Record<string, string[]>>(() =>
-    loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.COURSE_PROGRESS, {})
-  );
-
-  // Plans
-  const plans = INITIAL_PLANS;
+  const [courseProgress, setCourseProgress] = useState<Record<string, string[]>>({});
 
   /**
    * True only once /api/auth/me has answered with a user. `currentUser` can be
@@ -139,18 +121,40 @@ export function useAppStore() {
    */
   const [isSignedIn, setIsSignedIn] = useState(false);
 
-  // Persist changes
-  useEffect(() => saveToStorage(STORAGE_KEYS.THEME, theme), [theme]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.CURRENT_USER, currentUser), [currentUser]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.ALL_USERS, allUsers), [allUsers]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.QUESTIONS, questions), [questions]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.COURSES, courses), [courses]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.RESOURCES, resources), [resources]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.MOCK_TESTS, mockTests), [mockTests]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.PRACTICE_ATTEMPTS, practiceAttempts), [practiceAttempts]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.MOCK_ATTEMPTS, mockAttempts), [mockAttempts]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.PAYMENTS, payments), [payments]);
-  useEffect(() => saveToStorage(STORAGE_KEYS.COURSE_PROGRESS, courseProgress), [courseProgress]);
+  // Hydrate local cached state on client mount without SSR mismatch
+  const hasHydratedRef = useRef(false);
+
+  useEffect(() => {
+    setThemeState(loadFromStorage(STORAGE_KEYS.THEME, 'white'));
+    setCurrentUser(loadFromStorage<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null));
+    setAllUsers(loadFromStorage<UserProfile[]>(STORAGE_KEYS.ALL_USERS, []));
+    setQuestions(loadFromStorage<Question[]>(STORAGE_KEYS.QUESTIONS, []));
+    setCourses(loadFromStorage<Course[]>(STORAGE_KEYS.COURSES, []));
+    setResources(loadFromStorage<ResourceItem[]>(STORAGE_KEYS.RESOURCES, []));
+    setMockTests(loadFromStorage<MockTest[]>(STORAGE_KEYS.MOCK_TESTS, []));
+    setPracticeAttempts(loadFromStorage<PracticeAttempt[]>(STORAGE_KEYS.PRACTICE_ATTEMPTS, []));
+    setMockAttempts(loadFromStorage<MockTestAttempt[]>(STORAGE_KEYS.MOCK_ATTEMPTS, []));
+    setPayments(loadFromStorage<PaymentSubmission[]>(STORAGE_KEYS.PAYMENTS, []));
+    setPlans(loadFromStorage<ProductPlan[]>(STORAGE_KEYS.PLANS, INITIAL_PLANS));
+    setPaymentSettings(loadFromStorage<PaymentSettings>(STORAGE_KEYS.PAYMENT_SETTINGS, DEFAULT_PAYMENT_SETTINGS));
+    setCourseProgress(loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.COURSE_PROGRESS, {}));
+    hasHydratedRef.current = true;
+  }, []);
+
+  // Persist changes only after client hydration
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.THEME, theme); }, [theme]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.CURRENT_USER, currentUser); }, [currentUser]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.ALL_USERS, allUsers); }, [allUsers]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.QUESTIONS, questions); }, [questions]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.COURSES, courses); }, [courses]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.RESOURCES, resources); }, [resources]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.MOCK_TESTS, mockTests); }, [mockTests]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PRACTICE_ATTEMPTS, practiceAttempts); }, [practiceAttempts]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.MOCK_ATTEMPTS, mockAttempts); }, [mockAttempts]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PAYMENTS, payments); }, [payments]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PLANS, plans); }, [plans]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PAYMENT_SETTINGS, paymentSettings); }, [paymentSettings]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.COURSE_PROGRESS, courseProgress); }, [courseProgress]);
 
   // Who the cookie says we are. This is the only thing that establishes a
   // session; a cached `currentUser` without it is just a stale name on screen.
@@ -192,17 +196,21 @@ export function useAppStore() {
     let cancelled = false;
 
     const load = async () => {
-      const [q, c, r, m] = await Promise.all([
+      const [q, c, r, m, pSets, pPlans] = await Promise.all([
         api.get<{ items: Question[] }>('/questions'),
         api.get<{ items: Course[] }>('/courses'),
         api.get<{ items: ResourceItem[] }>('/resources'),
         api.get<{ items: MockTest[] }>('/mock-tests'),
+        fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
+        fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
       ]);
       if (cancelled) return;
       setQuestions(q.items);
       setCourses(c.items);
       setResources(r.items);
       setMockTests(m.items);
+      if (pSets?.settings) setPaymentSettings(pSets.settings);
+      if (pPlans?.items?.length) setPlans(pPlans.items);
 
       // The roster is part of the same load, inline rather than through
       // refreshUsers() so every setState in this effect sits behind an await.
@@ -614,6 +622,36 @@ export function useAppStore() {
     }
   );
 
+  const updatePaymentSettings = async (newSettings: PaymentSettings): Promise<PaymentSettings> => {
+    setPaymentSettings(newSettings);
+    const res = await fetch('/api/settings/payment', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: newSettings }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.settings) {
+      setPaymentSettings(data.settings);
+      return data.settings;
+    }
+    return newSettings;
+  };
+
+  const updatePlan = async (updatedPlan: ProductPlan): Promise<ProductPlan[]> => {
+    setPlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
+    const res = await fetch('/api/plans', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: updatedPlan }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.items) {
+      setPlans(data.items);
+      return data.items;
+    }
+    return plans;
+  };
+
   return {
     theme,
     setTheme,
@@ -625,6 +663,9 @@ export function useAppStore() {
     resources,
     mockTests,
     plans,
+    updatePlan,
+    paymentSettings,
+    updatePaymentSettings,
     practiceAttempts,
     mockAttempts,
     mockTestAttempts: mockAttempts,

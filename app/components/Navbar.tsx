@@ -461,119 +461,203 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Backdrop & Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[var(--surface)] border-b border-[var(--border)] px-4 py-4 space-y-3 animate-in slide-in-from-top-2 duration-150">
-          <nav className="flex flex-col space-y-1 text-sm font-medium">
-            <button
-              onClick={() => {
-                onNavigate(currentUser ? 'dashboard' : 'home');
-                setMobileMenuOpen(false);
-              }}
-              className="px-3 py-2 text-left text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg font-semibold"
-            >
-              {currentUser ? 'Dashboard' : 'Home'}
-            </button>
-            <button
-              onClick={() => {
-                onNavigate('practice');
-                setMobileMenuOpen(false);
-              }}
-              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
-            >
-              Practice Question Bank
-            </button>
-            <button
-              onClick={() => {
-                onNavigate('mock-tests');
-                setMobileMenuOpen(false);
-              }}
-              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
-            >
-              Full Mock Tests
-            </button>
-            <button
-              onClick={() => {
-                onNavigate('courses');
-                setMobileMenuOpen(false);
-              }}
-              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
-            >
-              Masterclass Courses
-            </button>
-            <button
-              onClick={() => {
-                onNavigate('pricing');
-                setMobileMenuOpen(false);
-              }}
-              className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
-            >
-              Pricing & Passes
-            </button>
-            {currentUser && (
+        <>
+          <div
+            className="fixed inset-0 top-[70px] z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="fixed inset-x-0 top-[70px] z-40 lg:hidden bg-[var(--surface)] border-b border-[var(--border)] px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-70px)] overflow-y-auto pb-safe">
+            <nav className="flex flex-col space-y-1 text-[13.5px] font-medium">
               <button
                 onClick={() => {
-                  onNavigate('progress');
+                  onNavigate(currentUser ? 'dashboard' : 'home');
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-2 text-left text-[var(--foreground-muted)] hover:text-[var(--navy-section)] hover:bg-[var(--surface-soft)] rounded-lg"
+                className={`px-3.5 py-2.5 text-left rounded-xl font-semibold transition-colors flex items-center justify-between ${
+                  isLinkActive(currentUser ? 'dashboard' : 'home')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)]'
+                    : 'text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
               >
-                Performance Analytics
+                <span>{currentUser ? 'Student Dashboard' : 'Home'}</span>
               </button>
-            )}
+              <button
+                onClick={() => {
+                  onNavigate('practice');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('practice')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Practice Question Bank</span>
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate('mock-tests');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('mock-tests')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Full Mock Tests</span>
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate('courses');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('courses')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Masterclass Courses</span>
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate('leaderboard');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('leaderboard')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Leaderboard</span>
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate('resources');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('resources')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Cheat Sheets & Resources</span>
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate('pricing');
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                  isLinkActive('pricing')
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                    : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span>Pricing & Passes</span>
+              </button>
+              {currentUser && (
+                <button
+                  onClick={() => {
+                    onNavigate('progress');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${
+                    isLinkActive('progress')
+                      ? 'bg-[var(--brand-soft)] text-[var(--brand-text)] font-semibold'
+                      : 'text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--surface-soft)]'
+                  }`}
+                >
+                  <span>Performance Analytics</span>
+                </button>
+              )}
 
-            {/* Mobile Theme Selector */}
-            <div className="pt-3 border-t border-[var(--border)]">
-              <span className="px-3 text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-wider block mb-2">
-                Color Theme
-              </span>
-              <div className="grid grid-cols-3 gap-1.5 px-1">
+              {isAdmin && (
                 <button
                   onClick={() => {
-                    onSetTheme('white');
+                    onNavigate('admin-dashboard');
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
-                    theme === 'white'
-                      ? 'bg-[var(--surface-soft)] border-[var(--brand)] text-[var(--foreground)] font-semibold'
-                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                  }`}
+                  className="px-3.5 py-2.5 text-left rounded-xl text-[var(--brand-text)] font-semibold hover:bg-[var(--brand-soft)] transition-colors flex items-center gap-2"
                 >
-                  <Sun className="w-4 h-4 text-amber-500 mb-1" />
-                  <span>Light</span>
+                  <Shield className="w-4 h-4" />
+                  <span>Admin Control Console</span>
                 </button>
-                <button
-                  onClick={() => {
-                    onSetTheme('warm');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
-                    theme === 'warm'
-                      ? 'bg-amber-50/70 border-amber-600 text-amber-950 font-semibold'
-                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                  }`}
-                >
-                  <Eye className="w-4 h-4 text-amber-700 mb-1" />
-                  <span>Comfort</span>
-                </button>
-                <button
-                  onClick={() => {
-                    onSetTheme('dark');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-colors ${
-                    theme === 'dark'
-                      ? 'bg-[var(--navy-section)] border-[var(--brand)] text-white font-semibold'
-                      : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
-                  }`}
-                >
-                  <Moon className="w-4 h-4 text-indigo-400 mb-1" />
-                  <span>Dark</span>
-                </button>
+              )}
+
+              {currentUser && (
+                <div className="pt-2 border-t border-[var(--border)]">
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left rounded-xl text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out ({currentUser.name})</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Theme Selector */}
+              <div className="pt-3 border-t border-[var(--border)]">
+                <span className="px-3 text-[11px] font-semibold text-[var(--foreground-muted)] uppercase tracking-wider block mb-2">
+                  Color Theme
+                </span>
+                <div className="grid grid-cols-3 gap-2 px-1">
+                  <button
+                    onClick={() => {
+                      onSetTheme('white');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
+                      theme === 'white'
+                        ? 'bg-[var(--surface-soft)] border-[var(--brand)] text-[var(--foreground)] font-semibold shadow-xs'
+                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    }`}
+                  >
+                    <Sun className="w-4 h-4 text-amber-500 mb-1" />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSetTheme('warm');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
+                      theme === 'warm'
+                        ? 'bg-amber-50/70 border-amber-600 text-amber-950 font-semibold shadow-xs'
+                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    }`}
+                  >
+                    <Eye className="w-4 h-4 text-amber-700 mb-1" />
+                    <span>Comfort</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSetTheme('dark');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-xs font-medium transition-colors ${
+                      theme === 'dark'
+                        ? 'bg-[var(--navy-section)] border-[var(--brand)] text-white font-semibold shadow-xs'
+                        : 'border-[var(--border)] text-[var(--foreground-secondary)] hover:bg-[var(--surface-soft)]'
+                    }`}
+                  >
+                    <Moon className="w-4 h-4 text-indigo-400 mb-1" />
+                    <span>Dark</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          </nav>
-        </div>
+            </nav>
+          </div>
+        </>
       )}
     </header>
   );
