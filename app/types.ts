@@ -151,6 +151,8 @@ export interface Lesson {
   videoUrl?: string;
   isFreePreview: boolean;
   order: number;
+  /** Which section this class belongs to — shown as separate tabs in admin + student views. */
+  subject?: Subject;
   resources?: { name: string; url: string; type: 'pdf' | 'link' | 'formula' }[];
 }
 
@@ -167,6 +169,10 @@ export interface Course {
   price: number;
   originalPrice: number;
   is_published: boolean;
+  /** Cover image shown on the catalog card and at the top of the classroom modal. */
+  thumbnailUrl?: string;
+  /** Alias kept for backwards compat — normalize writes whichever is present into thumbnailUrl. */
+  posterUrl?: string;
   features: string[];
   lessonsCount: number;
   totalHours: number;

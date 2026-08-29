@@ -422,43 +422,60 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </p>
           </div>
 
-          {/* Embedded YouTube Video Walkthrough Panel */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[12px] font-mono font-bold uppercase tracking-wider text-(--foreground)">
-                <Play className="w-3.5 h-3.5 text-(--brand-text) fill-(--brand-text)" />
-                <span>Instructor Video Breakdown</span>
-              </div>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[12px] text-(--brand-text) hover:text-(--brand-text) font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>Watch on YouTube</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            <div className="rounded-xl overflow-hidden border border-(--border) bg-(--navy-section) shadow-xs relative aspect-video flex flex-col items-center justify-center text-center p-6 group">
-              <div className="relative z-20 flex flex-col items-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-(--brand-cta) hover:bg-(--brand-hover) text-white flex items-center justify-center shadow-md transition-colors cursor-pointer">
-                  <Play className="w-6 h-6 fill-white ml-0.5" />
+          {/* Embedded YouTube Video Walkthrough Panel — uses explanation_resource_link when set */}
+          {(() => {
+            const raw = (question.explanation_resource_link || '').trim();
+            if (!raw) return null;
+            let embed: string | null = null;
+            try {
+              const u = new URL(raw);
+              if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) embed = `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+              else if (u.hostname === 'youtu.be') embed = `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+              else if (u.hostname.includes('youtube.com') && u.pathname.includes('/embed/')) embed = raw;
+            } catch { /* not a URL, ignore */ }
+            return (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[12px] font-mono font-bold uppercase tracking-wider text-(--foreground)">
+                    <Play className="w-3.5 h-3.5 text-(--brand-text) fill-(--brand-text)" />
+                    <span>Instructor Video Breakdown</span>
+                  </div>
+                  <a
+                    href={raw}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[12px] text-(--brand-text) hover:text-(--brand-text) font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Watch on YouTube</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
-                <div>
-                  <h6 className="text-white font-bold text-sm sm:text-base">White Board SAT Masterclass · Speed Breakdown & Concept Review</h6>
-                  <p className="text-(--foreground-muted) text-xs mt-1">Instructor: Dr. Al-Mubin • 4 min walkthrough</p>
-                </div>
+                {embed ? (
+                  <div className="rounded-xl overflow-hidden border border-(--border) bg-black shadow-xs aspect-video">
+                    <iframe src={embed} title="Instructor Video Breakdown" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+                  </div>
+                ) : (
+                  <a href={raw} target="_blank" rel="noreferrer" className="rounded-xl overflow-hidden border border-(--border) bg-(--navy-section) shadow-xs relative aspect-video flex flex-col items-center justify-center text-center p-6 group hover:opacity-95 transition-opacity">
+                    <div className="relative z-20 flex flex-col items-center space-y-3">
+                      <div className="w-14 h-14 rounded-full bg-(--brand-cta) hover:bg-(--brand-hover) text-white flex items-center justify-center shadow-md transition-colors cursor-pointer">
+                        <Play className="w-6 h-6 fill-white ml-0.5" />
+                      </div>
+                      <div>
+                        <h6 className="text-white font-bold text-sm sm:text-base">White Board SAT Masterclass · Speed Breakdown & Concept Review</h6>
+                        <p className="text-(--foreground-muted) text-xs mt-1">Instructor: Dr. Al-Mubin • 4 min walkthrough</p>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between text-[11px] text-(--foreground-muted) font-mono">
+                      <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> 03:45 HD Walkthrough</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded text-white font-sans">Chapter 4: Solving Systems</span>
+                    </div>
+                  </a>
+                )}
               </div>
+            );
+          })()}
 
-              <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between text-[11px] text-(--foreground-muted) font-mono">
-                <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> 03:45 HD Walkthrough</span>
-                <span className="bg-white/20 px-2 py-0.5 rounded text-white font-sans">Chapter 4: Solving Systems</span>
-              </div>
-            </div>
-          </div>
-
-          {question.explanation_resource_link && (
+          {question.explanation_resource_link && !(() => { try { const u=new URL(question.explanation_resource_link); return u.hostname.includes('youtube'); } catch { return false; } })() && (
             <div className="pt-1">
               <a
                 href={question.explanation_resource_link}

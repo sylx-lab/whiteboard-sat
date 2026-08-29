@@ -45,6 +45,7 @@ export interface QuestionFormState {
   choiceImages: Record<ChoiceId, string>;
   correctAnswer: ChoiceId;
   explanation: string;
+  explanationYoutubeUrl: string;
 }
 
 /** A new question starts empty; placeholders carry the guidance. */
@@ -65,6 +66,7 @@ export const blankQuestionForm = (subject: Subject = 'math'): QuestionFormState 
   choiceImages: { A: '', B: '', C: '', D: '' },
   correctAnswer: 'A',
   explanation: '',
+  explanationYoutubeUrl: '',
 });
 
 export const questionFormFromQuestion = (q: Question): QuestionFormState => {
@@ -88,6 +90,7 @@ export const questionFormFromQuestion = (q: Question): QuestionFormState => {
     choiceImages: { A: byImage('A'), B: byImage('B'), C: byImage('C'), D: byImage('D') },
     correctAnswer: q.correct_answer,
     explanation: q.explanation || '',
+    explanationYoutubeUrl: q.explanation_resource_link || '',
   };
 };
 
@@ -155,6 +158,7 @@ export function useQuestionForm(opts: {
       imageUrl: form.choiceImages[id]?.trim() || undefined,
     }));
     const stimulus = form.stimulus.trim();
+    const youtubeUrl = form.explanationYoutubeUrl.trim();
 
     return {
       id: initialQuestion?.id,
@@ -176,6 +180,7 @@ export function useQuestionForm(opts: {
       answer_choices: choicesPayload,
       correct_answer: form.correctAnswer,
       explanation: form.explanation.trim(),
+      explanation_resource_link: youtubeUrl || undefined,
       hasMath: /\$/.test(form.questionText),
     };
   };
@@ -506,6 +511,38 @@ export const QuestionFormFields: React.FC<{
           placeholder="Add 7 to both sides: $3x = 21$. Divide by 3: $x = 7$."
           rows={isFull ? 4 : 3}
         />
+        <Field label="Instructor video (YouTube link)" hint="Optional — shows in the Instructor Video Breakdown after submission. Paste a YouTube watch or embed URL.">
+          <input
+            type="url"
+            value={form.explanationYoutubeUrl}
+            onChange={(e) => update({ explanationYoutubeUrl: e.target.value })}
+            placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/embed/..."
+            className={`${inputClass} font-mono`}
+          />
+        </Field>
+        {form.explanationYoutubeUrl.trim() && (() => {
+          const raw = form.explanationYoutubeUrl.trim();
+          const toEmbed = (() => {
+            try {
+              const u = new URL(raw);
+              if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+              if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+              return raw;
+            } catch { return raw; }
+          })();
+          const isEmbed = toEmbed.includes('/embed/');
+          return (
+            <div className="rounded-xl overflow-hidden border border-[#E2E8F0] bg-black aspect-video">
+              {isEmbed ? (
+                <iframe src={toEmbed} title="YouTube preview" className="w-full h-full" allowFullScreen />
+              ) : (
+                <div className="w-full h-full grid place-items-center text-white text-[12px] p-4 text-center">
+                  <a href={raw} target="_blank" rel="noreferrer" className="underline">Watch on YouTube — {raw}</a>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </EditorSection>
 
       <EditorSection icon={Settings2} title="Publishing">
@@ -652,6 +689,26 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
           )}
         </div>
       </div>
+      {form.explanationYoutubeUrl.trim() && (
+        <div className="rounded-xl overflow-hidden border border-[#E2E8F0] bg-black aspect-video">
+          {(() => {
+            const raw = form.explanationYoutubeUrl.trim();
+            try {
+              const u = new URL(raw);
+              let embed: string | null = null;
+              if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) embed = `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+              else if (u.hostname === 'youtu.be') embed = `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+              else if (u.pathname.includes('/embed/')) embed = raw;
+              if (embed) return <iframe src={embed} title="YouTube preview" className="w-full h-full" allowFullScreen />;
+            } catch {}
+            return (
+              <a href={raw} target="_blank" rel="noreferrer" className="w-full h-full grid place-items-center text-white text-[12px] underline p-4 text-center">
+                Watch on YouTube — {raw}
+              </a>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };

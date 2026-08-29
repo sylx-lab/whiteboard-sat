@@ -16,6 +16,11 @@ import {
   ChevronDown,
   Pencil,
   Check,
+  Image as ImageIcon,
+  Calculator,
+  Languages,
+  X,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   EditorShell,
@@ -43,9 +48,9 @@ interface FormState {
   badge: string;
   features: string;
   isPublished: boolean;
+  thumbnailUrl: string;
 }
 
-/** New courses start empty, with no placeholder lessons to clean up. */
 const blankForm = (): FormState => ({
   title: '',
   subtitle: '',
@@ -57,7 +62,21 @@ const blankForm = (): FormState => ({
   badge: '',
   features: '',
   isPublished: false,
+  thumbnailUrl: '',
 });
+
+type LessonSection = 'math' | 'reading_writing';
+
+function getLessonSubject(lesson: Lesson): LessonSection {
+  const s = lesson.subject as string | undefined;
+  if (s === 'reading_writing') return 'reading_writing';
+  return 'math';
+}
+
+const SECTION_META: Record<LessonSection, { label: string; short: string; icon: typeof Calculator; hint: string }> = {
+  math: { label: 'Math', short: 'M', icon: Calculator, hint: 'Algebra, Advanced Math, Problem Solving, Geometry' },
+  reading_writing: { label: 'English — Reading & Writing', short: 'E', icon: Languages, hint: 'Information & Ideas, Craft & Structure, Expression, Conventions' },
+};
 
 export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialCourse, onSave }) => {
   const [form, setForm] = useState<FormState>(() =>
@@ -73,16 +92,23 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
           badge: initialCourse.badge || '',
           features: initialCourse.features.join('\n'),
           isPublished: initialCourse.is_published,
+          thumbnailUrl: initialCourse.thumbnailUrl || initialCourse.posterUrl || '',
         }
       : blankForm()
   );
-  const [lessons, setLessons] = useState<Lesson[]>(initialCourse?.lessons || []);
+  const [lessons, setLessons] = useState<Lesson[]>(() => {
+    const raw = initialCourse?.lessons || [];
+    return raw.map((l) => ({
+      ...l,
+      subject: (l.subject as Subject | undefined) ?? (initialCourse?.subject === 'reading_writing' ? 'reading_writing' as Subject : 'math' as Subject),
+    }));
+  });
   const [isDirty, setIsDirty] = useState(false);
-  // Lessons are edited in place, so there is no mirror state to fall out of sync.
   const [openLessonId, setOpenLessonId] = useState<string | null>(null);
   const [previewLessonId, setPreviewLessonId] = useState<string | null>(
     initialCourse?.lessons?.[0]?.id ?? null
   );
+  const [editingSection, setEditingSection] = useState<LessonSection | null>(null);
 
   const update = (patch: Partial<FormState>) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -94,7 +120,7 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
     setIsDirty(true);
   };
 
-  const addLesson = () => {
+  const addLesson = (section: LessonSection) => {
     const newLesson: Lesson = {
       id: `les-${Date.now()}`,
       courseId: initialCourse?.id || 'new',
@@ -102,8 +128,9 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
       description: '',
       durationMinutes: 15,
       videoUrl: '',
-      isFreePreview: lessons.length === 0, // first lesson defaults to a free preview
+      isFreePreview: lessons.length === 0,
       order: lessons.length + 1,
+      subject: section as Subject,
     };
     setLessons((prev) => [...prev, newLesson]);
     setOpenLessonId(newLesson.id);
@@ -119,17 +146,26 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
     setIsDirty(true);
   };
 
-  /** Move a lesson one slot up or down and renumber, so curriculum order is editable. */
-  const moveLesson = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= lessons.length) return;
+  const moveLesson = (lessonId: string, direction: -1 | 1) => {
+    const subject = getLessonSubject(lessons.find((l) => l.id === lessonId) as Lesson);
+    const indices = lessons
+      .map((l, idx) => (getLessonSubject(l) === subject ? idx : -1))
+      .filter((i) => i !== -1);
+    const pos = indices.indexOf(lessons.findIndex((l) => l.id === lessonId));
+    const targetPos = pos + direction;
+    if (targetPos < 0 || targetPos >= indices.length) return;
+    const fromIdx = indices[pos];
+    const toIdx = indices[targetPos];
     const next = [...lessons];
-    [next[index], next[target]] = [next[target], next[index]];
+    [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
     setLessons(next.map((l, i) => ({ ...l, order: i + 1 })));
     setIsDirty(true);
   };
 
   const totalMinutes = lessons.reduce((sum, l) => sum + (Number(l.durationMinutes) || 0), 0);
+  const mathLessons = lessons.filter((l) => getLessonSubject(l) === 'math');
+  const englishLessons = lessons.filter((l) => getLessonSubject(l) === 'reading_writing');
+
   const featureList = form.features
     .split('\n')
     .map((f) => f.trim())
@@ -150,6 +186,8 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
       price: Number(form.price),
       originalPrice: Number(form.originalPrice),
       badge: form.badge.trim(),
+      thumbnailUrl: form.thumbnailUrl.trim() || undefined,
+      posterUrl: form.thumbnailUrl.trim() || undefined,
       features: featureList,
       is_published: form.isPublished,
       lessonsCount: lessons.length,
@@ -159,6 +197,287 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
   };
 
   const previewLesson = lessons.find((l) => l.id === previewLessonId) || lessons[0];
+
+  // --- Section detail view ---
+  if (editingSection) {
+    const sectionLessons = editingSection === 'math' ? mathLessons : englishLessons;
+    const sectionMeta = SECTION_META[editingSection];
+    const SectionIcon = sectionMeta.icon;
+    const sectionMinutes = sectionLessons.reduce((s, l) => s + (Number(l.durationMinutes) || 0), 0);
+    const previewInSection = sectionLessons.find((l) => l.id === previewLessonId) || sectionLessons[0] || previewLesson;
+
+    return (
+      <EditorShell
+        eyebrow={sectionMeta.label}
+        title={`${form.title || 'New course'} — ${sectionMeta.label}`}
+        backTab="courses"
+        formId="course-form"
+        saveLabel={initialCourse ? 'Save changes' : 'Save course'}
+        isDirty={isDirty}
+      >
+        {/* Hidden form so the Save button still submits and native validation runs for hidden required fields */}
+        <form id="course-form" onSubmit={handleSubmit} className="hidden" aria-hidden />
+
+        {/* Sub-header for this module */}
+        <div className="bg-white border-b border-[#E2E8F0] px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => setEditingSection(null)}
+              className="p-2 rounded-[10px] border border-[#E2E8F0] bg-white hover:bg-[#F8FBFB] text-[#58708A] hover:text-[#071126] transition-colors cursor-pointer shrink-0"
+              aria-label="Back to course"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="w-9 h-9 rounded-xl bg-[#0D918A] text-white grid place-items-center shrink-0">
+              <SectionIcon className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[14px] font-bold text-[#071126] leading-tight truncate">
+                {sectionMeta.label} module
+              </h2>
+              <p className="text-[11px] text-[#58708A]">
+                {sectionLessons.length} classes • {Math.round((sectionMinutes / 60) * 10) / 10} hrs • {sectionMeta.hint}
+              </p>
+            </div>
+          </div>
+          <Button type="button" icon={Plus} variant="primary" onClick={() => addLesson(editingSection)}>
+            Add {sectionMeta.label === 'Math' ? 'Math' : 'English'} class
+          </Button>
+        </div>
+
+        <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
+          {/* Left: lesson list for this section */}
+          <div className="w-full lg:w-1/2 p-4 sm:p-6 lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-[#E2E8F0] space-y-4">
+            {sectionLessons.length === 0 ? (
+              <div className="py-10 text-center space-y-3 rounded-xl border border-dashed border-[#E2E8F0] bg-[#F8FBFB] p-6">
+                <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] grid place-items-center mx-auto text-[#58708A]">
+                  <SectionIcon className="w-5 h-5" />
+                </div>
+                <p className="text-[13px] font-semibold text-[#071126]">No {sectionMeta.label} classes yet</p>
+                <p className="text-[12px] text-[#58708A] max-w-sm mx-auto">
+                  Add the first video for this section. It will appear under the {sectionMeta.label} tab for students.
+                </p>
+                <Button type="button" variant="primary" icon={Plus} onClick={() => addLesson(editingSection)}>
+                  Add first {sectionMeta.label} class
+                </Button>
+              </div>
+            ) : (
+              <ol className="space-y-2">
+                {sectionLessons.map((les) => {
+                  const isOpen = openLessonId === les.id;
+                  const isPreviewing = previewLessonId === les.id;
+                  const sectionIndex = sectionLessons.findIndex((l) => l.id === les.id);
+                  return (
+                    <li
+                      key={les.id}
+                      className={`rounded-xl border transition-colors ${
+                        isPreviewing ? 'bg-[#F1F8F7] border-[#0D918A]' : 'bg-[#F8FBFB] border-[#E2E8F0]'
+                      }`}
+                    >
+                      <div className="p-3 flex items-start gap-2">
+                        <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] text-[#58708A] grid place-items-center text-[11px] font-mono font-bold shrink-0 mt-0.5">
+                          {sectionIndex + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewLessonId(les.id)}
+                          className="flex-1 min-w-0 text-left cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[13px] font-semibold text-[#071126]">
+                              {les.title || <span className="text-[#58708A]">Untitled lesson</span>}
+                            </span>
+                            {les.isFreePreview && <Pill tone="success">Free preview</Pill>}
+                          </div>
+                          <div className="text-[11px] text-[#58708A] mt-0.5">
+                            {les.durationMinutes} min
+                            {les.videoUrl ? '' : ' • no video URL'}
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => moveLesson(les.id, -1)}
+                            disabled={sectionIndex === 0}
+                            aria-label={`Move lesson ${sectionIndex + 1} up`}
+                            className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveLesson(les.id, 1)}
+                            disabled={sectionIndex === sectionLessons.length - 1}
+                            aria-label={`Move lesson ${sectionIndex + 1} down`}
+                            className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <IconAction
+                            icon={isOpen ? Check : Pencil}
+                            label={isOpen ? `Done editing lesson ${sectionIndex + 1}` : `Edit lesson ${sectionIndex + 1}`}
+                            onClick={() => setOpenLessonId(isOpen ? null : les.id)}
+                          />
+                          <IconAction
+                            icon={Trash2}
+                            tone="danger"
+                            label={`Remove lesson ${sectionIndex + 1}`}
+                            onClick={() => deleteLesson(les.id)}
+                          />
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div className="px-3 pb-3 pl-11 space-y-3 animate-in fade-in duration-150">
+                          <Field label="Lesson title">
+                            <input
+                              type="text"
+                              required
+                              value={les.title}
+                              onChange={(e) => updateLesson(les.id, { title: e.target.value })}
+                              placeholder={editingSection === 'math' ? 'Algebra — Linear equations' : 'Reading & Writing — Transitions'}
+                              className={inputClass}
+                            />
+                          </Field>
+                          <Field label="Description">
+                            <textarea
+                              rows={2}
+                              value={les.description}
+                              onChange={(e) => updateLesson(les.id, { description: e.target.value })}
+                              placeholder="What this class covers."
+                              className={textareaClass}
+                            />
+                          </Field>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Field label="Duration (minutes)">
+                              <input
+                                type="number"
+                                required
+                                min={1}
+                                value={les.durationMinutes}
+                                onChange={(e) => updateLesson(les.id, { durationMinutes: Number(e.target.value) })}
+                                className={`${inputClass} font-mono`}
+                              />
+                            </Field>
+                            <Field label="Access">
+                              <select
+                                value={les.isFreePreview ? 'preview' : 'enrolled'}
+                                onChange={(e) => updateLesson(les.id, { isFreePreview: e.target.value === 'preview' })}
+                                className={inputClass}
+                              >
+                                <option value="enrolled">Enrolled students only</option>
+                                <option value="preview">Free preview</option>
+                              </select>
+                            </Field>
+                          </div>
+                          <Field label="Video embed URL" hint="Must start with http:// or https://">
+                            <input
+                              type="url"
+                              value={les.videoUrl || ''}
+                              onChange={(e) => updateLesson(les.id, { videoUrl: e.target.value })}
+                              placeholder="https://www.youtube.com/embed/…"
+                              className={`${inputClass} font-mono`}
+                            />
+                          </Field>
+                          <Field label="Attachments" hint="Worksheets and notes a student downloads with this lesson">
+                            <div className="space-y-1.5">
+                              {(les.resources ?? []).map((res, i) => (
+                                <div
+                                  key={`${res.url}-${i}`}
+                                  className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FBFB] px-2.5 h-9"
+                                >
+                                  <Paperclip className="w-3.5 h-3.5 text-[#58708A] shrink-0" />
+                                  <span className="text-[12px] text-[#071126] truncate flex-1 min-w-0">{res.name}</span>
+                                  <IconAction
+                                    icon={Trash2}
+                                    label={`Remove ${res.name}`}
+                                    tone="danger"
+                                    onClick={() =>
+                                      updateLesson(les.id, {
+                                        resources: (les.resources ?? []).filter((_, at) => at !== i),
+                                      })
+                                    }
+                                  />
+                                </div>
+                              ))}
+                              <UploadButton
+                                folder="lessons"
+                                accept={ACCEPT.any}
+                                label="Attach a file"
+                                onUploaded={(url, file) =>
+                                  updateLesson(les.id, {
+                                    resources: [
+                                      ...(les.resources ?? []),
+                                      { name: file.name, url, type: file.type === 'application/pdf' ? 'pdf' : 'link' },
+                                    ],
+                                  })
+                                }
+                              />
+                            </div>
+                          </Field>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            {sectionLessons.length > 0 && (
+              <Button type="button" icon={Plus} onClick={() => addLesson(editingSection)} className="w-full">
+                Add {sectionMeta.label} class
+              </Button>
+            )}
+            <button
+              type="button"
+              onClick={() => setEditingSection(null)}
+              className="w-full h-10 rounded-[10px] border border-[#E2E8F0] bg-white hover:bg-[#F8FBFB] text-[12px] font-semibold text-[#071126] transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to course
+            </button>
+          </div>
+
+          {/* Right: preview for this section */}
+          <div className="w-full lg:w-1/2 p-4 sm:p-6 bg-[#F8FBFB] lg:overflow-y-auto space-y-3">
+            <div className="flex items-center gap-2 text-[12px] font-semibold text-[#58708A]">
+              <Eye className="w-4 h-4" />
+              <span>{sectionMeta.label} preview</span>
+            </div>
+            {previewInSection ? (
+              <div className="p-5 rounded-2xl bg-[#080D21] text-white space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-[12px] font-semibold text-teal-300">
+                    <Video className="w-4 h-4" />
+                    <span>Lesson {previewInSection.order} player — {sectionMeta.label}</span>
+                  </div>
+                  <span className="font-mono text-[12px] text-slate-400">{previewInSection.durationMinutes} min</span>
+                </div>
+                <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 grid place-items-center">
+                  {previewInSection.videoUrl ? (
+                    <iframe src={previewInSection.videoUrl} title={previewInSection.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
+                  ) : (
+                    <div className="text-center space-y-2 p-6">
+                      <Play className="w-8 h-8 text-teal-400 mx-auto opacity-70" />
+                      <div className="text-[12px] text-slate-400">No video URL for this lesson yet</div>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-[14px] font-bold">{previewInSection.title || 'Untitled lesson'}</h3>
+                  <p className="text-[12px] text-slate-400">{previewInSection.description}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 rounded-2xl bg-white border border-[#E2E8F0] text-center space-y-2">
+                <Video className="w-6 h-6 mx-auto text-[#58708A]" />
+                <p className="text-[12px] text-[#58708A]">No lessons in this section yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </EditorShell>
+    );
+  }
 
   return (
     <EditorShell
@@ -206,25 +525,63 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                 />
               </Field>
 
+              <Field label="Thumbnail / Poster" hint="Shown on the course card in the catalog. Recommended 16:9, JPG or PNG.">
+                {form.thumbnailUrl ? (
+                  <div className="space-y-2">
+                    <div className="relative rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#F8FBFB] aspect-video">
+                      <img src={form.thumbnailUrl} alt="Course thumbnail preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => update({ thumbnailUrl: '' })}
+                        aria-label="Remove thumbnail"
+                        className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-lg border border-[#E2E8F0] text-[#58708A] hover:text-rose-600 transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={form.thumbnailUrl}
+                        onChange={(e) => update({ thumbnailUrl: e.target.value })}
+                        placeholder="https://…"
+                        className={`${inputClass} font-mono flex-1`}
+                      />
+                      <UploadButton folder="courses" accept={ACCEPT.image} label="Replace" onUploaded={(url) => update({ thumbnailUrl: url })} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="rounded-xl border border-dashed border-[#E2E8F0] bg-[#F8FBFB] p-4 flex flex-col items-center justify-center gap-2 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] grid place-items-center text-[#58708A]">
+                        <ImageIcon className="w-5 h-5" />
+                      </div>
+                      <p className="text-[12px] text-[#58708A]">No poster yet. Upload an image or paste a URL.</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <UploadButton folder="courses" accept={ACCEPT.image} label="Upload thumbnail" onUploaded={(url) => update({ thumbnailUrl: url })} />
+                      </div>
+                    </div>
+                    <input
+                      type="url"
+                      value={form.thumbnailUrl}
+                      onChange={(e) => update({ thumbnailUrl: e.target.value })}
+                      placeholder="Or paste image URL https://…"
+                      className={`${inputClass} font-mono`}
+                    />
+                  </div>
+                )}
+              </Field>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Subject">
-                  <select
-                    value={form.subject}
-                    onChange={(e) => update({ subject: e.target.value as Subject | 'both' })}
-                    className={inputClass}
-                  >
+                  <select value={form.subject} onChange={(e) => update({ subject: e.target.value as Subject | 'both' })} className={inputClass}>
                     <option value="math">Math</option>
                     <option value="reading_writing">Reading &amp; Writing</option>
                     <option value="both">Both subjects</option>
                   </select>
                 </Field>
-
                 <Field label="Level">
-                  <select
-                    value={form.level}
-                    onChange={(e) => update({ level: e.target.value as Course['level'] })}
-                    className={inputClass}
-                  >
+                  <select value={form.level} onChange={(e) => update({ level: e.target.value as Course['level'] })} className={inputClass}>
                     <option value="All Levels">All levels</option>
                     <option value="Intermediate">Intermediate</option>
                     <option value="Advanced 1500+">Advanced 1500+</option>
@@ -234,33 +591,13 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Field label="Price (৳)">
-                  <input
-                    type="number"
-                    required
-                    min={0}
-                    value={form.price}
-                    onChange={(e) => update({ price: Number(e.target.value) })}
-                    className={`${inputClass} font-mono`}
-                  />
+                  <input type="number" required min={0} value={form.price} onChange={(e) => update({ price: Number(e.target.value) })} className={`${inputClass} font-mono`} />
                 </Field>
                 <Field label="Original price (৳)">
-                  <input
-                    type="number"
-                    required
-                    min={0}
-                    value={form.originalPrice}
-                    onChange={(e) => update({ originalPrice: Number(e.target.value) })}
-                    className={`${inputClass} font-mono`}
-                  />
+                  <input type="number" required min={0} value={form.originalPrice} onChange={(e) => update({ originalPrice: Number(e.target.value) })} className={`${inputClass} font-mono`} />
                 </Field>
                 <Field label="Badge" hint="Optional">
-                  <input
-                    type="text"
-                    value={form.badge}
-                    onChange={(e) => update({ badge: e.target.value })}
-                    placeholder="Best seller"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.badge} onChange={(e) => update({ badge: e.target.value })} placeholder="Best seller" className={inputClass} />
                 </Field>
               </div>
 
@@ -275,222 +612,68 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
               </Field>
 
               <Field label="Visibility">
-                <select
-                  value={form.isPublished ? 'published' : 'draft'}
-                  onChange={(e) => update({ isPublished: e.target.value === 'published' })}
-                  className={inputClass}
-                >
+                <select value={form.isPublished ? 'published' : 'draft'} onChange={(e) => update({ isPublished: e.target.value === 'published' })} className={inputClass}>
                   <option value="draft">Draft — hidden from students</option>
                   <option value="published">Published — visible in the catalog</option>
                 </select>
               </Field>
             </EditorSection>
 
-            <EditorSection
-              icon={Layers}
-              title={`Curriculum (${lessons.length})`}
-              hint={totalMinutes > 0 ? `${Math.round((totalMinutes / 60) * 10) / 10} hrs total` : undefined}
-            >
-              {lessons.length === 0 ? (
-                <div className="py-8 text-center space-y-3">
-                  <p className="text-[13px] text-[#58708A]">
-                    No lessons yet. A course needs at least one lesson before students can start it.
-                  </p>
-                  <Button type="button" variant="primary" icon={Plus} onClick={addLesson}>
-                    Add first lesson
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <ol className="space-y-2">
-                    {lessons.map((les, index) => {
-                      const isOpen = openLessonId === les.id;
-                      const isPreviewing = previewLessonId === les.id;
+            <EditorSection icon={Layers} title="Curriculum" hint={`${lessons.length} total • ${mathLessons.length} Math • ${englishLessons.length} English`}>
+              <p className="text-[12px] text-[#58708A] leading-relaxed">
+                Standard modules — choose a section to manage its videos. Changes are kept in this course until you save.
+              </p>
 
-                      return (
-                        <li
-                          key={les.id}
-                          className={`rounded-xl border transition-colors ${
-                            isPreviewing ? 'bg-[#F1F8F7] border-[#0D918A]' : 'bg-[#F8FBFB] border-[#E2E8F0]'
-                          }`}
-                        >
-                          <div className="p-3 flex items-start gap-2">
-                            <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] text-[#58708A] grid place-items-center text-[11px] font-mono font-bold shrink-0 mt-0.5">
-                              {index + 1}
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={() => setPreviewLessonId(les.id)}
-                              className="flex-1 min-w-0 text-left cursor-pointer"
-                            >
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[13px] font-semibold text-[#071126]">
-                                  {les.title || <span className="text-[#58708A]">Untitled lesson</span>}
-                                </span>
-                                {les.isFreePreview && <Pill tone="success">Free preview</Pill>}
-                              </div>
-                              <div className="text-[11px] text-[#58708A] mt-0.5">
-                                {les.durationMinutes} min
-                                {les.videoUrl ? '' : ' • no video URL'}
-                              </div>
-                            </button>
-
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => moveLesson(index, -1)}
-                                disabled={index === 0}
-                                aria-label={`Move lesson ${index + 1} up`}
-                                title="Move up"
-                                className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                              >
-                                <ChevronUp className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveLesson(index, 1)}
-                                disabled={index === lessons.length - 1}
-                                aria-label={`Move lesson ${index + 1} down`}
-                                title="Move down"
-                                className="p-1.5 rounded-lg text-[#58708A] hover:text-[#071126] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                              >
-                                <ChevronDown className="w-4 h-4" />
-                              </button>
-                              <IconAction
-                                icon={isOpen ? Check : Pencil}
-                                label={isOpen ? `Done editing lesson ${index + 1}` : `Edit lesson ${index + 1}`}
-                                onClick={() => setOpenLessonId(isOpen ? null : les.id)}
-                              />
-                              <IconAction
-                                icon={Trash2}
-                                tone="danger"
-                                label={`Remove lesson ${index + 1}`}
-                                onClick={() => deleteLesson(les.id)}
-                              />
-                            </div>
-                          </div>
-
-                          {isOpen && (
-                            <div className="px-3 pb-3 pl-11 space-y-3 animate-in fade-in duration-150">
-                              <Field label="Lesson title">
-                                <input
-                                  type="text"
-                                  required
-                                  value={les.title}
-                                  onChange={(e) => updateLesson(les.id, { title: e.target.value })}
-                                  placeholder="Digital SAT Math blueprint & timing"
-                                  className={inputClass}
-                                />
-                              </Field>
-
-                              <Field label="Description">
-                                <textarea
-                                  rows={2}
-                                  value={les.description}
-                                  onChange={(e) => updateLesson(les.id, { description: e.target.value })}
-                                  placeholder="What this lesson covers."
-                                  className={textareaClass}
-                                />
-                              </Field>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <Field label="Duration (minutes)">
-                                  <input
-                                    type="number"
-                                    required
-                                    min={1}
-                                    value={les.durationMinutes}
-                                    onChange={(e) =>
-                                      updateLesson(les.id, { durationMinutes: Number(e.target.value) })
-                                    }
-                                    className={`${inputClass} font-mono`}
-                                  />
-                                </Field>
-
-                                <Field label="Access">
-                                  <select
-                                    value={les.isFreePreview ? 'preview' : 'enrolled'}
-                                    onChange={(e) =>
-                                      updateLesson(les.id, { isFreePreview: e.target.value === 'preview' })
-                                    }
-                                    className={inputClass}
-                                  >
-                                    <option value="enrolled">Enrolled students only</option>
-                                    <option value="preview">Free preview</option>
-                                  </select>
-                                </Field>
-                              </div>
-
-                              <Field label="Video embed URL" hint="Must start with http:// or https://">
-                                <input
-                                  type="url"
-                                  value={les.videoUrl || ''}
-                                  onChange={(e) => updateLesson(les.id, { videoUrl: e.target.value })}
-                                  placeholder="https://www.youtube.com/embed/…"
-                                  className={`${inputClass} font-mono`}
-                                />
-                              </Field>
-
-                              <Field
-                                label="Attachments"
-                                hint="Worksheets and notes a student downloads with this lesson"
-                              >
-                                <div className="space-y-1.5">
-                                  {(les.resources ?? []).map((res, i) => (
-                                    <div
-                                      key={`${res.url}-${i}`}
-                                      className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FBFB] px-2.5 h-9"
-                                    >
-                                      <Paperclip className="w-3.5 h-3.5 text-[#58708A] shrink-0" />
-                                      <span className="text-[12px] text-[#071126] truncate flex-1 min-w-0">
-                                        {res.name}
-                                      </span>
-                                      <IconAction
-                                        icon={Trash2}
-                                        label={`Remove ${res.name}`}
-                                        tone="danger"
-                                        onClick={() =>
-                                          updateLesson(les.id, {
-                                            resources: (les.resources ?? []).filter(
-                                              (_, at) => at !== i,
-                                            ),
-                                          })
-                                        }
-                                      />
-                                    </div>
-                                  ))}
-                                  <UploadButton
-                                    folder="lessons"
-                                    accept={ACCEPT.any}
-                                    label="Attach a file"
-                                    onUploaded={(url, file) =>
-                                      updateLesson(les.id, {
-                                        resources: [
-                                          ...(les.resources ?? []),
-                                          {
-                                            name: file.name,
-                                            url,
-                                            type: file.type === 'application/pdf' ? 'pdf' : 'link',
-                                          },
-                                        ],
-                                      })
-                                    }
-                                  />
-                                </div>
-                              </Field>
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ol>
-
-                  <Button type="button" icon={Plus} onClick={addLesson} className="w-full">
-                    Add lesson
-                  </Button>
-                </>
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(Object.keys(SECTION_META) as LessonSection[]).map((key) => {
+                  const meta = SECTION_META[key];
+                  const Icon = meta.icon;
+                  const count = key === 'math' ? mathLessons.length : englishLessons.length;
+                  const mins = key === 'math' ? mathLessons.reduce((s, l) => s + (Number(l.durationMinutes) || 0), 0) : englishLessons.reduce((s, l) => s + (Number(l.durationMinutes) || 0), 0);
+                  const hrs = Math.round((mins / 60) * 10) / 10;
+                  const sample = (key === 'math' ? mathLessons : englishLessons).slice(0, 2);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setEditingSection(key)}
+                      className="text-left rounded-2xl border border-[#E2E8F0] bg-[#F8FBFB] hover:bg-white hover:border-[#0D918A]/30 hover:shadow-xs transition-all p-4 flex flex-col gap-3 cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] group-hover:border-[#0D918A]/30 text-[#0D918A] grid place-items-center shrink-0">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="px-2 py-1 rounded-lg bg-white border border-[#E2E8F0] text-[11px] font-mono font-semibold text-[#071126]">
+                          {count} classes • {hrs} hrs
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-[13px] font-bold text-[#071126]">{meta.label}</h3>
+                        <p className="text-[11px] text-[#58708A] leading-relaxed">{meta.hint}</p>
+                      </div>
+                      <div className="min-h-[36px]">
+                        {sample.length === 0 ? (
+                          <p className="text-[11px] text-[#58708A] italic">No classes yet — press to add</p>
+                        ) : (
+                          <ul className="space-y-1">
+                            {sample.map((l) => (
+                              <li key={l.id} className="text-[11px] text-[#071126] truncate flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-[#0D918A] shrink-0" />
+                                {l.title || 'Untitled lesson'}
+                              </li>
+                            ))}
+                            {count > 2 && <li className="text-[11px] text-[#58708A]">+{count - 2} more</li>}
+                          </ul>
+                        )}
+                      </div>
+                      <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-[#0D918A] group-hover:underline">Manage {key === 'math' ? 'Math' : 'English'} →</span>
+                        <span className="text-[11px] text-[#58708A]">Edit videos</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </EditorSection>
           </form>
         }
@@ -500,37 +683,31 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
               <Eye className="w-4 h-4" />
               <span>Student preview</span>
             </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-[#E2E8F0] space-y-4">
+            <div className="p-5 rounded-2xl bg-white border border-[#E2E8F0] space-y-4 overflow-hidden">
+              {form.thumbnailUrl && (
+                <div className="rounded-xl overflow-hidden border border-[#E2E8F0] aspect-video bg-[#F8FBFB]">
+                  <img src={form.thumbnailUrl} alt="Course thumbnail" className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {form.badge && <Pill tone="brand">{form.badge}</Pill>}
-                  <Pill tone={form.isPublished ? 'success' : 'warning'}>
-                    {form.isPublished ? 'Published' : 'Draft'}
-                  </Pill>
+                  <Pill tone={form.isPublished ? 'success' : 'warning'}>{form.isPublished ? 'Published' : 'Draft'}</Pill>
                 </div>
                 <span className="text-[12px] text-[#58708A]">{form.level}</span>
               </div>
-
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-[#071126] leading-snug">
-                  {form.title || <span className="text-[#58708A]">Course title</span>}
-                </h2>
+                <h2 className="text-xl font-bold text-[#071126] leading-snug">{form.title || <span className="text-[#58708A]">Course title</span>}</h2>
                 <p className="text-[13px] text-[#58708A]">{form.subtitle}</p>
               </div>
-
-              <p className="text-[13px] text-[#071126] leading-relaxed">
-                {form.description || (
-                  <span className="text-[#58708A]">The description will appear here.</span>
-                )}
-              </p>
-
+              <p className="text-[13px] text-[#071126] leading-relaxed">{form.description || <span className="text-[#58708A]">The description will appear here.</span>}</p>
               <div className="flex items-center gap-3 text-[12px] text-[#58708A] pt-1">
-                <span>{lessons.length} lessons</span>
+                <span className="flex items-center gap-1"><Calculator className="w-3 h-3" /> {mathLessons.length} Math</span>
+                <span aria-hidden="true">•</span>
+                <span className="flex items-center gap-1"><Languages className="w-3 h-3" /> {englishLessons.length} English</span>
                 <span aria-hidden="true">•</span>
                 <span>{Math.round((totalMinutes / 60) * 10) / 10} hrs</span>
               </div>
-
               {featureList.length > 0 && (
                 <div className="pt-3 border-t border-[#E2E8F0] space-y-2">
                   <div className="text-[12px] font-semibold text-[#071126]">What&apos;s included</div>
@@ -544,42 +721,36 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                   </ul>
                 </div>
               )}
-
               <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-3">
                 <div className="flex items-baseline gap-2 font-mono">
                   <span className="text-xl font-bold text-[#071126] tabular-nums">৳{form.price}</span>
-                  {form.originalPrice > form.price && (
-                    <span className="text-[12px] text-[#58708A] line-through tabular-nums">
-                      ৳{form.originalPrice}
-                    </span>
-                  )}
+                  {form.originalPrice > form.price && <span className="text-[12px] text-[#58708A] line-through tabular-nums">৳{form.originalPrice}</span>}
                 </div>
-                <span className="h-10 px-4 bg-[#0D918A] text-white text-[12px] font-semibold rounded-[10px] grid place-items-center">
-                  Enroll now
-                </span>
+                <span className="h-10 px-4 bg-[#0D918A] text-white text-[12px] font-semibold rounded-[10px] grid place-items-center">Enroll now</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FBFB] p-3">
+                  <div className="text-[11px] font-bold text-[#071126] flex items-center gap-1"><Calculator className="w-3 h-3" /> Math</div>
+                  <div className="text-[11px] text-[#58708A]">{mathLessons.length} classes</div>
+                </div>
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FBFB] p-3">
+                  <div className="text-[11px] font-bold text-[#071126] flex items-center gap-1"><Languages className="w-3 h-3" /> English</div>
+                  <div className="text-[11px] text-[#58708A]">{englishLessons.length} classes</div>
+                </div>
               </div>
             </div>
-
             {previewLesson && (
               <div className="p-5 rounded-2xl bg-[#080D21] text-white space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-[12px] font-semibold text-teal-300">
                     <Video className="w-4 h-4" />
-                    <span>Lesson {previewLesson.order} player</span>
+                    <span>Lesson {previewLesson.order} player — {getLessonSubject(previewLesson) === 'math' ? 'Math' : 'English'}</span>
                   </div>
-                  <span className="font-mono text-[12px] text-slate-400">
-                    {previewLesson.durationMinutes} min
-                  </span>
+                  <span className="font-mono text-[12px] text-slate-400">{previewLesson.durationMinutes} min</span>
                 </div>
-
                 <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 grid place-items-center">
                   {previewLesson.videoUrl ? (
-                    <iframe
-                      src={previewLesson.videoUrl}
-                      title={previewLesson.title || 'Lesson video'}
-                      className="w-full h-full"
-                      allowFullScreen
-                    />
+                    <iframe src={previewLesson.videoUrl} title={previewLesson.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
                   ) : (
                     <div className="text-center space-y-2 p-6">
                       <Play className="w-8 h-8 text-teal-400 mx-auto opacity-70" />
@@ -587,7 +758,6 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                     </div>
                   )}
                 </div>
-
                 <div className="space-y-1">
                   <h3 className="text-[14px] font-bold">{previewLesson.title || 'Untitled lesson'}</h3>
                   <p className="text-[12px] text-slate-400">{previewLesson.description}</p>

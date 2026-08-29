@@ -15,7 +15,7 @@ import {
   permissionsFor,
   grantedCount,
 } from '../lib/permissions';
-import { Check, ShieldCheck, KeyRound, GraduationCap, Award, UserCog, Receipt } from 'lucide-react';
+import { Check, ShieldCheck, KeyRound, GraduationCap, Award, Receipt, Info, UserCog } from 'lucide-react';
 import { EditorTopBar, EditorSection, Field, inputClass, editorPrimaryButtonClass } from './EditorShell';
 import { Pill, ToggleRow, Button, SearchInput } from './ui';
 
@@ -292,38 +292,60 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
             )}
           </EditorSection>
 
-          <EditorSection icon={UserCog} title="Role">
-            <Field
-              label="Account role"
-              hint={
-                isSelf
-                  ? 'You cannot change your own role.'
-                  : 'Staff can open the admin console with only the permissions you grant below.'
-              }
-            >
-              <select
-                value={person.role}
-                disabled={isSelf}
-                onChange={(e) => {
-                  const role = e.target.value as UserProfile['role'];
-                  if (
-                    role === 'admin' &&
-                    !confirm(
-                      `Make ${person.name} a full admin? They will be able to manage everything, including other staff.`
-                    )
-                  ) {
-                    return;
-                  }
-                  onSetRole(person.id, role);
-                }}
-                className={`${inputClass} disabled:bg-[#F8FBFB] disabled:cursor-not-allowed`}
+          {/* Role is never changed from the student detail page — that avoids an accidental
+              privilege escalation where a staff member with student-management rights promotes a
+              student to admin. Staff accounts are created from Team > New staff member. When
+              opened from Team (backTab=staff) the role can still be edited for existing staff. */}
+          {backTab === 'staff' ? (
+            <EditorSection icon={UserCog} title="Role">
+              <Field
+                label="Account role"
+                hint={
+                  isSelf
+                    ? 'You cannot change your own role.'
+                    : 'Changing this takes effect immediately. Demoting to Student removes admin access.'
+                }
               >
-                <option value="student">Student — no admin access</option>
-                <option value="sub_admin">Staff — admin access you choose</option>
-                <option value="admin">Full admin — everything</option>
-              </select>
-            </Field>
-          </EditorSection>
+                <select
+                  value={person.role}
+                  disabled={isSelf}
+                  onChange={(e) => {
+                    const role = e.target.value as UserProfile['role'];
+                    if (
+                      role === 'admin' &&
+                      !confirm(
+                        `Make ${person.name} a full admin? They will be able to manage everything, including other staff.`
+                      )
+                    ) {
+                      return;
+                    }
+                    if (
+                      role === 'student' &&
+                      !confirm(
+                        `Demote ${person.name} to Student? They will lose all admin access.`
+                      )
+                    ) {
+                      return;
+                    }
+                    onSetRole(person.id, role);
+                  }}
+                  className={`${inputClass} disabled:bg-[#F8FBFB] disabled:cursor-not-allowed`}
+                >
+                  <option value="student">Student — no admin access</option>
+                  <option value="sub_admin">Staff — admin access you choose</option>
+                  <option value="admin">Full admin — everything</option>
+                </select>
+              </Field>
+            </EditorSection>
+          ) : person.role === 'student' ? (
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-3 flex gap-2.5 text-[12.5px] leading-relaxed text-[#58708A]">
+              <Info className="w-4 h-4 text-[#0D918A] shrink-0 mt-0.5" />
+              <span>
+                Role changes are not done here. To give someone admin access, create a separate staff
+                account from <span className="font-semibold text-[#071126]">Team &gt; New staff member</span>.
+              </span>
+            </div>
+          ) : null}
 
           {person.role !== 'student' && (
             <EditorSection

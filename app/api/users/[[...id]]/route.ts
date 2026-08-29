@@ -112,6 +112,19 @@ export async function PATCH(request: Request, ctx: Ctx) {
   const set: Record<string, unknown> = {};
   if ('role' in body) {
     if (!['student', 'admin', 'sub_admin'].includes(body.role)) return bad('Unknown role');
+    // Prevent accidental privilege escalation: a student account must never be
+    // upgraded to staff/admin via the per-user editor. Staff accounts are
+    // created through POST /api/users (Team > New staff member) with a separate
+    // email and explicit permissions. Demoting staff -> student is still allowed.
+    if (
+      existing.role === 'student' &&
+      (body.role === 'sub_admin' || body.role === 'admin')
+    ) {
+      return bad(
+        'Promoting a student account to staff is not allowed. Create a new staff account from Team > New staff member instead.',
+        400
+      );
+    }
     set.role = body.role;
     // A new staff member starts with nothing granted, chosen explicitly after.
     if (body.role === 'sub_admin') set.permissions = existing.permissions ?? { ...NO_PERMISSIONS };

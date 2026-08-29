@@ -9,7 +9,7 @@ import { ALLOWED_TYPES, MAX_BYTES, isConfigured, objectKey, presignUpload } from
  * Staff only. Uploading is how a question figure or a resource PDF gets into the
  * product, so it is an authoring action, not something a student account can do.
  */
-const FOLDERS = ['questions', 'resources', 'lessons'] as const;
+const FOLDERS = ['questions', 'resources', 'lessons', 'courses'] as const;
 
 export async function POST(request: Request) {
   const user = await requireUser();

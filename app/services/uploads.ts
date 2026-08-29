@@ -1,6 +1,6 @@
 import { api } from './api';
 
-export type UploadFolder = 'questions' | 'resources' | 'lessons';
+export type UploadFolder = 'questions' | 'resources' | 'lessons' | 'courses';
 
 /**
  * Ask the server for a signed URL, PUT the file straight to R2, hand back the

@@ -515,6 +515,7 @@ export const INITIAL_COURSES: Course[] = [
     price: 3500,
     originalPrice: 6000,
     is_published: true,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800&auto=format&fit=crop&q=60',
     level: 'All Levels',
     badge: 'Bestseller',
     features: [
@@ -536,6 +537,7 @@ export const INITIAL_COURSES: Course[] = [
         videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
         isFreePreview: true,
         order: 1,
+        subject: 'math',
         resources: [
           { name: 'Desmos Keybindings PDF', url: '#', type: 'formula' },
           { name: 'Domain Weighting Breakdown', url: '#', type: 'pdf' },
@@ -549,6 +551,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 42,
         isFreePreview: true,
         order: 2,
+        subject: 'math',
         resources: [{ name: 'Linear Systems Drill Sheet', url: '#', type: 'pdf' }],
       },
       {
@@ -559,6 +562,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 50,
         isFreePreview: false,
         order: 3,
+        subject: 'math',
       },
       {
         id: 'l-m-4',
@@ -568,6 +572,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 45,
         isFreePreview: false,
         order: 4,
+        subject: 'math',
       },
       {
         id: 'l-m-5',
@@ -577,6 +582,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 48,
         isFreePreview: false,
         order: 5,
+        subject: 'math',
       },
     ],
   },
@@ -593,6 +599,7 @@ export const INITIAL_COURSES: Course[] = [
     price: 3500,
     originalPrice: 6000,
     is_published: true,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&auto=format&fit=crop&q=60',
     level: 'Intermediate',
     badge: 'Popular',
     features: [
@@ -614,6 +621,7 @@ export const INITIAL_COURSES: Course[] = [
         videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
         isFreePreview: true,
         order: 1,
+        subject: 'reading_writing',
         resources: [{ name: 'Verbal Section Blueprint PDF', url: '#', type: 'pdf' }],
       },
       {
@@ -624,6 +632,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 45,
         isFreePreview: true,
         order: 2,
+        subject: 'reading_writing',
         resources: [{ name: 'Grammar Punctuation Chart', url: '#', type: 'pdf' }],
       },
       {
@@ -634,6 +643,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 40,
         isFreePreview: false,
         order: 3,
+        subject: 'reading_writing',
       },
       {
         id: 'l-rw-4',
@@ -643,6 +653,7 @@ export const INITIAL_COURSES: Course[] = [
         durationMinutes: 38,
         isFreePreview: false,
         order: 4,
+        subject: 'reading_writing',
       },
     ],
   },
@@ -659,6 +670,7 @@ export const INITIAL_COURSES: Course[] = [
     price: 5900,
     originalPrice: 12000,
     is_published: true,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop&q=60',
     level: 'Advanced 1500+',
     badge: 'Best Value',
     features: [
@@ -670,7 +682,28 @@ export const INITIAL_COURSES: Course[] = [
     ],
     lessonsCount: 70,
     totalHours: 44,
-    lessons: [],
+    lessons: [
+      {
+        id: 'l-full-m-1',
+        courseId: 'c-full-1550',
+        title: 'Math — Foundations & Desmos Speed Hacks',
+        description: 'Crash foundations for Heart of Algebra + calculator strategies.',
+        durationMinutes: 45,
+        isFreePreview: true,
+        order: 1,
+        subject: 'math',
+      },
+      {
+        id: 'l-full-e-1',
+        courseId: 'c-full-1550',
+        title: 'English — Grammar Boundaries & Clauses',
+        description: 'Master semicolons, colons, and sentence boundaries.',
+        durationMinutes: 40,
+        isFreePreview: true,
+        order: 2,
+        subject: 'reading_writing',
+      },
+    ],
   },
 ];
 
