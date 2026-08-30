@@ -1,6 +1,7 @@
 import React from 'react';
 import { Flag } from 'lucide-react';
 import { Question, QuestionInteractionState } from '../types';
+import { isSprAnswerCorrect, isSprQuestion } from '../lib/spr';
 
 interface QuestionNavigatorProps {
   totalQuestions: number;
@@ -40,9 +41,15 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
           const isCurrent = index === currentIndex;
           const isSubmitted = interaction?.isSubmitted || false;
           const selectedAns = interaction?.selectedAnswer;
-          const isCorrect = isSubmitted && question && selectedAns === question.correct_answer;
-          const isIncorrect = isSubmitted && question && selectedAns && selectedAns !== question.correct_answer;
-          const isAnswered = !!selectedAns;
+          const enteredAns = String(interaction?.enteredAnswer ?? '').trim();
+          const isSpr = isSprQuestion(question ?? null);
+          const isAnswered = isSpr ? !!enteredAns : !!selectedAns;
+          const isCorrect = isSubmitted && question
+            ? isSpr
+              ? isSprAnswerCorrect(question, enteredAns)
+              : selectedAns === question.correct_answer
+            : false;
+          const isIncorrect = isSubmitted && question ? isAnswered && !isCorrect : false;
           const isMarked = !!interaction?.isMarkedForReview;
 
           let btnClass = 'bg-[var(--brand-soft)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface-soft)]';

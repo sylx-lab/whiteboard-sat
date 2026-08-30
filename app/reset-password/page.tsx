@@ -100,7 +100,7 @@ function ResetPasswordForm() {
 // useSearchParams needs a Suspense boundary, same as app/admin/page.tsx.
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <ResetPasswordForm />
     </Suspense>
   );

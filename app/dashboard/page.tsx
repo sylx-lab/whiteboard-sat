@@ -83,7 +83,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Suspense>
+      <Suspense fallback={null}>
         <EmailVerificationNotice
           user={store.currentUser}
           onResend={store.resendVerificationEmail}

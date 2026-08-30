@@ -1,4 +1,5 @@
 import { estimateSATScore } from './utils.ts';
+import { isSprAnswerCorrect, isSprQuestion } from './spr.ts';
 import type { MockTest, MockTestAttempt, MockTestModule, Question, Subject } from '../types';
 
 /**
@@ -169,7 +170,11 @@ export function scoreAttempt(
       const interaction = interactions?.[q.id];
       if (!interaction) continue;
       timeSpentSeconds += interaction.timeSpentSeconds || 0;
-      if (interaction.selectedAnswer !== q.correct_answer) continue;
+      const spr = isSprQuestion(q);
+      const correct = spr
+        ? isSprAnswerCorrect(q, interaction.enteredAnswer ?? (interaction.selectedAnswer as string | null | undefined))
+        : interaction.selectedAnswer === (q.correct_answer as string);
+      if (!correct) continue;
 
       totalCorrect += 1;
       domainBreakdown[q.domain].correct += 1;

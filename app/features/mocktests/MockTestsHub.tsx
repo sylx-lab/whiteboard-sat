@@ -85,6 +85,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         initialInteractions[q.id] = {
           questionId: q.id,
           selectedAnswer: null,
+          enteredAnswer: null,
           isSubmitted: false,
           isMarkedForReview: false,
           isBookmarked: false,
@@ -141,6 +142,25 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         [currentQ.id]: {
           ...activeAttempt.interactions[currentQ.id],
           selectedAnswer: choiceId,
+        },
+      },
+    };
+    setActiveAttempt(updated);
+    onSaveAttempt(updated);
+  };
+
+  const handleEnteredAnswerTest = (val: string) => {
+    if (!activeAttempt || !activeTest) return;
+    const currentModule = activeTest.modules[activeAttempt.currentModuleIndex];
+    const currentQ = currentModule.questions[activeAttempt.currentQuestionIndex];
+    if (!currentQ) return;
+    const updated = {
+      ...activeAttempt,
+      interactions: {
+        ...activeAttempt.interactions,
+        [currentQ.id]: {
+          ...activeAttempt.interactions[currentQ.id],
+          enteredAnswer: val,
         },
       },
     };
@@ -341,7 +361,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
             <button
               onClick={async () => {
                 const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
-                const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer || String(v?.enteredAnswer ?? '').trim()).length;
                 if (!confirm(`End test now and submit? ${answered}/${total} answered. Unanswered will be marked wrong.`)) return;
                 onSaveAttempt(activeAttempt);
                 const scored = await onFinalizeTest(activeAttempt.id);
@@ -372,7 +392,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         {/* Overall Test Progress — clear at-a-glance */}
         {(() => {
           const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
-          const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+          const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer || String(v?.enteredAnswer ?? '').trim()).length;
           const pct = total ? Math.round((answered / total) * 100) : 0;
           return (
             <div className="px-3.5 sm:px-6 lg:px-8 max-w-6xl w-full mx-auto pt-3">
@@ -396,6 +416,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               question={currentQ}
               interactionState={interaction}
               onSelectAnswer={handleSelectTestAnswer}
+              onEnteredAnswer={handleEnteredAnswerTest}
               onToggleCrossOut={handleToggleCrossOutTest}
               onToggleBookmark={() => { }}
               onToggleMarkForReview={handleToggleMarkReviewTest}
@@ -484,7 +505,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               <div className="flex justify-between text-(--foreground-secondary)">
                 <span>Answered:</span>
                 <strong className="font-mono text-(--brand-text)">
-                  {moduleQuestionIds.filter((id) => activeAttempt.interactions[id]?.selectedAnswer).length} / {moduleQuestionIds.length}
+                  {moduleQuestionIds.filter((id) => { const iv = activeAttempt.interactions[id]; return !!(iv?.selectedAnswer || String(iv?.enteredAnswer ?? '').trim()); }).length} / {moduleQuestionIds.length}
                 </strong>
               </div>
               <button
@@ -498,7 +519,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
               <button
                 onClick={async () => {
                   const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
-                  const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                  const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer || String(v?.enteredAnswer ?? '').trim()).length;
                   if (!confirm(`End test now? ${answered}/${total} answered. Unanswered will be marked wrong.`)) return;
                   onSaveAttempt(activeAttempt);
                   const scored = await onFinalizeTest(activeAttempt.id);
@@ -548,7 +569,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 <div className="flex justify-between text-[12px] text-(--foreground-secondary)">
                   <span>Answered items:</span>
                   <strong className="font-mono text-(--brand-text)">
-                    {moduleQuestionIds.filter((id) => activeAttempt.interactions[id]?.selectedAnswer).length} / {moduleQuestionIds.length}
+                    {moduleQuestionIds.filter((id) => { const iv = activeAttempt.interactions[id]; return !!(iv?.selectedAnswer || String(iv?.enteredAnswer ?? '').trim()); }).length} / {moduleQuestionIds.length}
                   </strong>
                 </div>
                 <button
@@ -566,7 +587,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                   onClick={async () => {
                     setIsMobileExamMatrixOpen(false);
                     const total = activeTest.modules.reduce((s, m) => s + m.questions.length, 0);
-                    const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer).length;
+                    const answered = Object.values(activeAttempt.interactions).filter((v: any) => v?.selectedAnswer || String(v?.enteredAnswer ?? '').trim()).length;
                     if (!confirm(`End test now? ${answered}/${total} answered.`)) return;
                     onSaveAttempt(activeAttempt);
                     const scored = await onFinalizeTest(activeAttempt.id);

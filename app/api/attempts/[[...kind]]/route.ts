@@ -3,6 +3,7 @@ import { canSeeMockTest, canSeeQuestion } from '../../../lib/access.ts';
 import { bad, denied, readBody, requireUser } from '../../../lib/api.ts';
 import { collections, dehydrate, hydrate } from '../../../lib/db.ts';
 import { scoreAttempt } from '../../../lib/mockTests.ts';
+import { isSprAnswerCorrect, isSprQuestion } from '../../../lib/spr.ts';
 import type { MockTestAttempt, PracticeAttempt, PracticeSession } from '../../../types.ts';
 
 /**
@@ -62,15 +63,20 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const now = new Date().toISOString();
   // The correct answer is read here, not taken from the request: grading is the
-  // whole reason this endpoint exists.
+  // whole reason this endpoint exists. For SPR grid-ins we check numeric equivalence.
+  const spr = isSprQuestion(question);
+  const isCorrect = spr
+    ? isSprAnswerCorrect(question, String(body.selectedAnswer ?? ''))
+    : String(body.selectedAnswer) === String(question.correct_answer);
   const attempt: PracticeAttempt = {
     id: `att-${Date.now()}`,
     userId: user.id,
     questionId: question.id,
     questionCode: question.code,
     selectedAnswer: body.selectedAnswer,
-    correctAnswer: question.correct_answer,
-    isCorrect: body.selectedAnswer === question.correct_answer,
+    enteredAnswer: spr ? String(body.selectedAnswer ?? '') : undefined,
+    correctAnswer: question.correct_answer as string,
+    isCorrect,
     timeSpentSeconds: Number(body.timeSpentSeconds) || 0,
     attemptedAt: now,
     timestamp: now,

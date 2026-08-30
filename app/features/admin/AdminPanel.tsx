@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useSyncExternalStore } from 'react';
+import React, { Suspense, useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   PaymentSubmission,
@@ -262,11 +262,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {activeSubPage === 'questions' && (
-            <QuestionBankView
-              questions={questions}
-              onDeleteQuestion={onDeleteQuestion}
-              onAddQuestion={onAddQuestion}
-            />
+            <Suspense fallback={null}>
+              <QuestionBankView
+                questions={questions}
+                onDeleteQuestion={onDeleteQuestion}
+                onAddQuestion={onAddQuestion}
+              />
+            </Suspense>
           )}
         </main>
       </div>

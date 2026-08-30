@@ -382,7 +382,7 @@ function useAppStoreInternal() {
    */
   const logPracticeAttempt = async (
     question: Question,
-    selectedAnswer: 'A' | 'B' | 'C' | 'D',
+    selectedAnswer: string,
     timeSpentSeconds: number,
   ) => {
     const { item } = await api.post<{ item: PracticeAttempt }>('/attempts/practice', {
