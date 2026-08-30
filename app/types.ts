@@ -23,6 +23,8 @@ export interface AnswerChoice {
   imageUrl?: string;
 }
 
+export type QuestionType = 'mcq' | 'spr';
+
 export interface Question {
   id: string;
   code: string; // e.g. "M-ALG-101"
@@ -38,9 +40,11 @@ export interface Question {
   /** A figure shown above the question text — a diagram, graph or table image. */
   imageUrl?: string;
   hasMath?: boolean;
+  /** 'mcq' = 4-option multiple choice, 'spr' = student-produced response / grid-in (numeric input) */
+  questionType?: QuestionType;
   choices?: AnswerChoice[];
   answer_choices?: AnswerChoice[];
-  correct_answer: 'A' | 'B' | 'C' | 'D';
+  correct_answer: 'A' | 'B' | 'C' | 'D' | string;
   explanation: string;
   explanation_resource_link?: string;
   is_free: boolean;
@@ -52,6 +56,8 @@ export interface Question {
 export interface QuestionInteractionState {
   questionId: string;
   selectedAnswer: 'A' | 'B' | 'C' | 'D' | null;
+  /** For SPR / grid-in questions: the student's typed numeric answer */
+  enteredAnswer?: string | null;
   isSubmitted: boolean;
   isMarkedForReview: boolean;
   isBookmarked: boolean;
@@ -64,8 +70,10 @@ export interface PracticeAttempt {
   userId: string;
   questionId: string;
   questionCode?: string;
-  selectedAnswer: 'A' | 'B' | 'C' | 'D';
-  correctAnswer?: 'A' | 'B' | 'C' | 'D';
+  selectedAnswer: 'A' | 'B' | 'C' | 'D' | string;
+  /** For SPR questions: the typed numeric answer (mirrors selectedAnswer for SPR) */
+  enteredAnswer?: string | null;
+  correctAnswer?: 'A' | 'B' | 'C' | 'D' | string;
   isCorrect: boolean;
   timeSpentSeconds: number;
   attemptedAt: string;

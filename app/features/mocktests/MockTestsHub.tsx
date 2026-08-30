@@ -22,6 +22,7 @@ import {
 } from '../../types';
 import { isPlayable } from '../../lib/mockTests';
 import { formatDomainName } from '../../lib/utils';
+import { isSprQuestion } from '../../lib/spr';
 import { QuestionCard } from '../../components/QuestionCard';
 import { QuestionNavigator } from '../../components/QuestionNavigator';
 import { DesmosModal } from '../../components/DesmosModal';

@@ -14,10 +14,12 @@ const routes = crud<Question, QuestionDoc>({
   toDoc: dehydrate.question,
   normalize: (row, id) => {
     const choices = row.choices ?? row.answer_choices ?? [];
+    const isSpr = (row as Question).questionType === 'spr' || (!choices.length && String((row as Question).correct_answer ?? '').trim() !== '' && !['A','B','C','D'].includes(String((row as Question).correct_answer).trim().toUpperCase()));
     return {
       ...(row as Question),
       id,
       code: row.code?.trim() || `Q-${id}`.toUpperCase(),
+      questionType: (row as Question).questionType ?? (isSpr ? 'spr' : 'mcq'),
       choices,
       answer_choices: choices,
       status: row.status ?? 'draft',

@@ -21,6 +21,7 @@ import {
   UserProfile,
 } from '../../types';
 import { formatDomainName } from '../../lib/utils';
+import { isSprQuestion, isSprAnswerCorrect } from '../../lib/spr';
 import { MathRenderer } from '../../components/MathRenderer';
 import { QuestionCard } from '../../components/QuestionCard';
 import { QuestionNavigator } from '../../components/QuestionNavigator';
@@ -31,7 +32,7 @@ interface PracticeHubProps {
   questions: Question[];
   currentUser: UserProfile | null;
   hasAccessToQuestion: (q: Question) => boolean;
-  onLogAttempt: (question: Question, answer: 'A' | 'B' | 'C' | 'D', timeSpent: number) => void;
+  onLogAttempt: (question: Question, answer: string, timeSpent: number) => void;
   onToggleBookmark?: (questionId: string) => void;
   onOpenPricing: () => void;
   onOpenAuth?: () => void;
@@ -268,6 +269,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       initialInteractions[id] = {
         questionId: id,
         selectedAnswer: null,
+        enteredAnswer: null,
         isSubmitted: false,
         isMarkedForReview: false,
         isBookmarked: bookmarked.has(id),
@@ -307,6 +309,17 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       [currentSessionQuestion.id]: {
         ...prev[currentSessionQuestion.id],
         selectedAnswer: choiceId,
+      },
+    }));
+  };
+
+  const handleEnteredAnswer = (val: string) => {
+    if (!currentSessionQuestion) return;
+    setSessionInteractions((prev) => ({
+      ...prev,
+      [currentSessionQuestion.id]: {
+        ...prev[currentSessionQuestion.id],
+        enteredAnswer: val,
       },
     }));
   };
@@ -356,7 +369,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       onOpenAuth?.();
       return;
     }
-    if (!currentSessionQuestion || !currentInteraction?.selectedAnswer) return;
+    if (!currentSessionQuestion || !currentInteraction) return;
+    const isSpr = isSprQuestion(currentSessionQuestion);
+    if (isSpr) {
+      if (!String(currentInteraction.enteredAnswer ?? '').trim()) return;
+    } else {
+      if (!currentInteraction.selectedAnswer) return;
+    }
     const elapsed = Math.max(1, Math.round((getNow() - questionStartMsRef.current) / 1000));
     // Persist per-question time
     setSessionInteractions((prev) => ({
@@ -367,7 +386,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         timeSpentSeconds: (prev[currentSessionQuestion.id]?.timeSpentSeconds || 0) + elapsed,
       },
     }));
-    onLogAttempt(currentSessionQuestion, currentInteraction.selectedAnswer, elapsed);
+    const answerToLog = isSpr
+      ? String(currentInteraction.enteredAnswer ?? '').trim()
+      : (currentInteraction.selectedAnswer as string);
+    onLogAttempt(currentSessionQuestion, answerToLog, elapsed);
   };
 
   const handleRetryProblem = () => {
@@ -378,6 +400,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       [currentSessionQuestion.id]: {
         ...prev[currentSessionQuestion.id],
         selectedAnswer: null,
+        enteredAnswer: null,
         isSubmitted: false,
         crossedOutChoices: [],
       },
@@ -475,9 +498,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           const answered = Object.values(sessionInteractions).filter((i) => i.isSubmitted).length;
           const correct = sessionQuestionIds.filter((id) => {
             const inter = sessionInteractions[id];
-            if (!inter?.isSubmitted || !inter.selectedAnswer) return false;
+            if (!inter?.isSubmitted) return false;
             const q = questions.find((qq) => qq.id === id);
-            return q ? inter.selectedAnswer === q.correct_answer : false;
+            if (!q) return false;
+            if (isSprQuestion(q)) return isSprAnswerCorrect(q, inter.enteredAnswer);
+            return !!inter.selectedAnswer && inter.selectedAnswer === q.correct_answer;
           }).length;
           const incorrect = answered - correct;
           const pct = total ? Math.round((answered / total) * 100) : 0;
@@ -536,6 +561,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               question={currentSessionQuestion}
               interactionState={currentInteraction}
               onSelectAnswer={handleSelectAnswer}
+              onEnteredAnswer={handleEnteredAnswer}
               onToggleCrossOut={handleToggleCrossOut}
               onToggleBookmark={handleToggleBookmark}
               onToggleMarkForReview={handleToggleMarkForReview}

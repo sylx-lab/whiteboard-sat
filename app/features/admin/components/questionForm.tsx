@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Question, Subject, Domain, Difficulty, QuestionStatus, AnswerChoice } from '../../../types';
+import { Question, Subject, Domain, Difficulty, QuestionStatus, AnswerChoice, QuestionType } from '../../../types';
+import { isSprQuestion } from '../../../lib/spr';
 import { VisualMathEditor } from '../../../components/VisualMathEditor';
 import { MathRenderer } from '../../../components/MathRenderer';
 import { domainsForSubject, formatDomainName, formatSubjectName } from '../../../lib/utils';
@@ -41,9 +42,11 @@ export interface QuestionFormState {
   stimulus: string;
   imageUrl: string;
   questionText: string;
+  questionType: QuestionType;
   choices: Record<ChoiceId, string>;
   choiceImages: Record<ChoiceId, string>;
-  correctAnswer: ChoiceId;
+  correctAnswer: ChoiceId | string;
+  sprAnswer: string;
   explanation: string;
   explanationYoutubeUrl: string;
 }
@@ -62,17 +65,21 @@ export const blankQuestionForm = (subject: Subject = 'math'): QuestionFormState 
   stimulus: '',
   imageUrl: '',
   questionText: '',
+  questionType: 'mcq',
   choices: { A: '', B: '', C: '', D: '' },
   choiceImages: { A: '', B: '', C: '', D: '' },
   correctAnswer: 'A',
+  sprAnswer: '',
   explanation: '',
   explanationYoutubeUrl: '',
 });
 
 export const questionFormFromQuestion = (q: Question): QuestionFormState => {
+  const isSpr = isSprQuestion(q);
   const existing = q.choices || q.answer_choices || [];
   const byId = (id: ChoiceId) => existing.find((c) => c.id === id)?.text || '';
   const byImage = (id: ChoiceId) => existing.find((c) => c.id === id)?.imageUrl || '';
+  const correct = String(q.correct_answer ?? '');
   return {
     code: q.code,
     subject: q.subject,
@@ -86,9 +93,11 @@ export const questionFormFromQuestion = (q: Question): QuestionFormState => {
     stimulus: q.stimulus || '',
     imageUrl: q.imageUrl || '',
     questionText: q.question_text,
+    questionType: isSpr ? 'spr' : (q.questionType ?? 'mcq'),
     choices: { A: byId('A'), B: byId('B'), C: byId('C'), D: byId('D') },
     choiceImages: { A: byImage('A'), B: byImage('B'), C: byImage('C'), D: byImage('D') },
-    correctAnswer: q.correct_answer,
+    correctAnswer: isSpr ? correct : (correct as ChoiceId) || 'A',
+    sprAnswer: isSpr ? correct : '',
     explanation: q.explanation || '',
     explanationYoutubeUrl: q.explanation_resource_link || '',
   };
@@ -152,11 +161,14 @@ export function useQuestionForm(opts: {
   const optionPool = domainQuestions.length ? domainQuestions : allQuestions;
 
   const buildPayload = () => {
-    const choicesPayload: AnswerChoice[] = CHOICE_IDS.map((id) => ({
-      id,
-      text: form.choices[id].trim(),
-      imageUrl: form.choiceImages[id]?.trim() || undefined,
-    }));
+    const isSpr = form.questionType === 'spr';
+    const choicesPayload: AnswerChoice[] = isSpr
+      ? []
+      : CHOICE_IDS.map((id) => ({
+          id,
+          text: form.choices[id].trim(),
+          imageUrl: form.choiceImages[id]?.trim() || undefined,
+        }));
     const stimulus = form.stimulus.trim();
     const youtubeUrl = form.explanationYoutubeUrl.trim();
 
@@ -176,9 +188,10 @@ export function useQuestionForm(opts: {
       stimulus: stimulus || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
       question_text: form.questionText.trim(),
+      questionType: isSpr ? 'spr' : 'mcq',
       choices: choicesPayload,
       answer_choices: choicesPayload,
-      correct_answer: form.correctAnswer,
+      correct_answer: isSpr ? form.sprAnswer.trim() : (form.correctAnswer as string),
       explanation: form.explanation.trim(),
       explanation_resource_link: youtubeUrl || undefined,
       hasMath: /\$/.test(form.questionText),
@@ -436,97 +449,128 @@ export const QuestionFormFields: React.FC<{
         )}
       </EditorSection>
 
-      <EditorSection icon={ListChecks} title="Answer choices" hint="Select the correct one and optionally add graph images">
-        <div className="space-y-3">
-          {CHOICE_IDS.map((id) => {
-            const isCorrect = form.correctAnswer === id;
-            const hasImage = Boolean(form.choiceImages[id]);
-            return (
-              <div
-                key={id}
-                className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${
-                  isCorrect ? 'bg-emerald-50/70 border-emerald-300' : 'bg-[#F8FBFB] border-[#E2E8F0]'
-                }`}
-              >
-                {/* Native radio: keyboard-navigable and announced as a group. */}
-                <label
-                  className="shrink-0 cursor-pointer mt-1"
-                  title={`Mark choice ${id} as the correct answer`}
+      <EditorSection icon={ListChecks} title="Answer" hint={form.questionType === 'spr' ? 'Grid-in — student types a number (integer, decimal, or fraction)' : 'Multiple choice — select the correct one'}>
+        {/* Type toggle — SPR is Math grid-in; kept visible for both subjects but defaults to mcq */}
+        <div className="flex items-center gap-2 p-1 bg-[#F8FBFB] border border-[#E2E8F0] rounded-xl w-fit">
+          <button
+            type="button"
+            onClick={() => update({ questionType: 'mcq' })}
+            className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-colors cursor-pointer ${form.questionType === 'mcq' ? 'bg-[#0D918A] text-white shadow-xs' : 'text-[#58708A] hover:text-[#071126]'}`}
+          >
+            Multiple choice (A–D)
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ questionType: 'spr' })}
+            className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-colors cursor-pointer ${form.questionType === 'spr' ? 'bg-[#0D918A] text-white shadow-xs' : 'text-[#58708A] hover:text-[#071126]'}`}
+          >
+            Grid-in (input box)
+          </button>
+        </div>
+
+        {form.questionType === 'spr' ? (
+          <Field label="Correct answer" hint="Numeric — integer, decimal, or fraction. Use | for multiple acceptable (e.g. 0.5|1/2). Equivalents like .5 and 0.50 count automatically.">
+            <input
+              type="text"
+              required
+              value={form.sprAnswer}
+              onChange={(e) => update({ sprAnswer: e.target.value, correctAnswer: e.target.value })}
+              placeholder="e.g. 7 or 2.5 or 3/4 or 0.5|1/2"
+              className={`${inputClass} font-mono`}
+            />
+          </Field>
+        ) : (
+          <div className="space-y-3">
+            {CHOICE_IDS.map((id) => {
+              const isCorrect = form.correctAnswer === id;
+              const hasImage = Boolean(form.choiceImages[id]);
+              return (
+                <div
+                  key={id}
+                  className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${
+                    isCorrect ? 'bg-emerald-50/70 border-emerald-300' : 'bg-[#F8FBFB] border-[#E2E8F0]'
+                  }`}
                 >
-                  <input
-                    type="radio"
-                    name={`correct-answer-${idScope}`}
-                    value={id}
-                    checked={isCorrect}
-                    onChange={() => update({ correctAnswer: id })}
-                    className="sr-only peer"
-                  />
-                  <span
-                    className={`w-7 h-7 rounded-full grid place-items-center text-[12px] font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#0D918A] peer-focus-visible:ring-offset-1 ${
-                      isCorrect
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-white text-[#58708A] border border-[#E2E8F0]'
-                    }`}
+                  {/* Native radio: keyboard-navigable and announced as a group. */}
+                  <label
+                    className="shrink-0 cursor-pointer mt-1"
+                    title={`Mark choice ${id} as the correct answer`}
                   >
-                    {id}
-                  </span>
-                </label>
-
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <textarea
-                      rows={1}
-                      value={form.choices[id]}
-                      onChange={(e) => update({ choices: { ...form.choices, [id]: e.target.value } })}
-                      placeholder={`Choice ${id} text or equation… (e.g. $y = 2x + 1$)`}
-                      aria-label={`Choice ${id} text`}
-                      className="flex-1 min-w-0 min-h-9 px-3 py-2 field-sizing-content bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
+                    <input
+                      type="radio"
+                      name={`correct-answer-${idScope}`}
+                      value={id}
+                      checked={isCorrect}
+                      onChange={() => update({ correctAnswer: id })}
+                      className="sr-only peer"
                     />
+                    <span
+                      className={`w-7 h-7 rounded-full grid place-items-center text-[12px] font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#0D918A] peer-focus-visible:ring-offset-1 ${
+                        isCorrect
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-white text-[#58708A] border border-[#E2E8F0]'
+                      }`}
+                    >
+                      {id}
+                    </span>
+                  </label>
 
-                    {!hasImage && (
-                      <UploadButton
-                        folder="questions"
-                        accept={ACCEPT.image}
-                        label="Add graph"
-                        onUploaded={(url) =>
-                          update({ choiceImages: { ...form.choiceImages, [id]: url } })
-                        }
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        rows={1}
+                        value={form.choices[id]}
+                        onChange={(e) => update({ choices: { ...form.choices, [id]: e.target.value } })}
+                        placeholder={`Choice ${id} text or equation… (e.g. $y = 2x + 1$)`}
+                        aria-label={`Choice ${id} text`}
+                        className="flex-1 min-w-0 min-h-9 px-3 py-2 field-sizing-content bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
                       />
-                    )}
 
-                    {isCorrect && (
-                      <span className="text-[11px] font-semibold text-emerald-700 shrink-0 hidden sm:inline mt-2">
-                        Correct Answer
-                      </span>
+                      {!hasImage && (
+                        <UploadButton
+                          folder="questions"
+                          accept={ACCEPT.image}
+                          label="Add graph"
+                          onUploaded={(url) =>
+                            update({ choiceImages: { ...form.choiceImages, [id]: url } })
+                          }
+                        />
+                      )}
+
+                      {isCorrect && (
+                        <span className="text-[11px] font-semibold text-emerald-700 shrink-0 hidden sm:inline mt-2">
+                          Correct Answer
+                        </span>
+                      )}
+                    </div>
+
+                    {hasImage && (
+                      <div className="flex items-center gap-3 p-2 bg-white border border-[#E2E8F0] rounded-xl">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={form.choiceImages[id]}
+                          alt={`Figure for choice ${id}`}
+                          className="h-14 w-auto max-w-35 rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold text-[#071126]">Option {id} Graph Attached</p>
+                          <p className="text-[10px] text-[#58708A] font-mono truncate">{form.choiceImages[id]}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => update({ choiceImages: { ...form.choiceImages, [id]: '' } })}
+                          className="text-[11.5px] font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer px-2 py-1 hover:bg-rose-50 rounded-lg"
+                        >
+                          Remove figure
+                        </button>
+                      </div>
                     )}
                   </div>
-
-                  {hasImage && (
-                    <div className="flex items-center gap-3 p-2 bg-white border border-[#E2E8F0] rounded-xl">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={form.choiceImages[id]}
-                        alt={`Figure for choice ${id}`}
-                        className="h-14 w-auto max-w-35 rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-semibold text-[#071126]">Option {id} Graph Attached</p>
-                        <p className="text-[10px] text-[#58708A] font-mono truncate">{form.choiceImages[id]}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => update({ choiceImages: { ...form.choiceImages, [id]: '' } })}
-                        className="text-[11.5px] font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer px-2 py-1 hover:bg-rose-50 rounded-lg"
-                      >
-                        Remove figure
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </EditorSection>
 
       <EditorSection icon={Lightbulb} title="Explanation" hint="Optional — shown after a student answers">
@@ -662,45 +706,58 @@ export const QuestionPreview: React.FC<{ ctl: QuestionFormController; compact?: 
         )}
       </div>
 
-      <div className="space-y-2">
-        {CHOICE_IDS.map((id) => {
-          const isCorrect = id === form.correctAnswer;
-          const choiceImg = form.choiceImages[id];
-          return (
-            <div
-              key={id}
-              className={`p-3 rounded-xl border flex items-start gap-2.5 text-[13px] ${
-                isCorrect
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
-                  : 'bg-white border-[#E2E8F0] text-[#071126]'
-              }`}
-            >
-              <span
-                className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-mono font-bold shrink-0 ${
-                  isCorrect ? 'bg-emerald-600 text-white' : 'bg-[#F1F8F7] text-[#58708A]'
+      {form.questionType === 'spr' ? (
+        <div className="rounded-xl border-2 border-dashed border-[#0D918A]/30 bg-[#F1F8F7] p-3 flex items-center gap-3">
+          <span className="px-2 py-1 rounded bg-white border border-[#E2E8F0] text-[11px] font-bold font-mono text-[#087C76]">GRID-IN</span>
+          <input
+            readOnly
+            value={form.sprAnswer || ''}
+            placeholder="Student types numeric answer"
+            className="flex-1 bg-white border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] font-mono text-[#071126] placeholder:text-[#58708A]/60"
+          />
+          {form.sprAnswer && <span className="text-[11px] font-semibold text-emerald-700">Correct: {form.sprAnswer}</span>}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {CHOICE_IDS.map((id) => {
+            const isCorrect = id === form.correctAnswer;
+            const choiceImg = form.choiceImages[id];
+            return (
+              <div
+                key={id}
+                className={`p-3 rounded-xl border flex items-start gap-2.5 text-[13px] ${
+                  isCorrect
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
+                    : 'bg-white border-[#E2E8F0] text-[#071126]'
                 }`}
               >
-                {id}
-              </span>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                {choiceImg && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={choiceImg}
-                    alt={`Choice ${id} figure`}
-                    className="max-h-32 w-auto rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
-                  />
-                )}
-                {form.choices[id] ? (
-                  <MathRenderer inline content={form.choices[id]} />
-                ) : (
-                  !choiceImg && <span className="text-[#58708A]">Choice {id}</span>
-                )}
+                <span
+                  className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-mono font-bold shrink-0 ${
+                    isCorrect ? 'bg-emerald-600 text-white' : 'bg-[#F1F8F7] text-[#58708A]'
+                  }`}
+                >
+                  {id}
+                </span>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {choiceImg && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={choiceImg}
+                      alt={`Choice ${id} figure`}
+                      className="max-h-32 w-auto rounded-lg border border-[#E2E8F0] bg-white object-contain p-1"
+                    />
+                  )}
+                  {form.choices[id] ? (
+                    <MathRenderer inline content={form.choices[id]} />
+                  ) : (
+                    !choiceImg && <span className="text-[#58708A]">Choice {id}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="p-3.5 rounded-xl bg-[#F1F8F7] border border-[#E2E8F0] text-[13px] space-y-1">
         <div className="font-semibold text-[#087C76] flex items-center gap-1.5">
