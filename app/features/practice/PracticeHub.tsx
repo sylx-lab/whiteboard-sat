@@ -53,10 +53,12 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   // High-Level Subject Switcher — All first, then Math / English
   const [selectedSubject, setSelectedSubject] = useState<Subject | 'all'>('all');
 
-  // Compact Toolbar Filters
-  const [selectedDomain, setSelectedDomain] = useState<Domain | 'all'>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all');
+  // Compact Toolbar Filters — multi-select (sketch: checkboxes)
+  const [selectedDomains, setSelectedDomains] = useState<Domain[]>([]);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<Difficulty[]>([]);
   const [selectedAccess, setSelectedAccess] = useState<'all' | 'free' | 'premium'>('all');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recommended');
   const PAGE_SIZE = 24;
@@ -65,12 +67,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   // Filter Dropdown Open States
   const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
   const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
+  const [sourceDropdownOpen, setSourceDropdownOpen] = useState(false);
   const [accessDropdownOpen, setAccessDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
-
-  // Advanced Drawer Filters
-  const [selectedTopic, setSelectedTopic] = useState<string>('all');
 
   // Active Practice Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -92,9 +92,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   const closeAllDropdowns = () => {
     setDomainDropdownOpen(false);
     setDifficultyDropdownOpen(false);
+    setSourceDropdownOpen(false);
     setAccessDropdownOpen(false);
     setSortDropdownOpen(false);
   };
+
+  const toggleIn = <T,>(arr: T[], val: T, setter: (v: T[]) => void) =>
+    setter(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
 
   // Keyboard shortcut: ⌘K or Ctrl+K to focus search
   useEffect(() => {
@@ -122,13 +126,25 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     'standard_english_conventions',
   ];
 
-  // Extract unique topics for advanced drawer — only what you can actually access
-  const availableTopics = useMemo(() => {
+  // Extract unique sources for filter — only what you can actually access
+  const availableSources = useMemo(() => {
     const set = new Set<string>();
     questions
       .filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && hasAccessToQuestion(q))
-      .forEach((q) => set.add(q.topic));
-    return Array.from(set);
+      .forEach((q) => { if (q.source) set.add(q.source); });
+    return Array.from(set).sort();
+  }, [questions, selectedSubject, hasAccessToQuestion]);
+
+  // Topics grouped by domain (for the drawer — mirrors sketch page 3)
+  const topicsByDomain = useMemo(() => {
+    const map = new Map<Domain, Set<string>>();
+    questions
+      .filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && hasAccessToQuestion(q))
+      .forEach((q) => {
+        if (!map.has(q.domain)) map.set(q.domain, new Set());
+        map.get(q.domain)!.add(q.topic);
+      });
+    return map;
   }, [questions, selectedSubject, hasAccessToQuestion]);
 
   // Filtered & Sorted Question List — premium hidden unless you have access
@@ -140,18 +156,21 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       // Subject filter — All shows both Math and Reading & Writing
       if (selectedSubject !== 'all' && q.subject !== selectedSubject) return false;
 
-      // Domain filter
-      if (selectedDomain !== 'all' && q.domain !== selectedDomain) return false;
+      // Domain — multi (empty = all) — sketch page 2: Algebra + Geometry checked
+      if (selectedDomains.length > 0 && !selectedDomains.includes(q.domain)) return false;
 
-      // Difficulty filter
-      if (selectedDifficulty !== 'all' && q.difficulty !== selectedDifficulty) return false;
+      // Difficulty — multi (empty = all)
+      if (selectedDifficulties.length > 0 && !selectedDifficulties.includes(q.difficulty)) return false;
 
       // Access filter (now only toggles within what you can actually see)
       if (selectedAccess === 'free' && !q.is_free) return false;
       if (selectedAccess === 'premium' && q.is_free) return false;
 
-      // Advanced filters
-      if (selectedTopic !== 'all' && q.topic !== selectedTopic) return false;
+      // Topics — multi — sketch page 3 per-domain checklist
+      if (selectedTopics.length > 0 && !selectedTopics.includes(q.topic)) return false;
+
+      // Sources — multi — sketch page 4: College Panda / Suite 1b / Previous year
+      if (selectedSources.length > 0 && !selectedSources.includes(q.source)) return false;
 
       // Search — includes stimulus so Reading passages are findable
       if (searchQuery.trim()) {
@@ -179,10 +198,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   }, [
     questions,
     selectedSubject,
-    selectedDomain,
-    selectedDifficulty,
+    selectedDomains,
+    selectedDifficulties,
     selectedAccess,
-    selectedTopic,
+    selectedTopics,
+    selectedSources,
     searchQuery,
     sortBy,
     hasAccessToQuestion,
@@ -204,25 +224,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   // Active filter counter
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (selectedDomain !== 'all') count++;
-    if (selectedDifficulty !== 'all') count++;
+    count += selectedDomains.length;
+    count += selectedDifficulties.length;
+    count += selectedTopics.length;
+    count += selectedSources.length;
     if (selectedAccess !== 'all') count++;
-    if (selectedTopic !== 'all') count++;
     if (searchQuery.trim()) count++;
     return count;
-  }, [selectedDomain, selectedDifficulty, selectedAccess, selectedTopic, searchQuery]);
+  }, [selectedDomains, selectedDifficulties, selectedAccess, selectedTopics, selectedSources, searchQuery]);
 
   const resetAllFilters = () => {
-    setSelectedDomain('all');
-    setSelectedDifficulty('all');
+    setSelectedDomains([]);
+    setSelectedDifficulties([]);
     setSelectedAccess('all');
-    setSelectedTopic('all');
+    setSelectedTopics([]);
+    setSelectedSources([]);
     setSearchQuery('');
     setSortBy('recommended');
   };
 
   // Reset pagination when filters change (React pattern for state adjustment during render)
-  const filterKey = `${selectedSubject}:${selectedDomain}:${selectedDifficulty}:${selectedAccess}:${selectedTopic}:${searchQuery}:${sortBy}`;
+  const filterKey = `${selectedSubject}:${selectedDomains.join(',')}:${selectedDifficulties.join(',')}:${selectedAccess}:${selectedTopics.join(',')}:${selectedSources.join(',')}:${searchQuery}:${sortBy}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -642,7 +664,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   return (
     <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       {/* Backdrop overlay for open dropdowns on touch */}
-      {(domainDropdownOpen || difficultyDropdownOpen || accessDropdownOpen || sortDropdownOpen) && (
+      {(domainDropdownOpen || difficultyDropdownOpen || sourceDropdownOpen || accessDropdownOpen || sortDropdownOpen) && (
         <div className="fixed inset-0 z-40 bg-transparent" onClick={closeAllDropdowns} />
       )}
 
@@ -714,8 +736,9 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => {
               setSelectedSubject('all');
-              setSelectedDomain('all');
-              setSelectedTopic('all');
+              setSelectedDomains([]);
+              setSelectedTopics([]);
+              setSelectedSources([]);
             }}
             className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
               selectedSubject === 'all'
@@ -728,8 +751,9 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => {
               setSelectedSubject('math');
-              setSelectedDomain('all');
-              setSelectedTopic('all');
+              setSelectedDomains([]);
+              setSelectedTopics([]);
+              setSelectedSources([]);
             }}
             className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
               selectedSubject === 'math'
@@ -742,8 +766,9 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => {
               setSelectedSubject('reading_writing');
-              setSelectedDomain('all');
-              setSelectedTopic('all');
+              setSelectedDomains([]);
+              setSelectedTopics([]);
+              setSelectedSources([]);
             }}
             className={`py-2.5 px-4 sm:px-5 rounded-lg text-[12.5px] sm:text-[13px] font-bold transition-all cursor-pointer text-center ${
               selectedSubject === 'reading_writing'
@@ -770,124 +795,159 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* 3. FILTER TOOLBAR & SEARCH */}
       {/* ============================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-        {/* Left Filter Dropdowns */}
+        {/* Left Filter Dropdowns — checkboxes (sketch pages 2-4) */}
         <div className="lg:col-span-8 flex flex-wrap items-center gap-2">
-          {/* Domain Dropdown */}
+          {/* Domain — multi checkbox */}
           <div className="relative">
             <button
               onClick={() => {
                 setDomainDropdownOpen(!domainDropdownOpen);
                 setDifficultyDropdownOpen(false);
+                setSourceDropdownOpen(false);
                 setAccessDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedDomain !== 'all'
+                selectedDomains.length > 0
                   ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
                   : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
               }`}
             >
               <span className="truncate max-w-32.5">
-                {selectedDomain === 'all' ? 'Domain' : formatDomainName(selectedDomain)}
+                {selectedDomains.length === 0
+                  ? 'Domain'
+                  : selectedDomains.length === 1
+                    ? formatDomainName(selectedDomains[0])
+                    : `${selectedDomains.length} Domains`}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
             </button>
 
             {domainDropdownOpen && (
-              <div
-                className="absolute left-0 mt-1.5 w-72 max-w-[calc(100vw-2rem)] bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-              >
-                <button
-                  onClick={() => {
-                    setSelectedDomain('all');
-                    setDomainDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
-                    selectedDomain === 'all'
-                      ? 'bg-teal-50 text-(--brand-text) font-semibold'
-                      : 'text-(--foreground) hover:bg-(--brand-soft)'
-                  }`}
-                >
-                  <span>All Domains</span>
-                  {selectedDomain === 'all' && <Check className="w-3.5 h-3.5 text-(--brand-text)" />}
-                </button>
-
-                <div className="pt-2 pb-1 px-3 text-[10px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  {selectedSubject === 'all' ? 'All Domains' : selectedSubject === 'math' ? 'Mathematics Domains' : 'Reading & Writing Domains'}
+              <div className="absolute left-0 mt-1.5 w-80 max-w-[calc(100vw-2rem)] bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between px-1 pb-2">
+                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Domains</span>
+                  {selectedDomains.length > 0 && (
+                    <button onClick={() => setSelectedDomains([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>
+                  )}
                 </div>
-
-                {(selectedSubject === 'all' ? [...mathDomains, ...rwDomains] : selectedSubject === 'math' ? mathDomains : rwDomains).map((dom) => (
-                  <button
-                    key={dom}
-                    onClick={() => {
-                      setSelectedDomain(dom);
-                      setDomainDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
-                      selectedDomain === dom
-                        ? 'bg-teal-50 text-(--brand-text) font-semibold'
-                        : 'text-(--foreground) hover:bg-(--brand-soft)'
-                    }`}
-                  >
-                    <span className="truncate mr-2">{formatDomainName(dom)}</span>
-                    {selectedDomain === dom && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
-                  </button>
-                ))}
+                {(() => {
+                  const domains = selectedSubject === 'all' ? [...mathDomains, ...rwDomains] : selectedSubject === 'math' ? mathDomains : rwDomains;
+                  const groupLabel = selectedSubject === 'all' ? 'All' : selectedSubject === 'math' ? 'Math' : 'Reading & Writing';
+                  return (
+                    <>
+                      <div className="pb-1.5 px-1 text-[10px] font-bold text-(--foreground-secondary) uppercase tracking-wider">{groupLabel}</div>
+                      <div className="grid grid-cols-1 gap-0.5 max-h-64 overflow-y-auto">
+                        {domains.map((dom) => {
+                          const checked = selectedDomains.includes(dom);
+                          return (
+                            <label key={dom} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-teal-50 text-(--brand-text)' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
+                              <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDomains, dom, setSelectedDomains)} className="w-3.5 h-3.5 rounded border-(--border) text-(--brand-cta) accent-[var(--brand-cta)]" />
+                              <span className={`flex-1 truncate ${checked ? 'font-semibold' : ''}`}>{formatDomainName(dom)}</span>
+                              {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
 
-          {/* Difficulty Dropdown */}
+          {/* Difficulty — multi checkbox (sketch: easy/medium) */}
           <div className="relative">
             <button
               onClick={() => {
                 setDifficultyDropdownOpen(!difficultyDropdownOpen);
                 setDomainDropdownOpen(false);
+                setSourceDropdownOpen(false);
                 setAccessDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedDifficulty !== 'all'
+                selectedDifficulties.length > 0
                   ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
                   : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
               }`}
             >
               <span className="capitalize">
-                {selectedDifficulty === 'all' ? 'Difficulty' : selectedDifficulty}
+                {selectedDifficulties.length === 0 ? 'Difficulty' : selectedDifficulties.length === 1 ? selectedDifficulties[0] : `${selectedDifficulties.length} Levels`}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
             </button>
 
             {difficultyDropdownOpen && (
-              <div
-                className="absolute left-0 mt-1.5 w-44 bg-(--surface) rounded-xl shadow-lg border border-(--border) p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-              >
-                {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
-                  <button
-                    key={diff}
-                    onClick={() => {
-                      setSelectedDifficulty(diff);
-                      setDifficultyDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between capitalize ${
-                      selectedDifficulty === diff
-                        ? 'bg-teal-50 text-(--brand-text) font-semibold'
-                        : 'text-(--foreground) hover:bg-(--brand-soft)'
-                    }`}
-                  >
-                    <span>{diff === 'all' ? 'All Difficulties' : diff}</span>
-                    {selectedDifficulty === diff && <Check className="w-3.5 h-3.5 text-(--brand-text)" />}
-                  </button>
-                ))}
+              <div className="absolute left-0 mt-1.5 w-48 bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between px-1 pb-2">
+                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Difficulty</span>
+                  {selectedDifficulties.length > 0 && <button onClick={() => setSelectedDifficulties([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
+                </div>
+                {(['easy', 'medium', 'hard'] as const).map((diff) => {
+                  const checked = selectedDifficulties.includes(diff);
+                  return (
+                    <label key={diff} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer capitalize transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-semibold' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDifficulties, diff, setSelectedDifficulties)} className="w-3.5 h-3.5 rounded border-(--border) accent-[var(--brand-cta)]" />
+                      <span className="flex-1">{diff}</span>
+                      {checked && <Check className="w-3.5 h-3.5 text-(--brand-text)" />}
+                    </label>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Access Dropdown */}
+          {/* Source — multi checkbox (sketch: College Panda, Suite 1b, Previous year) */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setSourceDropdownOpen(!sourceDropdownOpen);
+                setDomainDropdownOpen(false);
+                setDifficultyDropdownOpen(false);
+                setAccessDropdownOpen(false);
+              }}
+              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
+                selectedSources.length > 0
+                  ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
+                  : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
+              }`}
+            >
+              <span className="truncate max-w-32.5">{selectedSources.length === 0 ? 'Source' : selectedSources.length === 1 ? selectedSources[0] : `${selectedSources.length} Sources`}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
+            </button>
+            {sourceDropdownOpen && (
+              <div className="absolute left-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between px-1 pb-2">
+                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Source</span>
+                  {selectedSources.length > 0 && <button onClick={() => setSelectedSources([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5">
+                  {availableSources.length === 0 ? (
+                    <p className="px-2.5 py-2 text-[12px] text-(--foreground-secondary)">No sources for this subject</p>
+                  ) : (
+                    availableSources.map((src) => {
+                      const checked = selectedSources.includes(src);
+                      return (
+                        <label key={src} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-semibold' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
+                          <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedSources, src, setSelectedSources)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)]" />
+                          <span className="flex-1 truncate">{src}</span>
+                          {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Access Dropdown (single, unchanged) */}
           <div className="relative">
             <button
               onClick={() => {
                 setAccessDropdownOpen(!accessDropdownOpen);
                 setDomainDropdownOpen(false);
                 setDifficultyDropdownOpen(false);
+                setSourceDropdownOpen(false);
               }}
               className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
                 selectedAccess !== 'all'
@@ -930,13 +990,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <button
             onClick={() => setMoreFiltersOpen(true)}
             className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
-              selectedTopic !== 'all'
+              selectedTopics.length > 0
                 ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
                 : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-(--foreground-secondary)" />
-            <span>More Filters</span>
+            <span>More Filters{selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}</span>
           </button>
         </div>
 
@@ -967,11 +1027,25 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       </div>
 
       {/* ============================================================ */}
-      {/* 4. RESULTS HEADER */}
+      {/* 4. RESULTS HEADER — sketch oval: “216 question” */}
       {/* ============================================================ */}
-      <div className="flex items-center justify-between text-[13px] text-(--foreground-secondary) pt-1 sm:pt-2">
-        <div className="font-medium text-(--foreground)">
-          {filteredQuestions.length} question{filteredQuestions.length === 1 ? '' : 's'} found
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 sm:pt-2">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Oval count badge — directly matches sketch */}
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-(--surface) border-2 border-(--brand)/20 text-[12px] font-bold text-(--foreground) shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-(--brand-cta) shrink-0" />
+            {filteredQuestions.length} question{filteredQuestions.length === 1 ? '' : 's'}
+          </span>
+          {activeFiltersCount > 0 && (
+            <span className="text-[12px] text-(--foreground-secondary)">
+              · {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} active
+            </span>
+          )}
+          {selectedTopics.length > 0 && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-(--foreground-secondary) max-w-60 truncate">
+              <span className="text-(--foreground-muted)">Topics:</span> {selectedTopics.slice(0, 2).join(', ')}{selectedTopics.length > 2 ? ` +${selectedTopics.length - 2}` : ''}
+            </span>
+          )}
         </div>
 
         {/* Sort Dropdown */}
@@ -1148,46 +1222,81 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 </button>
               </div>
 
-              {/* Topic Selector */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  Specific Topic
-                </label>
-                <select
-                  value={selectedTopic}
-                  onChange={(e) => setSelectedTopic(e.target.value)}
-                  className="w-full p-2.5 border border-(--border) rounded-lg text-[12px] bg-(--surface) text-(--foreground) focus:outline-none focus:border-(--brand)"
-                >
-                  <option value="all">All Topics</option>
-                  {availableTopics.map((top) => (
-                    <option key={top} value={top}>
-                      {top}
-                    </option>
-                  ))}
-                </select>
+              {/* Topics grouped by domain — mirrors sketch page 3 */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
+                    Topics by Domain
+                  </label>
+                  {selectedTopics.length > 0 && (
+                    <button onClick={() => setSelectedTopics([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>
+                  )}
+                </div>
+                <div className="space-y-4 max-h-[32vh] overflow-y-auto pr-1">
+                  {Array.from(topicsByDomain.entries()).map(([domain, topics]) => {
+                    const all = Array.from(topics).sort();
+                    return (
+                      <div key={domain} className="space-y-1.5">
+                        <div className="text-[11px] font-bold text-(--foreground) bg-(--surface-soft) px-2.5 py-1 rounded-lg border border-(--border)/60 flex items-center justify-between">
+                          <span>{formatDomainName(domain)}</span>
+                          <span className="text-[10px] font-mono text-(--foreground-secondary)">{all.length}</span>
+                        </div>
+                        <div className="space-y-0.5 pl-1">
+                          {all.map((top) => {
+                            const checked = selectedTopics.includes(top);
+                            return (
+                              <label key={top} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer text-[12px] transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-medium' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
+                                <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedTopics, top, setSelectedTopics)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)] shrink-0" />
+                                <span className="flex-1 leading-tight">{top}</span>
+                                {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {topicsByDomain.size === 0 && <p className="text-[12px] text-(--foreground-secondary) px-2">No topics for this subject</p>}
+                </div>
               </div>
 
-              {/* Difficulty Quick Filter */}
+              {/* Sources — sketch page 4: College Panda / Suite 1b / Previous year */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  Difficulty Level
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">Source</label>
+                  {selectedSources.length > 0 && <button onClick={() => setSelectedSources([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
+                </div>
+                <div className="space-y-0.5 max-h-32 overflow-y-auto pr-1">
+                  {availableSources.map((src) => {
+                    const checked = selectedSources.includes(src);
+                    return (
+                      <label key={src} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer text-[12px] transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-medium' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedSources, src, setSelectedSources)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)]" />
+                        <span className="flex-1 truncate">{src}</span>
+                        {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
+                      </label>
+                    );
+                  })}
+                  {availableSources.length === 0 && <p className="text-[12px] text-(--foreground-secondary) px-2">No sources</p>}
+                </div>
+              </div>
+
+              {/* Difficulty — multi checkbox */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">Difficulty</label>
+                  {selectedDifficulties.length > 0 && <button onClick={() => setSelectedDifficulties([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
+                </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {(['easy', 'medium', 'hard'] as const).map((diff) => (
-                    <button
-                      key={diff}
-                      onClick={() =>
-                        setSelectedDifficulty(selectedDifficulty === diff ? 'all' : diff)
-                      }
-                      className={`py-2 rounded-lg text-[12px] font-medium border capitalize transition-colors cursor-pointer active:scale-95 ${
-                        selectedDifficulty === diff
-                          ? 'bg-(--brand-cta) text-white border-(--brand-cta) font-bold'
-                          : 'bg-(--brand-soft) text-(--foreground) border-(--border) hover:bg-(--surface-soft)'
-                      }`}
-                    >
-                      {diff}
-                    </button>
-                  ))}
+                  {(['easy', 'medium', 'hard'] as const).map((diff) => {
+                    const checked = selectedDifficulties.includes(diff);
+                    return (
+                      <label key={diff} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-medium border capitalize cursor-pointer transition-colors ${checked ? 'bg-(--brand-cta) text-white border-(--brand-cta) font-bold' : 'bg-(--brand-soft) text-(--foreground) border-(--border) hover:bg-(--surface-soft)'}`}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDifficulties, diff, setSelectedDifficulties)} className="w-3.5 h-3.5 rounded accent-white hidden" />
+                        {diff}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1229,8 +1338,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             <div className="pt-4 border-t border-(--border) flex items-center gap-3">
               <button
                 onClick={() => {
-                  setSelectedTopic('all');
-                  setSelectedDifficulty('all');
+                  setSelectedTopics([]);
+                  setSelectedSources([]);
+                  setSelectedDifficulties([]);
+                  setSelectedDomains([]);
                   setSelectedAccess('all');
                 }}
                 className="flex-1 py-2.5 bg-(--surface-soft) hover:bg-(--border) text-(--foreground) text-[13px] font-medium rounded-lg transition-colors cursor-pointer active:scale-95"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Bookmark,
   Flag,
@@ -14,9 +14,6 @@ import {
   ArrowRight,
   ExternalLink,
   Clock,
-  Maximize2,
-  Minimize2,
-  X,
 } from 'lucide-react';
 import { Question, QuestionInteractionState, AnswerChoice } from '../types';
 import { MathRenderer } from './MathRenderer';
@@ -138,14 +135,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const diffStyle = getDifficultyColor(question.difficulty);
 
-  const [mobileReadingTab, setMobileReadingTab] = useState<'question' | 'passage'>('question');
-  const [isPassageExpanded, setIsPassageExpanded] = useState(false);
-
-  // Reset to question tab when question changes
-  React.useEffect(() => {
-    setMobileReadingTab('question');
-  }, [question.id]);
-
   if (isLocked) {
     return (
       <div className="bg-(--surface) rounded-2xl border border-(--border) p-6 sm:p-8 text-center space-y-5 shadow-xs">
@@ -177,6 +166,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const renderContentBody = () => (
     <div className="space-y-5">
+      {/* Unified passage — stimulus + question appear as one continuous block, no separate headers */}
+      {stimulusText && (
+        <div className="text-[15px] sm:text-[15.5px] text-(--foreground) font-serif leading-[1.8] space-y-4">
+          <MathRenderer content={stimulusText} />
+        </div>
+      )}
+
       {/* Figure — a diagram or graph the question refers to */}
       {question.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- an R2 URL, not a build-time asset
@@ -578,144 +574,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       </div>
 
-      {/* Bluebook Split-Pane Layout (When Passage / Stimulus Exists) */}
-      {stimulusText ? (
-        <div>
-          {/* Mobile Tab Control for Reading & Writing (Passage vs Question) */}
-          <div className="lg:hidden p-3 bg-(--surface-soft) border-b border-(--border) flex items-center justify-between gap-2">
-            <div className="inline-flex w-full p-1 rounded-xl bg-(--surface) border border-(--border) shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setMobileReadingTab('passage')}
-                className={`flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-all cursor-pointer text-center ${mobileReadingTab === 'passage'
-                  ? 'bg-(--brand-cta) text-white shadow-xs'
-                  : 'text-(--foreground-secondary) hover:text-(--foreground)'
-                  }`}
-              >
-                Reading Passage
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileReadingTab('question')}
-                className={`flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-all cursor-pointer text-center ${mobileReadingTab === 'question'
-                  ? 'bg-(--brand-cta) text-white shadow-xs'
-                  : 'text-(--foreground-secondary) hover:text-(--foreground)'
-                  }`}
-              >
-                Question & Choices
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-(--border) min-h-125">
-            {/* Left Column: Reading Passage (Stimulus) */}
-            <div
-              className={`lg:col-span-6 p-5 sm:p-8 bg-(--brand-soft)/60 overflow-y-auto max-h-187.5 ${mobileReadingTab === 'passage' ? 'block' : 'hidden lg:block'
-                }`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--foreground-secondary)">
-                  Reading Passage / Source Context
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsPassageExpanded(true)}
-                    title="Enlarge reading passage"
-                    className="h-7 px-2.5 rounded-lg border border-(--border) bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) text-[11.5px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Enlarge Passage</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileReadingTab('question')}
-                    className="lg:hidden text-[11px] font-bold text-(--brand-text) hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Go to Question</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-[15px] sm:text-[15.5px] text-(--foreground) font-serif leading-[1.8] space-y-4">
-                <MathRenderer content={stimulusText} />
-              </div>
-              <div className="pt-6 lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => setMobileReadingTab('question')}
-                  className="w-full py-3 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-[0.98]"
-                >
-                  <span>Continue to Question & Options</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column: Question & Choices */}
-            <div
-              className={`lg:col-span-6 p-5 sm:p-8 overflow-y-auto max-h-187.5 ${mobileReadingTab === 'question' ? 'block' : 'hidden lg:block'
-                }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-(--brand-text)">
-                  Question Prompt
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileReadingTab('passage')}
-                  className="lg:hidden text-[11px] font-bold text-(--brand-text) hover:underline flex items-center gap-1 cursor-pointer bg-(--brand-soft) px-2.5 py-1 rounded-lg border border-teal-200/60"
-                >
-                  <span>&larr; View Passage</span>
-                </button>
-              </div>
-              {renderContentBody()}
-            </div>
-          </div>
-
-          {/* FULLSCREEN / ENLARGED PASSAGE MODAL */}
-          {isPassageExpanded && stimulusText && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-              <div className="bg-(--surface) w-full max-w-4xl max-h-[90vh] rounded-2xl border border-(--border) shadow-2xl flex flex-col overflow-hidden">
-                <div className="p-4 border-b border-(--border) flex items-center justify-between bg-(--surface)">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[14.5px] text-(--foreground)">Reading Passage & Context</span>
-                    <span className="text-[11px] font-mono text-(--brand-text) bg-(--brand-soft) px-2 py-0.5 rounded-md border border-teal-200">
-                      Enlarged View
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsPassageExpanded(false)}
-                    className="p-1.5 text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) rounded-lg transition-colors cursor-pointer"
-                    title="Close enlarged passage"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="flex-1 p-6 sm:p-8 overflow-y-auto bg-(--brand-soft)/30 text-[16px] sm:text-[17px] text-(--foreground) font-serif leading-[1.9] space-y-4">
-                  <MathRenderer content={stimulusText} />
-                </div>
-                <div className="p-3.5 border-t border-(--border) bg-(--surface) flex items-center justify-between">
-                  <span className="text-[12px] text-(--foreground-secondary)">Click Done or close icon to return</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsPassageExpanded(false)}
-                    className="px-5 py-2 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-all shadow-xs cursor-pointer"
-                  >
-                    Done Reading
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Standard Single Column Layout for Math & Non-Passage Items */
-        <div className="p-5 sm:p-8">
-          {renderContentBody()}
-        </div>
-      )}
+      {/* Unified single-passage layout — no split pane, no "Reading Passage / Question Prompt" labels */}
+      <div className="p-5 sm:p-8">
+        {renderContentBody()}
+      </div>
     </div>
   );
 };

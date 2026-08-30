@@ -224,7 +224,7 @@ export function useQuestionForm(opts: {
   };
 }
 
-/** Native datalists — typing still allows a brand-new value. */
+/** Native datalists — typing still allows a brand-new value (freeform / creatable). */
 export const QuestionDatalists: React.FC<{ ctl: QuestionFormController }> = ({ ctl }) => (
   <>
     <datalist id={`topic-options-${ctl.idScope}`}>
@@ -235,6 +235,11 @@ export const QuestionDatalists: React.FC<{ ctl: QuestionFormController }> = ({ c
     <datalist id={`subtopic-options-${ctl.idScope}`}>
       {ctl.subtopicOptions.map((t) => (
         <option key={t} value={t} />
+      ))}
+    </datalist>
+    <datalist id={`source-options-${ctl.idScope}`}>
+      {ctl.sourceOptions.map((s) => (
+        <option key={s} value={s} />
       ))}
     </datalist>
   </>
@@ -326,6 +331,28 @@ export const QuestionFormFields: React.FC<{
               />
             </Field>
           )}
+
+          <Field
+            label="Source"
+            hint={
+              ctl.sourceOptions.length
+                ? 'Pick College Panda etc. or type a new source — it will be created on save'
+                : 'e.g. College Panda — new sources are created automatically'
+            }
+            className="sm:col-span-2"
+          >
+            <input
+              type="text"
+              list={`source-options-${idScope}`}
+              value={form.source}
+              onChange={(e) => update({ source: e.target.value })}
+              placeholder="College Panda, White Board Official Bank, Previous year..."
+              className={inputClass}
+            />
+            {form.source.trim() && !ctl.sourceOptions.includes(form.source.trim()) && (
+              <p className="text-[11px] text-[#087C76] font-medium">New source “{form.source.trim()}” will be created</p>
+            )}
+          </Field>
 
           <div className="sm:col-span-2 flex items-center justify-between p-3 bg-[#F8FBFB] border border-[#E2E8F0] rounded-xl text-[12px]">
             <div className="flex items-center gap-2">
