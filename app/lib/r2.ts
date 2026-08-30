@@ -35,7 +35,7 @@ export const ALLOWED_TYPES: Record<string, string> = {
 // No SVG on purpose: it is a script-bearing document, and these files are served
 // from a domain of ours.
 
-export const MAX_BYTES = 25 * 1024 * 1024;
+export const MAX_BYTES = 100 * 1024 * 1024;
 
 const SAFE = /[^a-z0-9]+/g;
 
