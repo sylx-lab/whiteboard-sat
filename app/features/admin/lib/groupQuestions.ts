@@ -5,6 +5,7 @@ import {
   formatSubjectName,
   getDomainSubject,
 } from '../../../lib/utils.ts';
+import { compareQuestionCodes } from '../../../lib/questionSort.ts';
 
 export type GroupBy = 'domain' | 'topic';
 
@@ -86,7 +87,7 @@ export function groupQuestions(
       .map(([key, groupQuestionList]) => ({
         key,
         label: groupBy === 'domain' ? formatDomainName(key as Domain) : key,
-        questions: groupQuestionList,
+        questions: [...groupQuestionList].sort((a, b) => compareQuestionCodes(a.code, b.code)),
         draftCount: groupQuestionList.filter((q) => q.status === 'draft').length,
         difficultyMix: {
           easy: groupQuestionList.filter((q) => q.difficulty === 'easy').length,

@@ -27,6 +27,7 @@ import { QuestionCard } from '../../components/QuestionCard';
 import { QuestionNavigator } from '../../components/QuestionNavigator';
 import { DesmosModal } from '../../components/DesmosModal';
 import { FormulaReferenceModal } from '../../components/FormulaReferenceModal';
+import { sortQuestions, type QuestionSortOption } from '../../lib/questionSort';
 
 interface PracticeHubProps {
   questions: Question[];
@@ -38,7 +39,7 @@ interface PracticeHubProps {
   onOpenAuth?: () => void;
 }
 
-type SortOption = 'recommended' | 'difficulty' | 'newest';
+type SortOption = QuestionSortOption;
 
 const getNow = () => Date.now();
 
@@ -187,15 +188,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       return true;
     });
 
-    // Sorting
-    if (sortBy === 'difficulty') {
-      const rank: Record<Difficulty, number> = { easy: 1, medium: 2, hard: 3 };
-      result = [...result].sort((a, b) => rank[a.difficulty] - rank[b.difficulty]);
-    } else if (sortBy === 'newest') {
-      result = [...result].sort((a, b) => b.code.localeCompare(a.code));
-    }
-
-    return result;
+    // Sorting (recommended, difficulty, newest)
+    return sortQuestions(result, sortBy);
   }, [
     questions,
     selectedSubject,

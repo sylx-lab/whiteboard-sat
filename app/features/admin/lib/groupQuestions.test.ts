@@ -124,3 +124,19 @@ test('includeEmptyDomains is ignored when grouping by topic', () => {
   const sections = groupQuestions([q('algebra', 'Slopes')], 'topic', { includeEmptyDomains: true });
   assert.equal(sections.flatMap((s) => s.groups).length, 1);
 });
+
+test('sorts questions within a group by code natural order', () => {
+  const sections = groupQuestions(
+    [
+      q('algebra', 'Slopes', { code: 'M-ALG-103' }),
+      q('algebra', 'Slopes', { code: 'M-ALG-101' }),
+      q('algebra', 'Slopes', { code: 'M-ALG-102' }),
+    ],
+    'domain'
+  );
+  assert.deepEqual(
+    sections[0].groups[0].questions.map((item) => item.code),
+    ['M-ALG-101', 'M-ALG-102', 'M-ALG-103']
+  );
+});
+
