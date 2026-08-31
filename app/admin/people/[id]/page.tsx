@@ -38,6 +38,8 @@ function PersonEditor() {
       onSetPermissions={store.setUserPermissions}
       onToggleStatus={store.toggleUserStatus}
       onDeleteUser={store.deleteUser}
+      onResendResetLink={store.resendPasswordResetLink}
+      onUpdatePasswordAndEmail={store.updateUserPasswordAndEmailCredentials}
       backTab={backTab}
     />
   );

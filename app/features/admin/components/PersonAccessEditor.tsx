@@ -15,7 +15,21 @@ import {
   permissionsFor,
   grantedCount,
 } from '../lib/permissions';
-import { Check, ShieldCheck, KeyRound, GraduationCap, Award, Receipt, Info, UserCog, Trash2 } from 'lucide-react';
+import {
+  Check,
+  ShieldCheck,
+  KeyRound,
+  GraduationCap,
+  Award,
+  Receipt,
+  Info,
+  UserCog,
+  Trash2,
+  Mail,
+  Key,
+  Send,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { EditorTopBar, EditorSection, Field, inputClass, editorPrimaryButtonClass } from './EditorShell';
 import { Pill, ToggleRow, Button, SearchInput } from './ui';
@@ -34,6 +48,8 @@ interface PersonAccessEditorProps {
   onSetPermissions: (userId: string, updates: Partial<AdminPermission>) => void;
   onToggleStatus: (userId: string) => void;
   onDeleteUser?: (userId: string) => Promise<void> | void;
+  onResendResetLink?: (userId: string) => Promise<void>;
+  onUpdatePasswordAndEmail?: (userId: string, newPassword: string) => Promise<void>;
   backTab: string;
 }
 
@@ -56,11 +72,26 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   onSetPermissions,
   onToggleStatus,
   onDeleteUser,
+  onResendResetLink,
+  onUpdatePasswordAndEmail,
   backTab,
 }) => {
   const router = useRouter();
   const [mockSearch, setMockSearch] = useState('');
   const [courseSearch, setCourseSearch] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let res = '';
+    for (let i = 0; i < 10; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(res);
+  };
 
   const access = person.access;
   // A full pass covers the individual subject passes and all mock tests, so those render locked-on
@@ -187,6 +218,140 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
                   >
                     Delete account
                   </Button>
+                )}
+              </div>
+            </div>
+          </EditorSection>
+
+          <EditorSection
+            icon={Key}
+            title="Credentials & Email"
+            hint="Send password setup link or set a new password and email credentials"
+          >
+            <div className="space-y-3">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[13px]">
+                <div>
+                  <div className="font-semibold text-[#071126]">Send Password Setup / Reset Link</div>
+                  <div className="text-[#58708A] text-[12px]">
+                    Emails a secure link to {person.email || 'this user'} to choose or reset their password.
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={Mail}
+                  disabled={!person.email || isSendingReset}
+                  title={!person.email ? 'No email address on file' : undefined}
+                  onClick={async () => {
+                    if (!person.email) return;
+                    setIsSendingReset(true);
+                    try {
+                      if (onResendResetLink) {
+                        await onResendResetLink(person.id);
+                      }
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : 'Failed to send reset link';
+                      toast.error(msg);
+                    } finally {
+                      setIsSendingReset(false);
+                    }
+                  }}
+                >
+                  {isSendingReset ? 'Sending…' : 'Send Setup Link'}
+                </Button>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="font-semibold text-[#071126] text-[13px]">
+                      Set New Password & Email Credentials
+                    </div>
+                    <div className="text-[#58708A] text-[12px]">
+                      Assign a password and immediately email full login credentials to {person.email || 'this user'}.
+                    </div>
+                  </div>
+                  {!showPasswordInput && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={Send}
+                      disabled={!person.email}
+                      title={!person.email ? 'No email address on file' : undefined}
+                      onClick={() => {
+                        setShowPasswordInput(true);
+                        if (!newPassword) generateRandomPassword();
+                      }}
+                    >
+                      Set & Email Password
+                    </Button>
+                  )}
+                </div>
+
+                {showPasswordInput && (
+                  <div className="pt-3 border-t border-slate-200/80 space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter password (min 8 chars)"
+                        className={`${inputClass} font-mono`}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        icon={Sparkles}
+                        onClick={generateRandomPassword}
+                        className="shrink-0"
+                      >
+                        Generate
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setShowPasswordInput(false);
+                          setNewPassword('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="primary"
+                        icon={Send}
+                        disabled={isUpdatingPassword || newPassword.trim().length < 8 || !person.email}
+                        onClick={async () => {
+                          if (newPassword.trim().length < 8) {
+                            toast.error('Password must be at least 8 characters');
+                            return;
+                          }
+                          setIsUpdatingPassword(true);
+                          try {
+                            if (onUpdatePasswordAndEmail) {
+                              await onUpdatePasswordAndEmail(person.id, newPassword.trim());
+                              setShowPasswordInput(false);
+                              setNewPassword('');
+                            }
+                          } catch (err: unknown) {
+                            const msg = err instanceof Error ? err.message : 'Failed to update credentials';
+                            toast.error(msg);
+                          } finally {
+                            setIsUpdatingPassword(false);
+                          }
+                        }}
+                      >
+                        {isUpdatingPassword ? 'Saving & Sending…' : 'Save & Email Credentials'}
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

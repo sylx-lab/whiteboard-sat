@@ -1,7 +1,7 @@
 import { can, NO_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../../../features/admin/lib/permissions.ts';
 import { bad, denied, newId, readBody, requireUser, today } from '../../../lib/api.ts';
-import { hashPassword } from '../../../lib/auth.ts';
-import { sendStaffCredentialsEmail, appUrl } from '../../../lib/email.ts';
+import { hashPassword, signToken, RESET_PASSWORD_TTL } from '../../../lib/auth.ts';
+import { sendStaffCredentialsEmail, sendPasswordResetEmail, appUrl } from '../../../lib/email.ts';
 import { collections, hydrate } from '../../../lib/db.ts';
 import type { UserDoc } from '../../../lib/db.ts';
 import type { AccessGrants } from '../../../types.ts';
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
   return Response.json({ item: hydrate.user(doc) }, { status: 201 });
 }
 
-/** PATCH /api/users/<id> — { role?, permissions?, access?, isSuspended?, password? }. Applies immediately. */
+/** PATCH /api/users/<id> — { role?, permissions?, access?, isSuspended?, password?, sendResetLink? }. Applies immediately. */
 export async function PATCH(request: Request, ctx: Ctx) {
   const user = await requireUser();
   if (denied(user)) return user;
@@ -139,11 +139,11 @@ export async function PATCH(request: Request, ctx: Ctx) {
 
   const body = await readBody(request);
   if (!body) return bad('Expected a JSON body');
-  const wantsStaffChange = 'role' in body || 'permissions' in body || 'password' in body;
+  const wantsStaffChange = 'role' in body || 'permissions' in body || 'password' in body || 'sendResetLink' in body;
   const wantsStudentChange = 'access' in body || 'isSuspended' in body;
 
-  if (wantsStaffChange && !can(user, 'canManageSubAdmins')) {
-    return bad('You do not have permission to manage staff settings', 403);
+  if (wantsStaffChange && !can(user, 'canManageSubAdmins') && !can(user, 'canManageStudents')) {
+    return bad('You do not have permission to manage user credentials or settings', 403);
   }
   if (wantsStudentChange && !can(user, 'canManageStudents')) {
     return bad('You do not have permission to change access', 403);
@@ -157,6 +157,14 @@ export async function PATCH(request: Request, ctx: Ctx) {
   const users = await collections.users();
   const existing = await users.findOne({ _id: id });
   if (!existing) return bad('Not found', 404);
+
+  if (body.sendResetLink) {
+    if (!existing.email) return bad('This account does not have an email address on file', 400);
+    const token = signToken(existing._id, 'reset_password', existing.passwordHash, RESET_PASSWORD_TTL);
+    const resetUrl = appUrl(`/reset-password?token=${token}`, request);
+    await sendPasswordResetEmail(existing.email, existing.name, resetUrl);
+    return Response.json({ ok: true, message: `Password setup link sent to ${existing.email}` });
+  }
 
   const set: Record<string, unknown> = {};
   if ('role' in body) {
@@ -178,7 +186,18 @@ export async function PATCH(request: Request, ctx: Ctx) {
   }
   if ('password' in body && body.password?.trim()) {
     if (body.password.trim().length < 8) return bad('Password must be at least 8 characters');
-    set.passwordHash = await hashPassword(body.password.trim());
+    const rawPassword = body.password.trim();
+    set.passwordHash = await hashPassword(rawPassword);
+
+    if (existing.email && (body.sendCredentialsEmail ?? true)) {
+      await sendStaffCredentialsEmail(
+        existing.email,
+        existing.name,
+        existing.email,
+        rawPassword,
+        appUrl('/', request),
+      ).catch((err) => console.warn('[email] Staff credentials email note:', err));
+    }
   }
   if ('isSuspended' in body) set.isSuspended = !!body.isSuspended;
   if ('access' in body) set.access = normalizeAccess({ ...existing.access, ...body.access }, await allCourseIds());

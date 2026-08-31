@@ -555,6 +555,16 @@ function useAppStoreInternal() {
 
   const deleteUser = (userId: string) => deleteIn<UserProfile>('/users', userId, setAllUsers);
 
+  const resendPasswordResetLink = async (userId: string) => {
+    await api.patch(`/users/${userId}`, { sendResetLink: true });
+    toast.success('Password setup link sent to user email.');
+  };
+
+  const updateUserPasswordAndEmailCredentials = async (userId: string, newPassword: string) => {
+    await api.patch(`/users/${userId}`, { password: newPassword, sendCredentialsEmail: true });
+    toast.success('Password updated and credentials emailed successfully.');
+  };
+
   /** Creates a new staff member or upgrades an existing student to staff. */
   const createStaffUser = (
     name: string,
@@ -791,6 +801,8 @@ function useAppStoreInternal() {
     setUserRole,
     setUserPermissions,
     createStaffUser,
+    resendPasswordResetLink,
+    updateUserPasswordAndEmailCredentials,
     // Course & Lesson CRUD
     addCourse,
     updateCourse,
