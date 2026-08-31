@@ -44,6 +44,17 @@ const allOf = (value: boolean): AdminPermission =>
 export const ALL_PERMISSIONS = allOf(true);
 export const NO_PERMISSIONS = allOf(false);
 
+/** Default access for new staff members: all areas enabled except managing other staff / team. */
+export const DEFAULT_STAFF_PERMISSIONS: AdminPermission = {
+  canManageStudents: true,
+  canManagePurchases: true,
+  canManagePractice: true,
+  canManageCourses: true,
+  canManageMockTests: true,
+  canManageResources: true,
+  canManageSubAdmins: false,
+};
+
 /**
  * Effective permissions for a person.
  *

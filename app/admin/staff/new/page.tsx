@@ -7,6 +7,7 @@ import { useAppStore } from '../../../services/store';
 import {
   PERMISSION_KEYS,
   PERMISSION_LABELS,
+  DEFAULT_STAFF_PERMISSIONS,
 } from '../../../features/admin/lib/permissions';
 import { ShieldCheck, UserPlus, Save, AlertCircle, Loader2 } from 'lucide-react';
 import {
@@ -28,7 +29,7 @@ export default function NewStaffPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [permissions, setPermissions] = useState<Partial<AdminPermission>>({});
+  const [permissions, setPermissions] = useState<Partial<AdminPermission>>(DEFAULT_STAFF_PERMISSIONS);
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,10 +47,10 @@ export default function NewStaffPage() {
         email.trim(),
         phone.trim() || undefined,
         permissions,
-        password.trim() || undefined,
+        password.trim(),
       );
       setIsDirty(false);
-      toast.success('Staff member created successfully.');
+      toast.success('Staff member created and credentials emailed.');
       router.push(`/admin/people/${staff.id}?from=staff`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create staff member.';
@@ -63,31 +64,26 @@ export default function NewStaffPage() {
     <div className="min-h-screen bg-slate-50 text-[#071126] flex flex-col">
       <EditorTopBar
         eyebrow="Team"
-        title="New staff member"
+        title={name.trim() || 'New staff member'}
         onBack={() => {
           if (isDirty && !window.confirm('Discard this staff member?')) return;
           router.push('/admin?tab=staff');
         }}
-        backLabel="Back to the team list"
+        backLabel="Back to team"
         status={isDirty ? 'Unsaved' : undefined}
       >
         <button
           type="submit"
           form="staff-form"
-          disabled={isSubmitting}
+          disabled={!isDirty || isSubmitting}
           className={`${editorPrimaryButtonClass} flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Saving…</span>
-            </>
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <>
-              <Save className="w-4 h-4" />
-              <span>Create staff member</span>
-            </>
+            <Save className="w-4 h-4" />
           )}
+          <span>{isSubmitting ? 'Creating…' : 'Add member'}</span>
         </button>
       </EditorTopBar>
 
@@ -118,7 +114,7 @@ export default function NewStaffPage() {
               />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Email" hint="Used to sign in">
+              <Field label="Email" hint="Used to sign in & receive credentials">
                 <input
                   type="email"
                   required
@@ -139,15 +135,16 @@ export default function NewStaffPage() {
               </Field>
             </div>
             <Field
-              label="Initial password"
-              hint="Optional (min 8 chars). If left empty, the staff member can set their password via 'Forgot password'."
+              label="Account password"
+              hint="Required (min 8 characters). Account credentials will be automatically emailed to this person."
             >
               <input
                 type="password"
+                required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Minimum 8 characters"
                 className={inputClass}
               />
             </Field>

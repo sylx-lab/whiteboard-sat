@@ -1,6 +1,7 @@
-import { can, NO_PERMISSIONS } from '../../../features/admin/lib/permissions.ts';
+import { can, NO_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../../../features/admin/lib/permissions.ts';
 import { bad, denied, newId, readBody, requireUser, today } from '../../../lib/api.ts';
 import { hashPassword } from '../../../lib/auth.ts';
+import { sendStaffCredentialsEmail, appUrl } from '../../../lib/email.ts';
 import { collections, hydrate } from '../../../lib/db.ts';
 import type { UserDoc } from '../../../lib/db.ts';
 import type { AccessGrants } from '../../../types.ts';
@@ -35,8 +36,8 @@ export async function GET(request: Request, ctx: Ctx) {
 
 /**
  * POST /api/users — add a staff member.
- * If a password is provided, it is securely hashed and stored.
- * If no password is provided, they can sign in by running the forgot-password flow.
+ * Password is required and securely hashed.
+ * An email containing account credentials and login link is sent to the staff member.
  */
 export async function POST(request: Request) {
   const user = await requireUser();
@@ -46,15 +47,13 @@ export async function POST(request: Request) {
   const body = await readBody(request);
   if (!body?.name?.trim()) return bad('A name is required');
   if (!body.email?.trim()) return bad('An email address is required');
+  if (!body.password?.trim()) return bad('A password is required for the new staff member');
+  if (body.password.trim().length < 8) return bad('Password must be at least 8 characters');
 
   const cleanEmail = body.email.trim().toLowerCase();
   const cleanPhone = body.phone?.trim() ? body.phone.trim() : undefined;
-
-  let passwordHash: string | undefined;
-  if (body.password?.trim()) {
-    if (body.password.trim().length < 8) return bad('Password must be at least 8 characters');
-    passwordHash = await hashPassword(body.password.trim());
-  }
+  const rawPassword = body.password.trim();
+  const passwordHash = await hashPassword(rawPassword);
 
   const users = await collections.users();
   const emailClash = await users.findOne({ email: cleanEmail });
@@ -68,8 +67,8 @@ export async function POST(request: Request) {
       name: body.name.trim(),
       role: 'sub_admin',
       ...(cleanPhone ? { phone: cleanPhone } : {}),
-      ...(passwordHash ? { passwordHash } : {}),
-      permissions: { ...NO_PERMISSIONS, ...(body.permissions ?? {}) },
+      passwordHash,
+      permissions: { ...DEFAULT_STAFF_PERMISSIONS, ...(body.permissions ?? {}) },
       access: {
         premiumMath: true,
         premiumReadingWriting: true,
@@ -79,6 +78,16 @@ export async function POST(request: Request) {
       },
     };
     await users.updateOne({ _id: emailClash._id }, { $set: set });
+
+    // Send credentials email
+    await sendStaffCredentialsEmail(
+      cleanEmail,
+      body.name.trim(),
+      cleanEmail,
+      rawPassword,
+      appUrl('/', request),
+    ).catch((err) => console.warn('[email] Staff credentials email note:', err));
+
     return Response.json({ item: hydrate.user({ ...emailClash, ...set } as UserDoc) }, { status: 200 });
   }
 
@@ -92,7 +101,7 @@ export async function POST(request: Request) {
     name: body.name.trim(),
     email: cleanEmail,
     ...(cleanPhone ? { phone: cleanPhone } : {}),
-    ...(passwordHash ? { passwordHash } : {}),
+    passwordHash,
     role: 'sub_admin',
     targetScore: 1600,
     createdAt: today(),
@@ -103,11 +112,21 @@ export async function POST(request: Request) {
       enrolledCourseIds: [],
       fullPremium: true,
     },
-    permissions: { ...NO_PERMISSIONS, ...(body.permissions ?? {}) },
+    permissions: { ...DEFAULT_STAFF_PERMISSIONS, ...(body.permissions ?? {}) },
     courseProgress: {},
   };
 
   await users.insertOne(doc);
+
+  // Send credentials email
+  await sendStaffCredentialsEmail(
+    cleanEmail,
+    body.name.trim(),
+    cleanEmail,
+    rawPassword,
+    appUrl('/', request),
+  ).catch((err) => console.warn('[email] Staff credentials email note:', err));
+
   return Response.json({ item: hydrate.user(doc) }, { status: 201 });
 }
 

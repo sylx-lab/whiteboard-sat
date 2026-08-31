@@ -559,7 +559,7 @@ function useAppStoreInternal() {
   const createStaffUser = (
     name: string,
     email: string,
-    phone?: string,
+    phone: string | undefined,
     permissions: Partial<AdminPermission> = {},
     password?: string,
   ): Promise<UserProfile> =>
@@ -568,7 +568,7 @@ function useAppStoreInternal() {
       email,
       phone,
       permissions,
-      password: password?.trim() ? password.trim() : undefined,
+      password: password?.trim(),
     });
 
   // --- QUESTION MANAGEMENT CRUD ---
