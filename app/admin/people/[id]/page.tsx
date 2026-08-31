@@ -37,6 +37,7 @@ function PersonEditor() {
       onSetRole={store.setUserRole}
       onSetPermissions={store.setUserPermissions}
       onToggleStatus={store.toggleUserStatus}
+      onDeleteUser={store.deleteUser}
       backTab={backTab}
     />
   );

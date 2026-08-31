@@ -48,6 +48,7 @@ export interface AdminPanelProps {
   onDeletePlan?: (planId: string) => Promise<ProductPlan[]>;
   onUpdateUserAccess: (userId: string, accessUpdate: Partial<UserProfile['access']>) => void;
   onToggleUserStatus: (userId: string) => void;
+  onDeleteUser?: (userId: string) => Promise<void> | void;
   /** The bank's JSON import adds straight from the list view. */
   onAddQuestion: (questions: Omit<Question, 'id' | 'created_at' | 'updated_at'>[]) => Promise<Question[]>;
   onDeleteQuestion: (id: string) => void;

@@ -1,3 +1,5 @@
+import { toast } from 'sonner';
+
 /**
  * The store's one way of talking to `/api`. Cookies ride along automatically on
  * a same-origin fetch, so there is no token to thread through — the session
@@ -7,18 +9,29 @@
  * "That reset link has already been used" rather than "Request failed".
  */
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    method,
-    ...(body === undefined
-      ? {}
-      : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-  });
+  try {
+    const response = await fetch(`/api${path}`, {
+      method,
+      ...(body === undefined
+        ? {}
+        : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+    });
 
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(data?.error ?? `${method} /api${path} failed (${response.status})`);
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = data?.error ?? `${method} /api${path} failed (${response.status})`;
+      toast.error(message);
+      throw new Error(message);
+    }
+    return data as T;
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      throw err;
+    }
+    const message = 'Network request failed';
+    toast.error(message);
+    throw new Error(message);
   }
-  return data as T;
 }
 
 export const api = {

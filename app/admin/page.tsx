@@ -30,6 +30,7 @@ export default function AdminPage() {
         onDeletePlan={store.deletePlan}
         onUpdateUserAccess={store.updateUserAccess}
         onToggleUserStatus={store.toggleUserStatus}
+        onDeleteUser={store.deleteUser}
         onAddQuestion={store.addQuestions}
         onDeleteQuestion={store.deleteQuestion}
         onDeleteCourse={store.deleteCourse}

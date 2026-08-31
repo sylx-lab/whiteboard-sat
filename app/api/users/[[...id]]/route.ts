@@ -1,5 +1,6 @@
 import { can, NO_PERMISSIONS } from '../../../features/admin/lib/permissions.ts';
 import { bad, denied, newId, readBody, requireUser, today } from '../../../lib/api.ts';
+import { hashPassword } from '../../../lib/auth.ts';
 import { collections, hydrate } from '../../../lib/db.ts';
 import type { UserDoc } from '../../../lib/db.ts';
 import type { AccessGrants } from '../../../types.ts';
@@ -33,9 +34,9 @@ export async function GET(request: Request, ctx: Ctx) {
 }
 
 /**
- * POST /api/users — add a staff member. No password is set: they sign in by
- * running the forgot-password flow against the email given here, so nobody has
- * to invent a password on someone else's behalf.
+ * POST /api/users — add a staff member.
+ * If a password is provided, it is securely hashed and stored.
+ * If no password is provided, they can sign in by running the forgot-password flow.
  */
 export async function POST(request: Request) {
   const user = await requireUser();
@@ -49,9 +50,37 @@ export async function POST(request: Request) {
   const cleanEmail = body.email.trim().toLowerCase();
   const cleanPhone = body.phone?.trim() ? body.phone.trim() : undefined;
 
+  let passwordHash: string | undefined;
+  if (body.password?.trim()) {
+    if (body.password.trim().length < 8) return bad('Password must be at least 8 characters');
+    passwordHash = await hashPassword(body.password.trim());
+  }
+
   const users = await collections.users();
   const emailClash = await users.findOne({ email: cleanEmail });
-  if (emailClash) return bad('An account with this email already exists', 409);
+
+  if (emailClash) {
+    if (emailClash.role === 'admin' || emailClash.role === 'sub_admin') {
+      return bad('A staff member with this email already exists', 409);
+    }
+    // An existing student account is being granted staff status explicitly by an admin with canManageSubAdmins
+    const set: Partial<UserDoc> = {
+      name: body.name.trim(),
+      role: 'sub_admin',
+      ...(cleanPhone ? { phone: cleanPhone } : {}),
+      ...(passwordHash ? { passwordHash } : {}),
+      permissions: { ...NO_PERMISSIONS, ...(body.permissions ?? {}) },
+      access: {
+        premiumMath: true,
+        premiumReadingWriting: true,
+        redbookPractice: true,
+        enrolledCourseIds: [],
+        fullPremium: true,
+      },
+    };
+    await users.updateOne({ _id: emailClash._id }, { $set: set });
+    return Response.json({ item: hydrate.user({ ...emailClash, ...set } as UserDoc) }, { status: 200 });
+  }
 
   if (cleanPhone) {
     const phoneClash = await users.findOne({ phone: cleanPhone });
@@ -63,6 +92,7 @@ export async function POST(request: Request) {
     name: body.name.trim(),
     email: cleanEmail,
     ...(cleanPhone ? { phone: cleanPhone } : {}),
+    ...(passwordHash ? { passwordHash } : {}),
     role: 'sub_admin',
     targetScore: 1600,
     createdAt: today(),
@@ -81,7 +111,7 @@ export async function POST(request: Request) {
   return Response.json({ item: hydrate.user(doc) }, { status: 201 });
 }
 
-/** PATCH /api/users/<id> — { role?, permissions?, access?, isSuspended? }. Applies immediately. */
+/** PATCH /api/users/<id> — { role?, permissions?, access?, isSuspended?, password? }. Applies immediately. */
 export async function PATCH(request: Request, ctx: Ctx) {
   const user = await requireUser();
   if (denied(user)) return user;
@@ -90,18 +120,18 @@ export async function PATCH(request: Request, ctx: Ctx) {
 
   const body = await readBody(request);
   if (!body) return bad('Expected a JSON body');
-  const wantsStaffChange = 'role' in body || 'permissions' in body;
+  const wantsStaffChange = 'role' in body || 'permissions' in body || 'password' in body;
   const wantsStudentChange = 'access' in body || 'isSuspended' in body;
 
   if (wantsStaffChange && !can(user, 'canManageSubAdmins')) {
-    return bad('You do not have permission to change roles', 403);
+    return bad('You do not have permission to manage staff settings', 403);
   }
   if (wantsStudentChange && !can(user, 'canManageStudents')) {
     return bad('You do not have permission to change access', 403);
   }
   if (!wantsStaffChange && !wantsStudentChange) return bad('Nothing to change');
   // Nobody edits themselves out of — or further into — their own authority.
-  if (id === user.id && (wantsStaffChange || 'isSuspended' in body)) {
+  if (id === user.id && (wantsStaffChange || 'isSuspended' in body) && !('password' in body)) {
     return bad('You cannot change your own role, permissions or suspension');
   }
 
@@ -112,31 +142,64 @@ export async function PATCH(request: Request, ctx: Ctx) {
   const set: Record<string, unknown> = {};
   if ('role' in body) {
     if (!['student', 'admin', 'sub_admin'].includes(body.role)) return bad('Unknown role');
-    // Prevent accidental privilege escalation: a student account must never be
-    // upgraded to staff/admin via the per-user editor. Staff accounts are
-    // created through POST /api/users (Team > New staff member) with a separate
-    // email and explicit permissions. Demoting staff -> student is still allowed.
     if (
       existing.role === 'student' &&
       (body.role === 'sub_admin' || body.role === 'admin')
     ) {
       return bad(
-        'Promoting a student account to staff is not allowed. Create a new staff account from Team > New staff member instead.',
+        'Promoting a student account to staff is not allowed here. Create/upgrade from Team > New staff member instead.',
         400
       );
     }
     set.role = body.role;
-    // A new staff member starts with nothing granted, chosen explicitly after.
     if (body.role === 'sub_admin') set.permissions = existing.permissions ?? { ...NO_PERMISSIONS };
   }
   if ('permissions' in body) {
     set.permissions = { ...NO_PERMISSIONS, ...(existing.permissions ?? {}), ...body.permissions };
+  }
+  if ('password' in body && body.password?.trim()) {
+    if (body.password.trim().length < 8) return bad('Password must be at least 8 characters');
+    set.passwordHash = await hashPassword(body.password.trim());
   }
   if ('isSuspended' in body) set.isSuspended = !!body.isSuspended;
   if ('access' in body) set.access = normalizeAccess({ ...existing.access, ...body.access }, await allCourseIds());
 
   await users.updateOne({ _id: id }, { $set: set });
   return Response.json({ item: hydrate.user({ ...existing, ...set } as UserDoc) });
+}
+
+/** DELETE /api/users/<id> — delete a user account and their test attempts. */
+export async function DELETE(request: Request, ctx: Ctx) {
+  const user = await requireUser();
+  if (denied(user)) return user;
+  const id = (await ctx.params).id?.[0];
+  if (!id) return bad('Which person? DELETE /api/users/<id>');
+
+  if (id === user.id) {
+    return bad('You cannot delete your own account', 400);
+  }
+
+  const users = await collections.users();
+  const existing = await users.findOne({ _id: id });
+  if (!existing) return bad('Not found', 404);
+
+  const isStaff = existing.role === 'admin' || existing.role === 'sub_admin';
+  if (isStaff && !can(user, 'canManageSubAdmins')) {
+    return bad('You do not have permission to delete staff members', 403);
+  }
+  if (!isStaff && !can(user, 'canManageStudents')) {
+    return bad('You do not have permission to delete student accounts', 403);
+  }
+
+  await users.deleteOne({ _id: id });
+  const practiceAttempts = await collections.practiceAttempts();
+  const mockAttempts = await collections.mockAttempts();
+  await Promise.all([
+    practiceAttempts.deleteMany({ userId: id }),
+    mockAttempts.deleteMany({ userId: id }),
+  ]);
+
+  return Response.json({ ok: true, deletedId: id });
 }
 
 const allCourseIds = async () =>

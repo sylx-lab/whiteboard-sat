@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { AppShell } from "./components/AppShell";
 import { AppStoreProvider } from "./services/store";
 
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Toaster position="top-right" richColors closeButton />
         <AppStoreProvider>
           <AppShell>{children}</AppShell>
         </AppStoreProvider>

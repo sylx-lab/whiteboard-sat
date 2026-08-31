@@ -23,6 +23,7 @@ import { INITIAL_PLANS, DEFAULT_PAYMENT_SETTINGS } from '../data/seedData';
 import { ALL_DOMAINS } from '../lib/utils';
 import { canSeeCourse, canSeeMockTest, canSeeQuestion, applyPlanGrants } from '../lib/access';
 import { can } from '../features/admin/lib/permissions';
+import { toast } from 'sonner';
 import { api } from './api';
 
 /** No passes at all — the starting point for a new account, and the fallback
@@ -280,11 +281,14 @@ function useAppStoreInternal() {
       body: JSON.stringify({ phoneOrEmail, password }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) return { ok: false, error: data.error ?? 'Unable to sign in.' };
-    // Flips the load effect from "content only" to "content and this person's
-    // attempts, payments and roster".
+    if (!res.ok) {
+      const error = data.error ?? 'Unable to sign in.';
+      toast.error(error);
+      return { ok: false, error };
+    }
     setIsSignedIn(true);
     setCurrentUser(data.user);
+    toast.success('Signed in successfully.');
     return { ok: true, user: data.user };
   };
 
@@ -301,9 +305,14 @@ function useAppStoreInternal() {
       body: JSON.stringify({ name, email, password, phone, targetScore }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) return { ok: false, error: data.error ?? 'Unable to create the account.' };
+    if (!res.ok) {
+      const error = data.error ?? 'Unable to create the account.';
+      toast.error(error);
+      return { ok: false, error };
+    }
     setIsSignedIn(true);
     setCurrentUser(data.user);
+    toast.success('Account created successfully.');
     return { ok: true, user: data.user };
   };
 
@@ -314,6 +323,7 @@ function useAppStoreInternal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     }).catch(() => {});
+    toast.success('If an account exists with this email, a reset link has been sent.');
   };
 
   const resendVerificationEmail = async (): Promise<void> => {
@@ -351,7 +361,7 @@ function useAppStoreInternal() {
     body: unknown,
   ): Promise<T> => {
     const { item } = await api.post<{ item: T }>(path, body);
-    setList((prev) => [item, ...prev]);
+    setList((prev) => [item, ...prev.filter((row) => row.id !== item.id)]);
     return item;
   };
 
@@ -543,14 +553,23 @@ function useAppStoreInternal() {
     return patchUser(userId, { isSuspended: !target?.isSuspended });
   };
 
-  /** No password is set: the new staff member signs in through the reset-password flow. */
+  const deleteUser = (userId: string) => deleteIn<UserProfile>('/users', userId, setAllUsers);
+
+  /** Creates a new staff member or upgrades an existing student to staff. */
   const createStaffUser = (
     name: string,
     email: string,
     phone?: string,
     permissions: Partial<AdminPermission> = {},
+    password?: string,
   ): Promise<UserProfile> =>
-    createIn<UserProfile>('/users', setAllUsers, { name, email, phone, permissions });
+    createIn<UserProfile>('/users', setAllUsers, {
+      name,
+      email,
+      phone,
+      permissions,
+      password: password?.trim() ? password.trim() : undefined,
+    });
 
   // --- QUESTION MANAGEMENT CRUD ---
   const addQuestion = (newQ: Omit<Question, 'id' | 'created_at' | 'updated_at'>) =>
@@ -760,6 +779,7 @@ function useAppStoreInternal() {
     updateUserAccess: grantStudentAccess,
     toggleStudentSuspension,
     toggleUserStatus: toggleStudentSuspension,
+    deleteUser,
     addQuestion,
     addQuestions,
     updateQuestion,

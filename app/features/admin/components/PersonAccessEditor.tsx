@@ -15,7 +15,8 @@ import {
   permissionsFor,
   grantedCount,
 } from '../lib/permissions';
-import { Check, ShieldCheck, KeyRound, GraduationCap, Award, Receipt, Info, UserCog } from 'lucide-react';
+import { Check, ShieldCheck, KeyRound, GraduationCap, Award, Receipt, Info, UserCog, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { EditorTopBar, EditorSection, Field, inputClass, editorPrimaryButtonClass } from './EditorShell';
 import { Pill, ToggleRow, Button, SearchInput } from './ui';
 
@@ -32,6 +33,7 @@ interface PersonAccessEditorProps {
   onSetRole: (userId: string, role: UserProfile['role']) => void;
   onSetPermissions: (userId: string, updates: Partial<AdminPermission>) => void;
   onToggleStatus: (userId: string) => void;
+  onDeleteUser?: (userId: string) => Promise<void> | void;
   backTab: string;
 }
 
@@ -53,6 +55,7 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
   onSetRole,
   onSetPermissions,
   onToggleStatus,
+  onDeleteUser,
   backTab,
 }) => {
   const router = useRouter();
@@ -135,25 +138,57 @@ export const PersonAccessEditor: React.FC<PersonAccessEditorProps> = ({
               ))}
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
-              <Pill tone={isActive ? 'success' : 'danger'}>{isActive ? 'active' : 'suspended'}</Pill>
-              <Button
-                size="sm"
-                variant={isActive ? 'danger' : 'primary'}
-                disabled={isSelf}
-                title={isSelf ? 'You cannot suspend your own account' : undefined}
-                onClick={() => {
-                  if (
-                    !isActive ||
-                    confirm(`Suspend ${person.name}? They will not be able to sign in until reactivated.`)
-                  ) {
-                    onToggleStatus(person.id);
-                  }
-                }}
-                className="ml-auto"
-              >
-                {isActive ? 'Suspend account' : 'Reactivate account'}
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0] mt-2">
+              <div className="flex items-center gap-2">
+                <Pill tone={isActive ? 'success' : 'danger'}>{isActive ? 'active' : 'suspended'}</Pill>
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  size="sm"
+                  variant={isActive ? 'secondary' : 'primary'}
+                  disabled={isSelf}
+                  title={isSelf ? 'You cannot suspend your own account' : undefined}
+                  onClick={() => {
+                    if (
+                      !isActive ||
+                      confirm(`Suspend ${person.name}? They will not be able to sign in until reactivated.`)
+                    ) {
+                      onToggleStatus(person.id);
+                    }
+                  }}
+                >
+                  {isActive ? 'Suspend account' : 'Reactivate account'}
+                </Button>
+
+                {onDeleteUser && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={Trash2}
+                    disabled={isSelf}
+                    title={isSelf ? 'You cannot delete your own account' : undefined}
+                    onClick={async () => {
+                      if (
+                        confirm(
+                          `Permanently delete ${person.name}'s account (${person.email || person.phone || ''})? This will also remove their test history. This action cannot be undone.`
+                        )
+                      ) {
+                        try {
+                          await onDeleteUser(person.id);
+                          toast.success(`Deleted ${person.name}'s account.`);
+                          router.push(`/admin?tab=${backTab}`);
+                        } catch (err: unknown) {
+                          const msg = err instanceof Error ? err.message : 'Failed to delete user';
+                          toast.error(msg);
+                        }
+                      }
+                    }}
+                  >
+                    Delete account
+                  </Button>
+                )}
+              </div>
             </div>
           </EditorSection>
 
