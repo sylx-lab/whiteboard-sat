@@ -533,14 +533,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-(--border)">
           <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3">
             <button
-              onClick={() => setIsSessionActive(false)}
-              className="flex items-center gap-1 text-[12px] font-medium text-(--foreground-secondary) hover:text-(--foreground) px-2.5 sm:px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>End Practice</span>
-            </button>
-
-            <button
               onClick={finishSession}
               disabled={sessionStats.answered === 0}
               className="flex items-center gap-1 text-[12px] font-semibold text-white bg-(--brand-cta) hover:bg-(--brand-hover) disabled:opacity-40 disabled:cursor-not-allowed px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer active:scale-95"
@@ -734,6 +726,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            <button
+              onClick={() => setIsSessionActive(false)}
+              className="flex items-center gap-1 text-[12px] font-medium text-(--foreground-secondary) hover:text-(--foreground) px-2.5 sm:px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>End Practice</span>
+            </button>
           </div>
 
           {/* Desktop Right Matrix Navigator — hidden by default, expands on button */}
