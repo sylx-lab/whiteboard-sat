@@ -91,8 +91,8 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
         </div>
       </div>
 
-      {/* Courses Catalog Grid */}
-      <div className="max-w-310 mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+      {/* Courses Catalog Grid — 2 columns on iPad portrait, 3 on desktop */}
+      <div className="max-w-310 mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
         {courses.map((course, index) => {
           const isEnrolled = hasAccessToCourse(course.id);
           const lessonsList = course.lessons || [];
@@ -278,7 +278,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
         const activeLessons = syllabusTab === 'math' ? mathLessons : englishLessons;
         return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-5xl max-h-[92dvh] flex flex-col overflow-hidden">
             {/* Top Bar */}
             <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
               <div className="flex items-center gap-3">

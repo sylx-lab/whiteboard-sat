@@ -345,11 +345,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                         e.stopPropagation();
                         onToggleCrossOut(choice.id);
                       }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center font-mono text-xs font-bold transition-all cursor-pointer touch-manipulation active:scale-90 ${isCrossed
+                      className={`w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center font-mono text-xs font-bold transition-all cursor-pointer touch-manipulation active:scale-90 ${isCrossed
                         ? 'bg-(--navy-section) text-white border-(--foreground) shadow-sm'
                         : isCrossOutModeActive
                           ? 'bg-(--surface) text-(--foreground) border-(--border-strong) hover:bg-(--surface-soft) shadow-2xs'
-                          : 'bg-(--surface) text-(--foreground-muted) border-(--border) opacity-85 sm:opacity-0 sm:group-hover/choice:opacity-100 hover:text-(--foreground) hover:border-(--border-strong) shadow-2xs'
+                          : 'bg-(--surface) text-(--foreground-muted) border-(--border) opacity-80 hover:opacity-100 hover:text-(--foreground) hover:border-(--border-strong) shadow-2xs'
                         }`}
                       title={`Eliminate option ${choice.id}`}
                     >
@@ -578,22 +578,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {question.subject === 'math' && onOpenDesmos && (
             <button
               onClick={onOpenDesmos}
-              className="hidden sm:flex h-8 sm:h-9 px-2.5 sm:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
+              className="flex h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Desmos Graphing Calculator"
             >
               <Calculator className="w-3.5 h-3.5 text-(--brand-text)" />
-              <span className="hidden md:inline">Desmos</span>
+              <span className="hidden xl:inline">Desmos</span>
             </button>
           )}
 
           {question.subject === 'math' && onOpenFormulas && (
             <button
               onClick={onOpenFormulas}
-              className="hidden sm:flex h-8 sm:h-9 px-2.5 sm:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
+              className="flex h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Formula Reference Sheet"
             >
               <BookOpen className="w-3.5 h-3.5 text-(--brand-text)" />
-              <span className="hidden md:inline">Formulas</span>
+              <span className="hidden xl:inline">Formulas</span>
             </button>
           )}
 
@@ -601,7 +601,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {!isSpr && (
             <button
               onClick={onToggleCrossOutMode}
-              className={`h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors font-semibold text-[11px] sm:text-[12px] cursor-pointer active:scale-95 ${isCrossOutModeActive
+              className={`h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors font-semibold text-[11px] sm:text-[12px] cursor-pointer active:scale-95 ${isCrossOutModeActive
                 ? 'bg-(--brand-cta) text-white border-(--brand-cta) shadow-xs'
                 : 'bg-(--surface) text-(--foreground) hover:bg-(--brand-soft) border-(--border)'
                 }`}
@@ -611,7 +611,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 ABC
                 <span className="absolute -inset-x-px top-1/2 h-[1.5px] bg-current -translate-y-1/2 pointer-events-none" />
               </span>
-              <span className="hidden sm:inline font-medium">Eliminate</span>
+              <span className="hidden md:inline font-medium">Eliminate</span>
             </button>
           )}
 
@@ -624,7 +624,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             title={isMarkedForReview ? 'Marked for review' : 'Mark for review'}
           >
             <Flag className={`w-3.5 h-3.5 ${isMarkedForReview ? 'fill-amber-500 text-amber-500' : ''}`} />
-            <span className="hidden sm:inline">Flag</span>
+            <span className="hidden lg:inline">Flag</span>
           </button>
 
           <button
@@ -636,7 +636,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             title={isBookmarked ? 'Bookmarked' : 'Bookmark question'}
           >
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-(--brand-text) text-(--brand-text)' : ''}`} />
-            <span className="hidden sm:inline">Bookmark</span>
+            <span className="hidden lg:inline">Bookmark</span>
           </button>
 
           {onReportIssue && (
@@ -646,7 +646,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               title="Report an issue with this question"
             >
               <MessageSquareWarning className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Report</span>
+              <span className="hidden lg:inline">Report</span>
             </button>
           )}
         </div>

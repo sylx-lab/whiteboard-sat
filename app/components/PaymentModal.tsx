@@ -109,9 +109,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150" onClick={onClose} role="dialog" aria-modal="true" aria-label="Payment verification">
-      <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between shrink-0">
           <div>
             <div className="text-[11px] font-bold text-(--brand-text) uppercase tracking-wider">
               Manual Verification
@@ -127,7 +127,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
 
         {isSubmittedSuccess ? (
-          <div className="p-8 text-center space-y-5">
+          <div className="p-8 text-center space-y-5 overflow-y-auto">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mx-auto">
               <Clock className="w-6 h-6 animate-pulse" />
             </div>
@@ -140,7 +140,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="font-semibold text-(--foreground)">Next Steps:</div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Admin verifies transaction in billing queue.</span>
+                  <span>Your payment will be manually verified within 15–30 minutes</span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -160,7 +160,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </button>
           </div>
         ) : (
-          <div className="p-6 overflow-y-auto max-h-[80vh] space-y-5">
+          <div className="p-6 overflow-y-auto max-h-[calc(90dvh-70px)] space-y-5">
             {/* Price & Summary */}
             <div className="p-4 bg-(--brand-soft) rounded-xl border border-(--border) flex items-center justify-between">
               <div>

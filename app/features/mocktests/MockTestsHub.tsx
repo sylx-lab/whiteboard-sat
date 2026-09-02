@@ -310,19 +310,19 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
     return (
       <div className="fixed inset-0 z-50 bg-(--surface) flex flex-col overflow-hidden select-none">
         {/* Exam Top Header */}
-        <header className="bg-(--navy-section) text-white px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between border-b border-(--border-strong) pt-safe">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <header className="bg-(--navy-section) text-white px-3 sm:px-4 lg:px-6 py-2 sm:py-3 flex items-center justify-between border-b border-(--border-strong) pt-safe gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="w-7 h-7 rounded-md bg-(--brand-cta) flex items-center justify-center font-bold text-[11px] shrink-0">
               WB
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-[12.5px] sm:text-[13px] text-white leading-tight truncate">{activeTest.title}</div>
-              <div className="text-[10.5px] sm:text-[11px] text-(--brand-text) font-medium truncate">{currentModule.title}</div>
+              <div className="font-semibold text-[12px] sm:text-[13px] text-white leading-tight truncate">{activeTest.title}</div>
+              <div className="text-[10px] sm:text-[11px] text-(--brand-text) font-medium truncate">{currentModule.title}</div>
             </div>
           </div>
 
           {/* Module Timer */}
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 rounded-lg bg-slate-900/80 border border-(--border-strong) font-mono text-[12px] sm:text-[13px] font-semibold shrink-0 mx-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg bg-slate-900/80 border border-(--border-strong) font-mono text-[11.5px] sm:text-[13px] font-semibold shrink-0 mx-1 sm:mx-2">
             <Clock className="w-3.5 h-3.5 text-(--brand-text)" />
             <span className={activeAttempt.timeRemainingSeconds < 120 ? 'text-rose-400 animate-pulse' : 'text-white'}>
               {timeMins}:{timeSecs.toString().padStart(2, '0')}
@@ -330,32 +330,34 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
           </div>
 
           {/* Tools & Exit */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
             {currentModule.section === 'math' && (
               <>
                 <button
                   onClick={() => setIsDesmosOpen(true)}
-                  className="px-2 sm:px-2.5 py-1 bg-(--navy-section) hover:bg-(--border-strong) text-(--foreground-secondary) text-[11px] font-medium rounded-lg flex items-center gap-1 border border-(--border-strong) transition-colors active:scale-95"
+                  className="px-2 sm:px-2.5 py-1 bg-(--navy-section) hover:bg-(--border-strong) text-(--foreground-secondary) text-[11px] font-medium rounded-lg flex items-center gap-1 border border-(--border-strong) transition-colors active:scale-95 cursor-pointer"
+                  title="Open Desmos Graphing Calculator"
                 >
                   <Calculator className="w-3 h-3 text-(--brand-text)" />
-                  <span className="hidden sm:inline">Desmos</span>
+                  <span className="hidden md:inline">Desmos</span>
                 </button>
                 <button
                   onClick={() => setIsFormulasOpen(true)}
-                  className="px-2 sm:px-2.5 py-1 bg-(--navy-section) hover:bg-(--border-strong) text-(--foreground-secondary) text-[11px] font-medium rounded-lg flex items-center gap-1 border border-(--border-strong) transition-colors active:scale-95"
+                  className="px-2 sm:px-2.5 py-1 bg-(--navy-section) hover:bg-(--border-strong) text-(--foreground-secondary) text-[11px] font-medium rounded-lg flex items-center gap-1 border border-(--border-strong) transition-colors active:scale-95 cursor-pointer"
+                  title="Open Formula Reference Sheet"
                 >
                   <BookOpen className="w-3 h-3 text-(--foreground-muted)" />
-                  <span className="hidden sm:inline">Formulas</span>
+                  <span className="hidden md:inline">Formulas</span>
                 </button>
               </>
             )}
 
-            {/* Mobile Matrix Drawer Button */}
+            {/* Mobile/Tablet Matrix Drawer Button */}
             <button
               onClick={() => setIsMobileExamMatrixOpen(true)}
-              className="lg:hidden px-2 sm:px-2.5 py-1 bg-(--brand-cta) text-white text-[11px] font-semibold rounded-lg transition-colors active:scale-95"
+              className="lg:hidden px-2 sm:px-2.5 py-1 bg-(--brand-cta) text-white text-[11px] font-semibold rounded-lg transition-colors active:scale-95 cursor-pointer"
             >
-              Matrix ({activeAttempt.currentQuestionIndex + 1}/{moduleQuestionIds.length})
+              <span className="hidden sm:inline">Matrix </span>({activeAttempt.currentQuestionIndex + 1}/{moduleQuestionIds.length})
             </button>
 
             <button
@@ -536,10 +538,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
           </div>
         </div>
 
-        {/* Mobile Matrix Drawer Bottom Sheet */}
+        {/* Mobile / Tablet Matrix Drawer Dialog */}
         {isMobileExamMatrixOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end animate-in fade-in duration-150">
-            <div className="w-full bg-(--surface) rounded-t-2xl max-h-[85vh] flex flex-col p-5 space-y-4 border-t border-(--border) shadow-2xl overflow-y-auto animate-in slide-in-from-bottom duration-200 pb-safe">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end md:items-center md:justify-center p-0 md:p-4 animate-in fade-in duration-150">
+            <div className="w-full md:max-w-md bg-(--surface) rounded-t-2xl md:rounded-2xl max-h-[85vh] md:max-h-[85dvh] flex flex-col p-5 space-y-4 border-t md:border border-(--border) shadow-2xl overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-200 pb-safe md:pb-5">
               <div className="flex items-center justify-between pb-2 border-b border-(--border)">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-(--brand-cta)" />
@@ -625,8 +627,8 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
         </div>
       </div>
 
-      {/* Tests Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      {/* Tests Grid — 2 columns on iPad portrait, 3 on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {mockTests.map((test) => {
           const hasAccess = hasAccessToMockTest(test);
           const attempt = mockAttempts.find(
@@ -756,7 +758,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       {/* --- 3. DIAGNOSTIC SCORE REPORT MODAL --- */}
       {selectedResultAttempt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-(--surface) rounded-2xl shadow-xl border border-(--border) w-full max-w-4xl max-h-[90dvh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
               <div>

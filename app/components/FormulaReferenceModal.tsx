@@ -12,7 +12,7 @@ export const FormulaReferenceModal: React.FC<FormulaReferenceModalProps> = ({ is
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-(--surface) rounded-2xl shadow-2xl border border-(--border) w-full max-w-4xl max-h-[94dvh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-(--surface) rounded-2xl shadow-2xl border border-(--border) w-full max-w-4xl max-h-[94dvh] sm:max-h-[90dvh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-(--border) flex items-center justify-between bg-(--brand-soft)">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -39,7 +39,7 @@ export const FormulaReferenceModal: React.FC<FormulaReferenceModalProps> = ({ is
             <h4 className="text-xs font-bold text-(--brand-text) uppercase tracking-wider mb-2.5 sm:mb-3 font-mono">
               1. Area & Perimeter Formulas
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               <div className="p-3 border border-(--border) rounded-xl bg-(--brand-soft) text-center space-y-1">
                 <div className="text-xs font-semibold text-(--foreground)">Circle Area & Circumference</div>
                 <MathRenderer content="$A = \pi r^2$" className="text-sm font-semibold text-(--brand-text)" />

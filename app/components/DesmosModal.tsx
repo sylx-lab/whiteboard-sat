@@ -66,11 +66,16 @@ const getDefaultLayout = (): WindowLayout => {
   const screenWidth = window.innerWidth;
   const screenHeight = window.innerHeight;
 
-  const defaultWidth = Math.min(600, Math.max(MIN_WIDTH, Math.floor(screenWidth * 0.46)));
-  const defaultHeight = Math.min(520, Math.max(MIN_HEIGHT, Math.floor(screenHeight * 0.72)));
+  // On iPad/tablets (e.g. 768px - 834px width), 46% of width is too narrow (~350px) for Desmos keypad
+  const isTablet = screenWidth >= 640 && screenWidth <= 1024;
+  const defaultWidth = isTablet
+    ? Math.min(screenWidth - 24, Math.max(480, Math.floor(screenWidth * 0.62)))
+    : Math.min(600, Math.max(MIN_WIDTH, Math.floor(screenWidth * 0.46)));
+
+  const defaultHeight = Math.min(540, Math.max(MIN_HEIGHT, Math.floor(screenHeight * (isTablet ? 0.65 : 0.72))));
 
   // Position on top-right by default so student can see question on left
-  const defaultX = Math.max(12, screenWidth - defaultWidth - 24);
+  const defaultX = Math.max(12, screenWidth - defaultWidth - 20);
   const defaultY = Math.min(72, Math.max(12, Math.floor(screenHeight * 0.08)));
 
   return {
@@ -302,8 +307,8 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
         position: 'fixed',
         left: 12,
         top: 12,
-        width: 'calc(100vw - 24px)',
-        height: 'calc(100vh - 24px)',
+        width: 'calc(100dvw - 24px)',
+        height: 'calc(100dvh - 24px)',
         zIndex: 55,
       }
     : {
@@ -327,6 +332,7 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
       {/* Draggable Header */}
       <div
         onPointerDown={handleHeaderPointerDown}
+        style={{ touchAction: isMaximized ? 'auto' : 'none' }}
         className={`px-3 sm:px-4 py-2 border-b border-(--border) flex items-center justify-between gap-2 bg-(--surface-soft) select-none ${
           isMaximized ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
         }`}
@@ -450,34 +456,41 @@ export const DesmosModal: React.FC<DesmosModalProps> = ({ isOpen, onClose }) => 
         )}
       </div>
 
-      {/* Resize Handles (disabled when maximized) */}
+      {/* Resize Handles (disabled when maximized) — touch-friendly for iPad/tablets */}
       {!isMaximized && (
         <>
           {/* Bottom-right corner resize handle */}
           <div
             onPointerDown={(e) => handleResizePointerDown(e, 'se')}
-            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 z-40 select-none group"
+            style={{ touchAction: 'none' }}
+            className="absolute -bottom-1 -right-1 w-9 h-9 cursor-se-resize flex items-end justify-end p-1.5 z-40 select-none group"
             title="Drag to resize"
           >
-            <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-(--foreground-muted) group-hover:border-(--brand) rounded-br-xs transition-colors" />
+            <div className="w-3 h-3 border-r-2 border-b-2 border-(--foreground-muted) group-hover:border-(--brand) rounded-br-xs transition-colors pointer-events-none" />
           </div>
 
           {/* Right edge resize */}
           <div
             onPointerDown={(e) => handleResizePointerDown(e, 'e')}
-            className="absolute top-10 right-0 w-1.5 bottom-4 cursor-e-resize z-30 hover:bg-(--brand)/30 transition-colors"
+            style={{ touchAction: 'none' }}
+            className="absolute top-10 -right-1.5 w-4 bottom-4 cursor-e-resize z-30 hover:bg-(--brand)/20 transition-colors"
+            title="Drag to resize width"
           />
 
           {/* Bottom edge resize */}
           <div
             onPointerDown={(e) => handleResizePointerDown(e, 's')}
-            className="absolute bottom-0 left-4 right-4 h-1.5 cursor-s-resize z-30 hover:bg-(--brand)/30 transition-colors"
+            style={{ touchAction: 'none' }}
+            className="absolute -bottom-1.5 left-4 right-6 h-4 cursor-s-resize z-30 hover:bg-(--brand)/20 transition-colors"
+            title="Drag to resize height"
           />
 
           {/* Left edge resize */}
           <div
             onPointerDown={(e) => handleResizePointerDown(e, 'w')}
-            className="absolute top-10 left-0 w-1.5 bottom-4 cursor-w-resize z-30 hover:bg-(--brand)/30 transition-colors"
+            style={{ touchAction: 'none' }}
+            className="absolute top-10 -left-1.5 w-4 bottom-4 cursor-w-resize z-30 hover:bg-(--brand)/20 transition-colors"
+            title="Drag to resize width"
           />
         </>
       )}

@@ -274,16 +274,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     strokeLinejoin="round"
                   />
                   {trendPoints.map((pt, i) => (
-                    <circle
+                    <g
                       key={i}
-                      cx={pt.cx}
-                      cy={pt.cy}
-                      r={hoveredPoint?.day === pt.day ? '6' : '4'}
-                      fill="#087C76"
-                      className="cursor-pointer transition-all duration-150"
-                      onMouseEnter={() => setHoveredPoint(pt)}
-                      onMouseLeave={() => setHoveredPoint(null)}
-                    />
+                      className="cursor-pointer"
+                      onClick={() => setHoveredPoint(hoveredPoint?.day === pt.day ? null : pt)}
+                    >
+                      {/* Invisible larger touch target for iPad & mobile fingers */}
+                      <circle cx={pt.cx} cy={pt.cy} r="14" fill="transparent" />
+                      <circle
+                        cx={pt.cx}
+                        cy={pt.cy}
+                        r={hoveredPoint?.day === pt.day ? '6' : '4'}
+                        fill="#087C76"
+                        className="transition-all duration-150"
+                        onMouseEnter={() => setHoveredPoint(pt)}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      />
+                    </g>
                   ))}
                 </svg>
               ) : (

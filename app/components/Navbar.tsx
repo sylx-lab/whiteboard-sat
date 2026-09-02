@@ -81,11 +81,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-(--brand) border-b border-[rgba(255,255,255,0.15) ${isScrolled ? 'shadow-md bg-(--brand-cta)' : 'shadow-xs'}`}>
-      <div className="max-w-310 mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="max-w-310 mx-auto px-3 sm:px-6 lg:px-6 xl:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 lg:h-17">
           {/* Zone 1: LEFT Brand Wordmark */}
           <div
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none group"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none group shrink-0"
             onClick={() => onNavigate(currentUser ? 'dashboard' : 'home')}
           >
             {/* Minimal Geometric WB Mark */}
@@ -96,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Editorial Brand Name */}
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[13px] sm:text-[14.5px] tracking-tight text-white leading-none">
+                <span className="font-bold text-[13px] sm:text-[14px] xl:text-[14.5px] tracking-tight text-white leading-none">
                   WHITE BOARD
                 </span>
                 <span className="text-[10px] font-bold text-(--brand-text) bg-(--surface) px-1.5 py-0.5 rounded-sm leading-none">
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Zone 2: CENTER Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 font-medium">
+          <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6 font-medium text-[13px] xl:text-sm">
             {!currentUser ? (
               // Public Visitor Navigation Links
               <>
@@ -471,8 +471,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="fixed inset-0 top-14 sm:top-16 z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed inset-x-0 top-14 sm:top-16 z-40 lg:hidden bg-(--surface) border-b border-(--border) px-4 py-4 space-y-3 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-56px)] sm:max-h-[calc(100dvh-64px)] overflow-y-auto pb-safe">
-            <nav className="flex flex-col space-y-1 text-[13.5px] font-medium">
+          <div className="fixed inset-x-0 top-14 sm:top-16 z-40 lg:hidden bg-(--surface) border-b border-(--border) px-4 sm:px-6 py-4 space-y-3 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-56px)] sm:max-h-[calc(100dvh-64px)] overflow-y-auto pb-safe">
+            <div className="max-w-xl mx-auto w-full">
+              <nav className="flex flex-col space-y-1.5 text-[13.5px] font-medium">
               <button
                 onClick={() => {
                   onNavigate(currentUser ? 'dashboard' : 'home');
@@ -662,7 +663,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
                 </div>
               </div>
-            </nav>
+              </nav>
+            </div>
           </div>
         </>
       )}

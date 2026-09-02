@@ -592,12 +592,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               {isDesktopMatrixOpen ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
               <span>{isDesktopMatrixOpen ? 'Hide Matrix' : `Matrix (${currentIndex + 1}/${sessionQuestionIds.length})`}</span>
             </button>
-            {/* Mobile Navigator Matrix Toggle Button */}
             <button
               onClick={() => setIsMobileMatrixOpen(true)}
               className="lg:hidden px-2.5 sm:px-3 py-1 bg-(--brand-cta) text-white text-[11.5px] sm:text-[12px] font-medium rounded-lg shadow-xs cursor-pointer active:scale-95"
             >
-              Matrix ({currentIndex + 1}/{sessionQuestionIds.length})
+              <span className="hidden sm:inline">Matrix </span>({currentIndex + 1}/{sessionQuestionIds.length})
             </button>
           </div>
         </div>
@@ -761,10 +760,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           )}
         </div>
 
-        {/* Mobile Matrix Drawer Bottom Sheet */}
+        {/* Mobile / Tablet Matrix Drawer Dialog */}
         {isMobileMatrixOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end animate-in fade-in duration-150">
-            <div className="w-full bg-(--surface) rounded-t-2xl max-h-[80vh] flex flex-col p-5 space-y-4 border-t border-(--border) shadow-2xl overflow-y-auto animate-in slide-in-from-bottom duration-200 pb-safe">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end md:items-center md:justify-center p-0 md:p-4 animate-in fade-in duration-150">
+            <div className="w-full md:max-w-md bg-(--surface) rounded-t-2xl md:rounded-2xl max-h-[85vh] md:max-h-[85dvh] flex flex-col p-5 space-y-4 border-t md:border border-(--border) shadow-2xl overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-200 pb-safe md:pb-5">
               <div className="flex items-center justify-between pb-2 border-b border-(--border)">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-(--brand-cta)" />

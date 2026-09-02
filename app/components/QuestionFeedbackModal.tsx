@@ -35,8 +35,8 @@ export const QuestionFeedbackModal: React.FC<QuestionFeedbackModalProps> = ({ qu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-(--surface) rounded-2xl shadow-2xl border border-(--border) w-full max-w-md overflow-hidden">
-        <div className="px-5 py-4 border-b border-(--border) flex items-center justify-between bg-(--brand-soft)">
+      <div className="bg-(--surface) rounded-2xl shadow-2xl border border-(--border) w-full max-w-md max-h-[90dvh] flex flex-col overflow-hidden">
+        <div className="px-5 py-4 border-b border-(--border) flex items-center justify-between bg-(--brand-soft) shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-(--brand-cta) flex items-center justify-center text-white shrink-0">
               <MessageSquareWarning className="w-4 h-4" />
@@ -46,13 +46,13 @@ export const QuestionFeedbackModal: React.FC<QuestionFeedbackModalProps> = ({ qu
               <p className="text-[11px] text-(--foreground-secondary) truncate font-mono">{question.code}</p>
             </div>
           </div>
-          <button onClick={close} className="p-1.5 text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) rounded-lg transition-colors cursor-pointer shrink-0">
+          <button onClick={close} className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) rounded-lg transition-colors cursor-pointer shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {isSent ? (
-          <div className="p-5 space-y-4">
+          <div className="p-5 space-y-4 overflow-y-auto">
             <p className="text-[13px] text-(--foreground) leading-relaxed">
               Thanks — sent to the team. They&apos;ll review this question and fix it if needed.
             </p>
@@ -64,7 +64,7 @@ export const QuestionFeedbackModal: React.FC<QuestionFeedbackModalProps> = ({ qu
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-5 space-y-3">
+          <form onSubmit={handleSubmit} className="p-5 space-y-3 overflow-y-auto">
             <label className="block text-[12px] font-medium text-(--foreground-secondary)">
               What&apos;s wrong with this question?
             </label>

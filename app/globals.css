@@ -185,6 +185,15 @@
       transition: none;
     }
   }
+
+  /* Touch & Tablet Optimizations (iPad, Tablets) */
+  @media (hover: none) and (pointer: coarse) {
+    /* Touch devices: ensure buttons have natural feedback on active rather than hover */
+    button, a, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+  }
 }
 
 /* Custom Scrollbars & Momentum Touch Scrolling */
