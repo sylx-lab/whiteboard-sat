@@ -42,6 +42,10 @@ export const SUB_PAGE_META: Record<AdminSubPage, { title: string; description: s
     title: 'Resources',
     description: 'Publish formula sheets, grammar guides, and strategy PDFs.',
   },
+  feedback: {
+    title: 'Feedback',
+    description: 'Question issues students reported — review and fix, then mark resolved.',
+  },
 };
 
 interface AdminHeaderProps {

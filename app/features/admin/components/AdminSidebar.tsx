@@ -14,6 +14,7 @@ import {
   Shield,
   ShieldCheck,
   Tags,
+  MessageSquareWarning,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
@@ -29,7 +30,8 @@ export type AdminSubPage =
   | 'resources'
   | 'mock-tests'
   | 'questions'
-  | 'topics';
+  | 'topics'
+  | 'feedback';
 
 export const ADMIN_SUB_PAGES: AdminSubPage[] = [
   'overview',
@@ -41,6 +43,7 @@ export const ADMIN_SUB_PAGES: AdminSubPage[] = [
   'mock-tests',
   'questions',
   'topics',
+  'feedback',
 ];
 
 interface AdminSidebarProps {
@@ -55,6 +58,7 @@ interface AdminSidebarProps {
   totalMockTestsCount: number;
   totalStaffCount: number;
   totalTopicsCount: number;
+  openFeedbackCount: number;
   /** Pages this person may open. Anything else is hidden, not just disabled. */
   allowedPages: AdminSubPage[];
   isCollapsed: boolean;
@@ -79,6 +83,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   totalMockTestsCount,
   totalStaffCount,
   totalTopicsCount,
+  openFeedbackCount,
   allowedPages,
   isCollapsed,
   onToggleCollapse,
@@ -113,6 +118,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'staff', label: 'Team', icon: ShieldCheck, count: totalStaffCount },
     { id: 'questions', label: 'Question bank', icon: Database, count: totalQuestionsCount },
     { id: 'topics', label: 'Topics', icon: Tags, count: totalTopicsCount },
+    {
+      id: 'feedback',
+      label: 'Feedback',
+      icon: MessageSquareWarning,
+      count: openFeedbackCount || undefined,
+      urgent: openFeedbackCount > 0,
+    },
     { id: 'courses', label: 'Courses', icon: BookOpen, count: totalCoursesCount },
     { id: 'mock-tests', label: 'Mock tests', icon: Award, count: totalMockTestsCount },
     { id: 'resources', label: 'Resources', icon: FileText, count: totalResourcesCount },
@@ -121,7 +133,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const sectionMap: Record<(typeof SECTIONS)[number], AdminSubPage[]> = {
     Analytics: ['overview'],
     'People & payments': ['payments', 'candidates', 'staff'],
-    Content: ['questions', 'topics', 'courses', 'mock-tests', 'resources'],
+    Content: ['questions', 'topics', 'feedback', 'courses', 'mock-tests', 'resources'],
   };
 
   const showLabels = isMobileOpen || !isCollapsed;

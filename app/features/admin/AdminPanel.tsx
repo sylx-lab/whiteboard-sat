@@ -9,6 +9,7 @@ import {
   Course,
   ResourceItem,
   MockTest,
+  QuestionFeedback,
   AdminPermission,
   PaymentSettings,
   ProductPlan,
@@ -29,6 +30,7 @@ import { CoursesView } from './views/CoursesView';
 import { ResourcesView } from './views/ResourcesView';
 import { MockTestsView } from './views/MockTestsView';
 import { QuestionBankView } from './views/QuestionBankView';
+import { FeedbackView } from './views/FeedbackView';
 
 export interface AdminPanelProps {
   currentUser: UserProfile | null;
@@ -38,10 +40,12 @@ export interface AdminPanelProps {
   courses: Course[];
   resources: ResourceItem[];
   mockTests: MockTest[];
+  questionFeedback: QuestionFeedback[];
   paymentSettings?: PaymentSettings;
   plans?: ProductPlan[];
   onVerifyPayment: (paymentId: string) => void;
   onRejectPayment: (paymentId: string) => void;
+  onResolveFeedback: (feedbackId: string, resolved?: boolean) => void;
   onUpdatePaymentSettings?: (settings: PaymentSettings) => Promise<PaymentSettings>;
   onUpdatePlan?: (plan: ProductPlan) => Promise<ProductPlan[]>;
   onAddPlan?: (plan: Partial<ProductPlan> & { name: string; price: number }) => Promise<ProductPlan[]>;
@@ -80,6 +84,7 @@ const PAGE_PERMISSION: Record<AdminSubPage, keyof AdminPermission | null> = {
   staff: 'canManageSubAdmins',
   questions: 'canManagePractice',
   topics: 'canManagePractice',
+  feedback: 'canManagePractice',
   courses: 'canManageCourses',
   'mock-tests': 'canManageMockTests',
   resources: 'canManageResources',
@@ -93,10 +98,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   courses,
   resources,
   mockTests,
+  questionFeedback,
   paymentSettings,
   plans,
   onVerifyPayment,
   onRejectPayment,
+  onResolveFeedback,
   onUpdatePaymentSettings,
   onUpdatePlan,
   onAddPlan,
@@ -176,6 +183,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   }
 
   const pendingPaymentsCount = payments.filter((p) => p.status === 'pending').length;
+  const openFeedbackCount = questionFeedback.filter((f) => f.status === 'open').length;
   const staffCount = users.filter((u) => u.role === 'admin' || u.role === 'sub_admin').length;
   const topicCount = listTopics(questions).length;
   const quickAction = QUICK_ACTIONS[activeSubPage];
@@ -194,6 +202,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         totalMockTestsCount={mockTests.length}
         totalStaffCount={staffCount}
         totalTopicsCount={topicCount}
+        openFeedbackCount={openFeedbackCount}
         allowedPages={allowedPages}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -270,6 +279,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 onAddQuestion={onAddQuestion}
               />
             </Suspense>
+          )}
+
+          {activeSubPage === 'feedback' && (
+            <FeedbackView feedback={questionFeedback} onResolveFeedback={onResolveFeedback} />
           )}
         </main>
       </div>

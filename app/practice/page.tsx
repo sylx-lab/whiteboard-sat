@@ -29,6 +29,7 @@ export default function PracticePage() {
         onToggleBookmark={store.toggleBookmark}
         onOpenPricing={() => router.push('/pricing')}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onSubmitFeedback={store.currentUser ? store.submitQuestionFeedback : undefined}
       />
       <AuthModal
         isOpen={isAuthOpen}

@@ -13,6 +13,7 @@ import {
   MockTestAttempt,
   PracticeAttempt,
   PaymentSubmission,
+  QuestionFeedback,
   AppTheme,
   AdminPermission,
   AuthResult,
@@ -56,6 +57,7 @@ const STORAGE_KEYS = {
   MOCK_ATTEMPTS: 'wbsat_mock_attempts',
   PRACTICE_ATTEMPTS: 'wbsat_practice_attempts',
   PAYMENTS: 'wbsat_payments',
+  FEEDBACK: 'wbsat_feedback',
   PAYMENT_SETTINGS: 'wbsat_payment_settings',
   PLANS: 'wbsat_plans',
   COURSE_PROGRESS: 'wbsat_course_progress',
@@ -110,6 +112,9 @@ function useAppStoreInternal() {
   // Payments
   const [payments, setPayments] = useState<PaymentSubmission[]>([]);
 
+  // Question feedback — a student's reports, or the full fix queue for staff
+  const [questionFeedback, setQuestionFeedback] = useState<QuestionFeedback[]>([]);
+
   // Plans & Payment Settings (Dynamic)
   const [plans, setPlans] = useState<ProductPlan[]>(INITIAL_PLANS);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
@@ -140,6 +145,7 @@ function useAppStoreInternal() {
     setPracticeAttempts(loadFromStorage<PracticeAttempt[]>(STORAGE_KEYS.PRACTICE_ATTEMPTS, []));
     setMockAttempts(loadFromStorage<MockTestAttempt[]>(STORAGE_KEYS.MOCK_ATTEMPTS, []));
     setPayments(loadFromStorage<PaymentSubmission[]>(STORAGE_KEYS.PAYMENTS, []));
+    setQuestionFeedback(loadFromStorage<QuestionFeedback[]>(STORAGE_KEYS.FEEDBACK, []));
     setPlans(loadFromStorage<ProductPlan[]>(STORAGE_KEYS.PLANS, INITIAL_PLANS));
     setPaymentSettings(loadFromStorage<PaymentSettings>(STORAGE_KEYS.PAYMENT_SETTINGS, DEFAULT_PAYMENT_SETTINGS));
     setCourseProgress(loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.COURSE_PROGRESS, {}));
@@ -157,6 +163,7 @@ function useAppStoreInternal() {
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PRACTICE_ATTEMPTS, practiceAttempts); }, [practiceAttempts]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.MOCK_ATTEMPTS, mockAttempts); }, [mockAttempts]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PAYMENTS, payments); }, [payments]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.FEEDBACK, questionFeedback); }, [questionFeedback]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PLANS, plans); }, [plans]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.PAYMENT_SETTINGS, paymentSettings); }, [paymentSettings]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.COURSE_PROGRESS, courseProgress); }, [courseProgress]);
@@ -227,14 +234,16 @@ function useAppStoreInternal() {
         }
 
         if (!isSignedIn) return;
-        const [history, pays] = await Promise.all([
+        const [history, pays, fb] = await Promise.all([
           api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
           api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })),
+          api.get<{ items: QuestionFeedback[] }>('/feedback').catch(() => ({ items: [] as QuestionFeedback[] })),
         ]);
         if (cancelled) return;
         setPracticeAttempts(history?.practice ?? []);
         setMockAttempts(history?.mock ?? []);
         setPayments(pays?.items ?? []);
+        setQuestionFeedback(fb?.items ?? []);
       } catch (err) {
         console.error('Could not load from the API', err);
       } finally {
@@ -343,6 +352,7 @@ function useAppStoreInternal() {
     setPracticeAttempts([]);
     setMockAttempts([]);
     setPayments([]);
+    setQuestionFeedback([]);
     setAllUsers([]);
     setCourseProgress({});
   };
@@ -491,6 +501,15 @@ function useAppStoreInternal() {
   };
 
   const rejectPayment = (paymentId: string) => verifyPayment(paymentId, false);
+
+  // --- QUESTION FEEDBACK — student reports, admin fix queue ---
+  const submitQuestionFeedback = (questionId: string, message: string): Promise<QuestionFeedback> =>
+    createIn<QuestionFeedback>('/feedback', setQuestionFeedback, { questionId, message });
+
+  const resolveQuestionFeedback = (feedbackId: string, resolved: boolean = true) =>
+    patchIn<QuestionFeedback>('/feedback', feedbackId, setQuestionFeedback, {
+      status: resolved ? 'resolved' : 'open',
+    });
 
   // --- PEOPLE: ACCESS, ROLES & STAFF ---
   /** One PATCH covers role, permissions, access and suspension; the guards live server-side. */
@@ -761,6 +780,7 @@ function useAppStoreInternal() {
     mockAttempts,
     mockTestAttempts: mockAttempts,
     payments,
+    questionFeedback,
     courseProgress,
     // Access control
     hasAccessToQuestion,
@@ -785,6 +805,8 @@ function useAppStoreInternal() {
     submitPayment,
     verifyPayment,
     rejectPayment,
+    submitQuestionFeedback,
+    resolveQuestionFeedback,
     grantStudentAccess,
     updateUserAccess: grantStudentAccess,
     toggleStudentSuspension,

@@ -20,10 +20,12 @@ export default function AdminPage() {
         courses={store.courses}
         resources={store.resources}
         mockTests={store.mockTests}
+        questionFeedback={store.questionFeedback}
         paymentSettings={store.paymentSettings}
         plans={store.plans}
         onVerifyPayment={store.verifyPayment}
         onRejectPayment={store.rejectPayment}
+        onResolveFeedback={store.resolveQuestionFeedback}
         onUpdatePaymentSettings={store.updatePaymentSettings}
         onUpdatePlan={store.updatePlan}
         onAddPlan={store.addPlan}

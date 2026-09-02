@@ -11,6 +11,8 @@ import {
   RotateCcw,
   ArrowRight,
   Clock,
+  Trophy,
+  Eye,
 } from 'lucide-react';
 import {
   Question,
@@ -27,6 +29,7 @@ import { QuestionCard } from '../../components/QuestionCard';
 import { QuestionNavigator } from '../../components/QuestionNavigator';
 import { DesmosModal } from '../../components/DesmosModal';
 import { FormulaReferenceModal } from '../../components/FormulaReferenceModal';
+import { QuestionFeedbackModal } from '../../components/QuestionFeedbackModal';
 import { sortQuestions, type QuestionSortOption } from '../../lib/questionSort';
 
 interface PracticeHubProps {
@@ -37,6 +40,7 @@ interface PracticeHubProps {
   onToggleBookmark?: (questionId: string) => void;
   onOpenPricing: () => void;
   onOpenAuth?: () => void;
+  onSubmitFeedback?: (questionId: string, message: string) => Promise<unknown>;
 }
 
 type SortOption = QuestionSortOption;
@@ -51,6 +55,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   onToggleBookmark,
   onOpenPricing,
   onOpenAuth,
+  onSubmitFeedback,
 }) => {
   // High-Level Subject Switcher — All first, then Math / English
   const [selectedSubject, setSelectedSubject] = useState<Subject | 'all'>('all');
@@ -88,6 +93,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   // Reference Modals
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
   const [isFormulasOpen, setIsFormulasOpen] = useState(false);
+  const [reportingQuestion, setReportingQuestion] = useState<Question | null>(null);
+
+  // Session Result Screen — shown on demand, not just when every question is answered
+  const [showResults, setShowResults] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -408,6 +417,112 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     }
   };
 
+  // Session summary — shared by the in-progress banner and the finish screen
+  const sessionStats = useMemo(() => {
+    const total = sessionQuestionIds.length;
+    let answered = 0;
+    let correct = 0;
+    const byDomain = new Map<Domain, { total: number; correct: number }>();
+    sessionQuestionIds.forEach((id) => {
+      const inter = sessionInteractions[id];
+      const q = questions.find((qq) => qq.id === id);
+      if (!inter?.isSubmitted || !q) return;
+      answered += 1;
+      const isCorrect = isSprQuestion(q) ? isSprAnswerCorrect(q, inter.enteredAnswer) : inter.selectedAnswer === q.correct_answer;
+      if (isCorrect) correct += 1;
+      const bucket = byDomain.get(q.domain) ?? { total: 0, correct: 0 };
+      bucket.total += 1;
+      if (isCorrect) bucket.correct += 1;
+      byDomain.set(q.domain, bucket);
+    });
+    const incorrect = answered - correct;
+    return {
+      total,
+      answered,
+      correct,
+      incorrect,
+      accuracy: answered > 0 ? Math.round((correct / answered) * 100) : 0,
+      domains: Array.from(byDomain.entries()).map(([domain, s]) => ({ domain, ...s })),
+    };
+  }, [sessionQuestionIds, sessionInteractions, questions]);
+
+  const finishSession = () => {
+    setShowResults(true);
+  };
+
+  const exitToBank = () => {
+    setShowResults(false);
+    setIsSessionActive(false);
+  };
+
+  // --- SESSION RESULT SCREEN ---
+  if (isSessionActive && showResults) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-14 space-y-6 animate-in fade-in duration-200">
+        <div className="text-center space-y-2">
+          <div className="w-14 h-14 rounded-2xl bg-(--brand-soft) text-(--brand-text) flex items-center justify-center mx-auto">
+            <Trophy className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-(--foreground)">Session Complete</h1>
+          <p className="text-[13.5px] text-(--foreground-secondary)">
+            {sessionStats.answered} of {sessionStats.total} question{sessionStats.total === 1 ? '' : 's'} answered · {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')} elapsed
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
+            <div className="text-2xl font-bold text-(--foreground) font-mono">{sessionStats.accuracy}%</div>
+            <div className="text-[11px] text-(--foreground-secondary) mt-1">Accuracy</div>
+          </div>
+          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
+            <div className="text-2xl font-bold text-emerald-700 font-mono">{sessionStats.correct}</div>
+            <div className="text-[11px] text-(--foreground-secondary) mt-1">Correct</div>
+          </div>
+          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
+            <div className="text-2xl font-bold text-rose-600 font-mono">{sessionStats.incorrect}</div>
+            <div className="text-[11px] text-(--foreground-secondary) mt-1">Incorrect</div>
+          </div>
+          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
+            <div className="text-2xl font-bold text-(--foreground-secondary) font-mono">{sessionStats.total - sessionStats.answered}</div>
+            <div className="text-[11px] text-(--foreground-secondary) mt-1">Skipped</div>
+          </div>
+        </div>
+
+        {sessionStats.domains.length > 0 && (
+          <div className="rounded-xl bg-(--surface) border border-(--border) divide-y divide-(--border)">
+            {sessionStats.domains.map(({ domain, total, correct }) => (
+              <div key={domain} className="flex items-center justify-between px-4 py-2.5 text-[12.5px]">
+                <span className="text-(--foreground)">{formatDomainName(domain)}</span>
+                <span className="font-mono text-(--foreground-secondary)">{correct}/{total}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <button
+            onClick={() => {
+              setShowResults(false);
+              setCurrentIndex(0);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--surface) hover:bg-(--brand-soft) text-(--foreground) font-semibold text-[13px] rounded-xl border border-(--border) transition-colors cursor-pointer"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Review answers</span>
+          </button>
+          <button
+            onClick={exitToBank}
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-colors cursor-pointer"
+          >
+            <span>Back to Practice Bank</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // --- ACTIVE SESSION RUNNER VIEW ---
   if (isSessionActive && currentSessionQuestion && currentInteraction) {
     const isLocked = !hasAccessToQuestion(currentSessionQuestion);
@@ -423,6 +538,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>Exit Practice</span>
+            </button>
+
+            <button
+              onClick={finishSession}
+              disabled={sessionStats.answered === 0}
+              className="flex items-center gap-1 text-[12px] font-semibold text-white bg-(--brand-cta) hover:bg-(--brand-hover) disabled:opacity-40 disabled:cursor-not-allowed px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer active:scale-95"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Finish</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -488,17 +612,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
         {/* Progress — clear at-a-glance while solving */}
         {(() => {
-          const total = sessionQuestionIds.length;
-          const answered = Object.values(sessionInteractions).filter((i) => i.isSubmitted).length;
-          const correct = sessionQuestionIds.filter((id) => {
-            const inter = sessionInteractions[id];
-            if (!inter?.isSubmitted) return false;
-            const q = questions.find((qq) => qq.id === id);
-            if (!q) return false;
-            if (isSprQuestion(q)) return isSprAnswerCorrect(q, inter.enteredAnswer);
-            return !!inter.selectedAnswer && inter.selectedAnswer === q.correct_answer;
-          }).length;
-          const incorrect = answered - correct;
+          const { total, answered, correct, incorrect } = sessionStats;
           const pct = total ? Math.round((answered / total) * 100) : 0;
           return (
             <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3 sm:p-4 space-y-2.5">
@@ -540,9 +654,17 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 <p className="text-[11px] text-[var(--foreground-secondary)]">Timer paused while you review the explanation.</p>
               )}
               {answered === total && total > 0 && (
-                <p className="text-[11px] font-medium text-emerald-700">
-                  All done! Timer stopped at {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}. Review any question or exit.
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-medium text-emerald-700">
+                    All done! Timer stopped at {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')}.
+                  </p>
+                  <button
+                    onClick={finishSession}
+                    className="text-[11px] font-semibold text-(--brand-text) hover:underline"
+                  >
+                    See results →
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -566,6 +688,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               onUnlock={onOpenPricing}
               onOpenDesmos={() => setIsDesmosOpen(true)}
               onOpenFormulas={() => setIsFormulasOpen(true)}
+              onReportIssue={onSubmitFeedback ? () => setReportingQuestion(currentSessionQuestion) : undefined}
               isCrossOutModeActive={isCrossOutMode}
               onToggleCrossOutMode={() => setIsCrossOutMode(!isCrossOutMode)}
               showExplanationImmediately={true}
@@ -675,6 +798,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
         <DesmosModal isOpen={isDesmosOpen} onClose={() => setIsDesmosOpen(false)} />
         <FormulaReferenceModal isOpen={isFormulasOpen} onClose={() => setIsFormulasOpen(false)} />
+        {onSubmitFeedback && (
+          <QuestionFeedbackModal
+            question={reportingQuestion}
+            onClose={() => setReportingQuestion(null)}
+            onSubmit={(message) => onSubmitFeedback(reportingQuestion!.id, message)}
+          />
+        )}
       </div>
     );
   }

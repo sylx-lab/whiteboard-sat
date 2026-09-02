@@ -9,6 +9,7 @@ import type {
   PracticeAttempt,
   PracticeSession,
   Question,
+  QuestionFeedback,
   ResourceItem,
   UserProfile,
   PaymentSettings,
@@ -34,6 +35,7 @@ export type MockTestDoc = Doc<Omit<MockTest, 'totalQuestions' | 'totalTimeMinute
 export type MockAttemptDoc = Doc<MockTestAttempt>;
 export type PracticeAttemptDoc = Doc<Omit<PracticeAttempt, 'timestamp'>>;
 export type PaymentDoc = Doc<Omit<PaymentSubmission, 'createdAt' | 'productTitle'>>;
+export type FeedbackDoc = Doc<QuestionFeedback>;
 export type PracticeSessionDoc = Doc<PracticeSession>;
 export type PaymentSettingsDoc = Doc<PaymentSettings>;
 export type PlanDoc = Doc<ProductPlan>;
@@ -85,6 +87,7 @@ export const hydrate = {
     const p = fromDoc(d) as Omit<PaymentSubmission, 'createdAt' | 'productTitle'>;
     return { ...p, createdAt: p.submittedAt, productTitle: p.productName };
   },
+  feedback: (d: FeedbackDoc): QuestionFeedback => fromDoc(d) as QuestionFeedback,
   paymentSettings: (d: PaymentSettingsDoc): PaymentSettings => fromDoc(d) as PaymentSettings,
   plan: (d: PlanDoc): ProductPlan => fromDoc(d) as ProductPlan,
   /** publicUser + the `status` mirror of isSuspended. Never returns passwordHash. */
@@ -105,6 +108,7 @@ export const dehydrate = {
   practiceAttempt: ({ timestamp: _t, ...a }: PracticeAttempt): PracticeAttemptDoc => toDoc(a),
   practiceSession: (s: PracticeSession): PracticeSessionDoc => toDoc(s),
   payment: ({ createdAt: _c, productTitle: _pt, ...p }: PaymentSubmission): PaymentDoc => toDoc(p),
+  feedback: (f: QuestionFeedback): FeedbackDoc => toDoc(f),
   paymentSettings: (s: PaymentSettings): PaymentSettingsDoc => toDoc(s),
   plan: (p: ProductPlan): PlanDoc => toDoc(p),
 };
@@ -140,6 +144,7 @@ export const collections = {
   mockAttempts: async () => (await db()).collection<MockAttemptDoc>('mockAttempts'),
   practiceAttempts: async () => (await db()).collection<PracticeAttemptDoc>('practiceAttempts'),
   payments: async () => (await db()).collection<PaymentDoc>('payments'),
+  feedback: async () => (await db()).collection<FeedbackDoc>('feedback'),
   practiceSessions: async () => (await db()).collection<PracticeSessionDoc>('practiceSessions'),
   paymentSettings: async () => (await db()).collection<PaymentSettingsDoc>('paymentSettings'),
   plans: async () => (await db()).collection<PlanDoc>('plans'),
@@ -176,6 +181,10 @@ export async function ensureIndexes() {
     (await c.practiceSessions()).createIndex({ userId: 1, isCompleted: 1, startedAt: -1 }),
     (await c.payments()).createIndexes([
       { key: { status: 1, submittedAt: -1 } },   // admin verification queue
+      { key: { userId: 1 } },
+    ]),
+    (await c.feedback()).createIndexes([
+      { key: { status: 1, createdAt: -1 } },     // admin fix queue
       { key: { userId: 1 } },
     ]),
   ]);

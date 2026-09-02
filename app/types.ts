@@ -202,6 +202,22 @@ export interface ResourceItem {
   dateAdded: string;
 }
 
+export type QuestionFeedbackStatus = 'open' | 'resolved';
+
+/** A student flagging something wrong with a question — the admin's fix queue. */
+export interface QuestionFeedback {
+  id: string;
+  questionId: string;
+  questionCode: string;
+  userId: string;
+  userName: string;
+  message: string;
+  status: QuestionFeedbackStatus;
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+
 export interface ProductPlan {
   id: string;
   name: string;

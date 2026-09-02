@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ExternalLink,
   Clock,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { Question, QuestionInteractionState, AnswerChoice } from '../types';
 import { MathRenderer } from './MathRenderer';
@@ -35,6 +36,7 @@ interface QuestionCardProps {
   onUnlock?: () => void;
   onOpenDesmos?: () => void;
   onOpenFormulas?: () => void;
+  onReportIssue?: () => void;
   isCrossOutModeActive: boolean;
   onToggleCrossOutMode: () => void;
   showExplanationImmediately?: boolean;
@@ -55,6 +57,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onUnlock,
   onOpenDesmos,
   onOpenFormulas,
+  onReportIssue,
   isCrossOutModeActive,
   onToggleCrossOutMode,
   showExplanationImmediately = true,
@@ -635,6 +638,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-(--brand-text) text-(--brand-text)' : ''}`} />
             <span className="hidden sm:inline">Bookmark</span>
           </button>
+
+          {onReportIssue && (
+            <button
+              onClick={onReportIssue}
+              className="h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border border-(--border) bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
+              title="Report an issue with this question"
+            >
+              <MessageSquareWarning className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Report</span>
+            </button>
+          )}
         </div>
       </div>
 
