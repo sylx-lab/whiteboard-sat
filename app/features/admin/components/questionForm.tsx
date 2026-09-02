@@ -516,16 +516,16 @@ export const QuestionFormFields: React.FC<{
                   </label>
 
                   <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <textarea
-                        rows={1}
-                        value={form.choices[id]}
-                        onChange={(e) => update({ choices: { ...form.choices, [id]: e.target.value } })}
-                        placeholder={`Choice ${id} text or equation… (e.g. $y = 2x + 1$)`}
-                        aria-label={`Choice ${id} text`}
-                        className="flex-1 min-w-0 min-h-9 px-3 py-2 field-sizing-content bg-white border border-[#E2E8F0] rounded-[10px] text-[12px] font-mono text-[#071126] focus:outline-none focus:border-[#0D918A] transition-colors resize-y"
-                      />
+                    <VisualMathEditor
+                      ariaLabel={`Choice ${id} text`}
+                      compact
+                      rows={1}
+                      value={form.choices[id]}
+                      onChange={(v) => update({ choices: { ...form.choices, [id]: v } })}
+                      placeholder={`Choice ${id} text or equation… (e.g. $y = 2x + 1$)`}
+                    />
 
+                    <div className="flex items-center gap-2">
                       {!hasImage && (
                         <UploadButton
                           folder="questions"
@@ -538,7 +538,7 @@ export const QuestionFormFields: React.FC<{
                       )}
 
                       {isCorrect && (
-                        <span className="text-[11px] font-semibold text-emerald-700 shrink-0 hidden sm:inline mt-2">
+                        <span className="text-[11px] font-semibold text-emerald-700">
                           Correct Answer
                         </span>
                       )}
