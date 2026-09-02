@@ -81,36 +81,36 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-all duration-200 bg-(--brand) border-b border-[rgba(255,255,255,0.15) ${isScrolled ? 'shadow-md bg-(--brand-cta)' : 'shadow-xs'}`}>
-      <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-17.5">
+      <div className="max-w-310 mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-17">
           {/* Zone 1: LEFT Brand Wordmark */}
           <div
-            className="flex items-center gap-3 cursor-pointer select-none group"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none group"
             onClick={() => onNavigate(currentUser ? 'dashboard' : 'home')}
           >
             {/* Minimal Geometric WB Mark */}
-            <div className="w-8 h-8 rounded-lg bg-(--surface) text-(--brand-text) flex items-center justify-center font-bold text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-(--surface) text-(--brand-text) flex items-center justify-center font-bold text-[10px] sm:text-[11px] tracking-wider transition-transform duration-150 group-hover:scale-105 shadow-xs">
               WB
             </div>
 
             {/* Editorial Brand Name */}
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-[14.5px] tracking-tight text-white leading-none">
+                <span className="font-bold text-[13px] sm:text-[14.5px] tracking-tight text-white leading-none">
                   WHITE BOARD
                 </span>
                 <span className="text-[10px] font-bold text-(--brand-text) bg-(--surface) px-1.5 py-0.5 rounded-sm leading-none">
                   SAT
                 </span>
               </div>
-              <span className="text-[10px] font-semibold tracking-wider text-white/80 uppercase mt-1">
+              <span className="hidden sm:block text-[10px] font-semibold tracking-wider text-white/80 uppercase mt-1">
                 DIGITAL SAT PREP
               </span>
             </div>
           </div>
 
           {/* Zone 2: CENTER Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 font-medium">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 font-medium">
             {!currentUser ? (
               // Public Visitor Navigation Links
               <>
@@ -292,12 +292,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Zone 3: RIGHT Action Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             {/* Theme Toggle Button */}
             <div className="relative">
               <button
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
                 title="Theme Settings"
                 aria-label="Theme Settings"
                 aria-expanded={themeDropdownOpen}
@@ -359,7 +359,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-[10px] border border-white/18 transition-colors cursor-pointer text-white"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 hover:bg-white/15 rounded-[10px] border border-white/18 transition-colors cursor-pointer text-white"
                 >
                   <div className="w-5 h-5 rounded-md bg-(--surface) text-(--brand-text) flex items-center justify-center font-bold text-[10px]">
                     {currentUser.name.charAt(0)}
@@ -436,16 +436,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-1.5 sm:gap-3">
                 <button
                   onClick={onOpenAuth}
-                  className="px-3 py-1.5 text-[14px] font-medium text-white/90 hover:text-white transition-colors cursor-pointer"
+                  className="hidden sm:inline-block px-3 py-1.5 text-[14px] font-medium text-white/90 hover:text-white transition-colors cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
                   onClick={onOpenAuth}
-                  className="px-4.5 py-2.5 bg-(--surface) hover:bg-(--brand-soft) text-(--brand-text) font-semibold text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
+                  className="px-3 sm:px-4.5 py-2 sm:py-2.5 bg-(--surface) hover:bg-(--brand-soft) text-(--brand-text) font-semibold text-[12.5px] sm:text-[13.5px] rounded-[10px] transition-all duration-150 cursor-pointer flex items-center gap-1.5 group shadow-none"
                 >
                   <span>Get Started</span>
                   <ArrowRight className="w-3.5 h-3.5 text-(--brand-text) transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -456,7 +456,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 sm:p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -468,17 +468,17 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 top-17.5 z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
+            className="fixed inset-0 top-14 sm:top-16 z-30 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed inset-x-0 top-17.5 z-40 lg:hidden bg-(--surface) border-b border-(--border) px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-70px) overflow-y-auto pb-safe">
+          <div className="fixed inset-x-0 top-14 sm:top-16 z-40 lg:hidden bg-(--surface) border-b border-(--border) px-4 py-4 space-y-3 shadow-2xl animate-in slide-in-from-top-2 duration-150 max-h-[calc(100dvh-56px)] sm:max-h-[calc(100dvh-64px)] overflow-y-auto pb-safe">
             <nav className="flex flex-col space-y-1 text-[13.5px] font-medium">
               <button
                 onClick={() => {
                   onNavigate(currentUser ? 'dashboard' : 'home');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl font-semibold transition-colors flex items-center justify-between ${isLinkActive(currentUser ? 'dashboard' : 'home')
+                className={`px-3.5 py-2 text-left rounded-xl font-semibold transition-colors flex items-center justify-between ${isLinkActive(currentUser ? 'dashboard' : 'home')
                     ? 'bg-(--brand-soft) text-(--brand-text)'
                     : 'text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -490,7 +490,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('practice');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('practice')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('practice')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -502,7 +502,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('mock-tests');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('mock-tests')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('mock-tests')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -514,7 +514,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('courses');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('courses')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('courses')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -526,7 +526,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('leaderboard');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('leaderboard')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('leaderboard')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -538,7 +538,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('resources');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('resources')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('resources')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -550,7 +550,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('pricing');
                   setMobileMenuOpen(false);
                 }}
-                className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('pricing')
+                className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('pricing')
                     ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                     : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                   }`}
@@ -563,7 +563,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onNavigate('progress');
                     setMobileMenuOpen(false);
                   }}
-                  className={`px-3.5 py-2.5 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('progress')
+                  className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center justify-between ${isLinkActive('progress')
                       ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
                       : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
                     }`}
@@ -578,7 +578,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onNavigate('admin-dashboard');
                     setMobileMenuOpen(false);
                   }}
-                  className="px-3.5 py-2.5 text-left rounded-xl text-(--brand-text) font-semibold hover:bg-(--brand-soft) transition-colors flex items-center gap-2"
+                  className="px-3.5 py-2 text-left rounded-xl text-(--brand-text) font-semibold hover:bg-(--brand-soft) transition-colors flex items-center gap-2"
                 >
                   <Shield className="w-4 h-4" />
                   <span>Admin Control Console</span>
@@ -592,7 +592,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full px-3.5 py-2.5 text-left rounded-xl text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center gap-2"
+                    className="w-full px-3.5 py-2 text-left rounded-xl text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center gap-2"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sign Out ({currentUser.name})</span>
