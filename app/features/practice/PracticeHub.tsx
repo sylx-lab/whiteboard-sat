@@ -537,7 +537,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               className="flex items-center gap-1 text-[12px] font-medium text-(--foreground-secondary) hover:text-(--foreground) px-2.5 sm:px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              <span>Exit Practice</span>
+              <span>End Practice</span>
             </button>
 
             <button
