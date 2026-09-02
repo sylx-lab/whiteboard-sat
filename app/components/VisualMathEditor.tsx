@@ -267,7 +267,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         Block
       </button>
 
-      {!compact && (
+      {(!compact || isFullModal) && (
         <>
           <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
           {SYMBOL_GROUPS.map((group) => (

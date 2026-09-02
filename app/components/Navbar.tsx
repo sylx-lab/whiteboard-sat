@@ -293,8 +293,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Zone 3: RIGHT Action Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {/* Theme Toggle Button */}
-            <div className="relative">
+            {/* Theme Toggle Button — desktop only; mobile picks a theme from the drawer */}
+            <div className="relative hidden lg:block">
               <button
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
                 className="p-1.5 sm:p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-[10px] transition-colors cursor-pointer"
@@ -354,9 +354,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Profile Menu or Log In / Get Started */}
+            {/* Profile Menu or Log In / Get Started — avatar menu is desktop only; mobile uses the drawer */}
             {currentUser ? (
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 hover:bg-white/15 rounded-[10px] border border-white/18 transition-colors cursor-pointer text-white"
@@ -485,6 +485,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <span>{currentUser ? 'Student Dashboard' : 'Home'}</span>
               </button>
+              {currentUser && (
+                <button
+                  onClick={() => {
+                    onNavigate('account');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`px-3.5 py-2 text-left rounded-xl transition-colors flex items-center gap-2 ${isLinkActive('account')
+                      ? 'bg-(--brand-soft) text-(--brand-text) font-semibold'
+                      : 'text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft)'
+                    }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile & Access</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   onNavigate('practice');
