@@ -31,6 +31,18 @@ export function domainsForSubject(subject: Subject): Domain[] {
   return subject === 'math' ? MATH_DOMAINS : READING_WRITING_DOMAINS;
 }
 
+/** Converts a YouTube watch/share/mobile link to its embeddable form; passes other URLs through unchanged. */
+export function toYouTubeEmbed(raw: string): string {
+  try {
+    const u = new URL(raw);
+    if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    return raw;
+  } catch {
+    return raw;
+  }
+}
+
 export function formatSubjectName(subject: Subject): string {
   return subject === 'math' ? 'Math' : 'Reading & Writing';
 }

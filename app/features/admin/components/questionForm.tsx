@@ -5,7 +5,7 @@ import { Question, Subject, Domain, Difficulty, QuestionStatus, AnswerChoice, Qu
 import { isSprQuestion } from '../../../lib/spr';
 import { VisualMathEditor } from '../../../components/VisualMathEditor';
 import { MathRenderer } from '../../../components/MathRenderer';
-import { domainsForSubject, formatDomainName, formatSubjectName } from '../../../lib/utils';
+import { domainsForSubject, formatDomainName, formatSubjectName, toYouTubeEmbed } from '../../../lib/utils';
 import { suggestQuestionCode, findCodeConflict, distinctValues } from '../lib/questionCodes';
 import {
   Database,
@@ -592,14 +592,7 @@ export const QuestionFormFields: React.FC<{
         </Field>
         {form.explanationYoutubeUrl.trim() && (() => {
           const raw = form.explanationYoutubeUrl.trim();
-          const toEmbed = (() => {
-            try {
-              const u = new URL(raw);
-              if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
-              if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
-              return raw;
-            } catch { return raw; }
-          })();
+          const toEmbed = toYouTubeEmbed(raw);
           const isEmbed = toEmbed.includes('/embed/');
           return (
             <div className="rounded-xl overflow-hidden border border-[#E2E8F0] bg-black aspect-video">

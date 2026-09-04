@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Question, QuestionInteractionState, AnswerChoice } from '../types';
 import { MathRenderer } from './MathRenderer';
-import { formatDomainName, getDifficultyColor } from '../lib/utils';
+import { formatDomainName, getDifficultyColor, toYouTubeEmbed } from '../lib/utils';
 import { isSprQuestion, isSprAnswerCorrect } from '../lib/spr';
 
 interface QuestionCardProps {
@@ -489,13 +489,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {(() => {
             const raw = (question.explanation_resource_link || '').trim();
             if (!raw) return null;
-            let embed: string | null = null;
-            try {
-              const u = new URL(raw);
-              if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) embed = `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
-              else if (u.hostname === 'youtu.be') embed = `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
-              else if (u.hostname.includes('youtube.com') && u.pathname.includes('/embed/')) embed = raw;
-            } catch { /* not a URL, ignore */ }
+            const converted = toYouTubeEmbed(raw);
+            const embed = converted.includes('/embed/') ? converted : null;
             return (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">

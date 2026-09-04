@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Course, Subject, Lesson } from '../../../types';
+import { toYouTubeEmbed } from '../../../lib/utils';
 import {
   BookOpen,
   Video,
@@ -454,7 +455,7 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                 </div>
                 <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 grid place-items-center">
                   {previewInSection.videoUrl ? (
-                    <iframe src={previewInSection.videoUrl} title={previewInSection.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
+                    <iframe src={toYouTubeEmbed(previewInSection.videoUrl)} title={previewInSection.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
                   ) : (
                     <div className="text-center space-y-2 p-6">
                       <Play className="w-8 h-8 text-teal-400 mx-auto opacity-70" />
@@ -750,7 +751,7 @@ export const CourseVisualEditor: React.FC<CourseVisualEditorProps> = ({ initialC
                 </div>
                 <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 grid place-items-center">
                   {previewLesson.videoUrl ? (
-                    <iframe src={previewLesson.videoUrl} title={previewLesson.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
+                    <iframe src={toYouTubeEmbed(previewLesson.videoUrl)} title={previewLesson.title || 'Lesson video'} className="w-full h-full" allowFullScreen />
                   ) : (
                     <div className="text-center space-y-2 p-6">
                       <Play className="w-8 h-8 text-teal-400 mx-auto opacity-70" />

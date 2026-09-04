@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { Course, Lesson, UserProfile } from '../../types';
+import { toYouTubeEmbed } from '../../lib/utils';
 
 interface CoursesHubProps {
   courses: Course[];
@@ -310,7 +311,7 @@ export const CoursesHub: React.FC<CoursesHubProps> = ({
                     <div className="w-full aspect-video bg-(--navy-section) rounded-xl overflow-hidden relative">
                       {activeLesson.videoUrl ? (
                         <iframe
-                          src={activeLesson.videoUrl}
+                          src={toYouTubeEmbed(activeLesson.videoUrl)}
                           title={activeLesson.title || 'Lesson video'}
                           className="w-full h-full"
                           allowFullScreen
