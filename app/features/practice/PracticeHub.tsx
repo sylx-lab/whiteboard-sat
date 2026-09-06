@@ -8,11 +8,16 @@ import {
   SlidersHorizontal,
   X,
   Check,
+  CheckCircle2,
   RotateCcw,
   ArrowRight,
   Clock,
   Trophy,
   Eye,
+  Target,
+  Bookmark,
+  Flag,
+  BarChart2,
 } from 'lucide-react';
 import {
   Question,
@@ -422,12 +427,17 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     const total = sessionQuestionIds.length;
     let answered = 0;
     let correct = 0;
+    let flagged = 0;
+    let totalTimeSpentAnswered = 0;
     const byDomain = new Map<Domain, { total: number; correct: number }>();
+
     sessionQuestionIds.forEach((id) => {
       const inter = sessionInteractions[id];
       const q = questions.find((qq) => qq.id === id);
+      if (inter?.isMarkedForReview) flagged += 1;
       if (!inter?.isSubmitted || !q) return;
       answered += 1;
+      totalTimeSpentAnswered += (inter.timeSpentSeconds || 0);
       const isCorrect = isSprQuestion(q) ? isSprAnswerCorrect(q, inter.enteredAnswer) : inter.selectedAnswer === q.correct_answer;
       if (isCorrect) correct += 1;
       const bucket = byDomain.get(q.domain) ?? { total: 0, correct: 0 };
@@ -435,19 +445,39 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       if (isCorrect) bucket.correct += 1;
       byDomain.set(q.domain, bucket);
     });
+
     const incorrect = answered - correct;
+    const avgSeconds = answered > 0
+      ? Math.round(totalTimeSpentAnswered > 0 ? totalTimeSpentAnswered / answered : sessionTimer / answered)
+      : 0;
+
+    const avgTimeFormatted = avgSeconds >= 60
+      ? `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s`
+      : `${avgSeconds}s`;
+
     return {
       total,
       answered,
       correct,
       incorrect,
+      flagged,
+      avgSeconds,
+      avgTimeFormatted,
       accuracy: answered > 0 ? Math.round((correct / answered) * 100) : 0,
       domains: Array.from(byDomain.entries()).map(([domain, s]) => ({ domain, ...s })),
     };
-  }, [sessionQuestionIds, sessionInteractions, questions]);
+  }, [sessionQuestionIds, sessionInteractions, questions, sessionTimer]);
 
   const finishSession = () => {
     setShowResults(true);
+  };
+
+  const handleEndPractice = () => {
+    if (sessionStats.answered > 0) {
+      setShowResults(true);
+    } else {
+      setIsSessionActive(false);
+    }
   };
 
   const exitToBank = () => {
@@ -458,47 +488,215 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   // --- SESSION RESULT SCREEN ---
   if (isSessionActive && showResults) {
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-14 space-y-6 animate-in fade-in duration-200">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6 animate-in fade-in duration-200">
+        {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-(--brand-soft) text-(--brand-text) flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-(--brand-soft) text-(--brand-text) flex items-center justify-center mx-auto shadow-xs">
             <Trophy className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-(--foreground)">Session Complete</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-(--foreground)">Practice Session Report</h1>
           <p className="text-[13.5px] text-(--foreground-secondary)">
-            {sessionStats.answered} of {sessionStats.total} question{sessionStats.total === 1 ? '' : 's'} answered · {Math.floor(sessionTimer / 60)}:{(sessionTimer % 60).toString().padStart(2, '0')} elapsed
+            Great job! Review your performance metrics and question breakdown below.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
-            <div className="text-2xl font-bold text-(--foreground) font-mono">{sessionStats.accuracy}%</div>
-            <div className="text-[11px] text-(--foreground-secondary) mt-1">Accuracy</div>
+        {/* 6 Key Performance Indicators (Solved, Avg Time, Accuracy, Correct, Wrong, Flagged) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* 1. Questions Solved */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Solved</span>
+              <CheckCircle2 className="w-4 h-4 text-(--brand-cta)" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-(--foreground)">
+                {sessionStats.answered} <span className="text-xs font-normal text-(--foreground-secondary)">/ {sessionStats.total}</span>
+              </div>
+              <div className="text-[10.5px] text-(--foreground-muted) mt-0.5">
+                {sessionStats.total - sessionStats.answered} skipped
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
-            <div className="text-2xl font-bold text-emerald-700 font-mono">{sessionStats.correct}</div>
-            <div className="text-[11px] text-(--foreground-secondary) mt-1">Correct</div>
+
+          {/* 2. Avg Time / Question */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Time</span>
+              <Clock className="w-4 h-4 text-blue-500" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-(--foreground)">
+                {sessionStats.avgTimeFormatted}
+              </div>
+              <div className="text-[10.5px] text-(--foreground-muted) mt-0.5">
+                {Math.floor(sessionTimer / 60)}m {(sessionTimer % 60).toString().padStart(2, '0')}s total
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
-            <div className="text-2xl font-bold text-rose-600 font-mono">{sessionStats.incorrect}</div>
-            <div className="text-[11px] text-(--foreground-secondary) mt-1">Incorrect</div>
+
+          {/* 3. Accuracy */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Accuracy</span>
+              <Target className="w-4 h-4 text-indigo-500" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-(--foreground)">
+                {sessionStats.accuracy}%
+              </div>
+              <div className="text-[10.5px] text-(--foreground-muted) mt-0.5">
+                overall score
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-(--surface) border border-(--border) text-center">
-            <div className="text-2xl font-bold text-(--foreground-secondary) font-mono">{sessionStats.total - sessionStats.answered}</div>
-            <div className="text-[11px] text-(--foreground-secondary) mt-1">Skipped</div>
+
+          {/* 4. Correct Count */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Correct</span>
+              <Check className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                {sessionStats.correct}
+              </div>
+              <div className="text-[10.5px] text-emerald-600/80 mt-0.5">
+                accurate answers
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Incorrect Count */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Wrong</span>
+              <X className="w-4 h-4 text-rose-600" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400">
+                {sessionStats.incorrect}
+              </div>
+              <div className="text-[10.5px] text-rose-600/80 mt-0.5">
+                needs review
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Flagged Count */}
+          <div className="p-3.5 rounded-xl bg-(--surface) border border-(--border) flex flex-col justify-between shadow-2xs">
+            <div className="flex items-center justify-between text-(--foreground-secondary) mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Flagged</span>
+              <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">
+                {sessionStats.flagged}
+              </div>
+              <div className="text-[10.5px] text-amber-600/80 mt-0.5">
+                marked for review
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Domain Breakdown */}
         {sessionStats.domains.length > 0 && (
-          <div className="rounded-xl bg-(--surface) border border-(--border) divide-y divide-(--border)">
-            {sessionStats.domains.map(({ domain, total, correct }) => (
-              <div key={domain} className="flex items-center justify-between px-4 py-2.5 text-[12.5px]">
-                <span className="text-(--foreground)">{formatDomainName(domain)}</span>
-                <span className="font-mono text-(--foreground-secondary)">{correct}/{total}</span>
-              </div>
-            ))}
+          <div className="rounded-xl bg-(--surface) border border-(--border) p-4 space-y-3 shadow-2xs">
+            <h2 className="text-[13px] font-bold text-(--foreground) uppercase tracking-wider flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-(--brand-cta)" />
+              <span>Domain Performance</span>
+            </h2>
+            <div className="space-y-2.5">
+              {sessionStats.domains.map(({ domain, total, correct }) => {
+                const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+                return (
+                  <div key={domain} className="space-y-1">
+                    <div className="flex items-center justify-between text-[12.5px]">
+                      <span className="text-(--foreground) font-medium">{formatDomainName(domain)}</span>
+                      <span className="font-mono text-(--foreground-secondary)">{correct} / {total} ({pct}%)</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-(--surface-soft) overflow-hidden border border-(--border)/50">
+                      <div
+                        className="h-full bg-(--brand-cta) transition-all rounded-full"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
+        {/* Question-by-Question Review Matrix */}
+        <div className="rounded-xl bg-(--surface) border border-(--border) p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[13px] font-bold text-(--foreground) uppercase tracking-wider">
+              Question Breakdown
+            </h2>
+            <span className="text-[11.5px] text-(--foreground-secondary)">Click question to inspect & review</span>
+          </div>
+          <div className="divide-y divide-(--border) border border-(--border) rounded-lg overflow-hidden">
+            {sessionQuestionIds.map((id, index) => {
+              const q = questions.find((item) => item.id === id);
+              const inter = sessionInteractions[id];
+              const isSubmitted = inter?.isSubmitted;
+              const isCorrect = isSubmitted && q
+                ? (isSprQuestion(q) ? isSprAnswerCorrect(q, inter.enteredAnswer) : inter.selectedAnswer === q.correct_answer)
+                : false;
+              const isFlagged = inter?.isMarkedForReview;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setShowResults(false);
+                    setCurrentIndex(index);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-(--surface-soft) transition-colors cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[12px] font-bold text-(--foreground-secondary) w-6">
+                      #{index + 1}
+                    </span>
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      !isSubmitted
+                        ? 'bg-neutral-300 dark:bg-neutral-600'
+                        : isCorrect
+                        ? 'bg-emerald-500'
+                        : 'bg-rose-500'
+                    }`} />
+                    <span className="text-[12.5px] font-medium text-(--foreground) truncate max-w-50 sm:max-w-xs">
+                      {q?.topic || (q ? formatDomainName(q.domain) : `Question ${index + 1}`)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {isFlagged && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                        <Bookmark className="w-3 h-3 fill-amber-500" />
+                        <span>Flagged</span>
+                      </span>
+                    )}
+                    <span className={`text-[12px] font-semibold px-2 py-0.5 rounded ${
+                      !isSubmitted
+                        ? 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800'
+                        : isCorrect
+                        ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50'
+                        : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50'
+                    }`}>
+                      {!isSubmitted ? 'Skipped' : isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             onClick={() => {
@@ -506,14 +704,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               setCurrentIndex(0);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--surface) hover:bg-(--brand-soft) text-(--foreground) font-semibold text-[13px] rounded-xl border border-(--border) transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--surface) hover:bg-(--brand-soft) text-(--foreground) font-semibold text-[13px] rounded-xl border border-(--border) transition-colors cursor-pointer active:scale-98"
           >
             <Eye className="w-4 h-4" />
-            <span>Review answers</span>
+            <span>Review Questions</span>
           </button>
           <button
             onClick={exitToBank}
-            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-semibold text-[13px] rounded-xl transition-colors cursor-pointer active:scale-98 shadow-xs"
           >
             <span>Back to Practice Bank</span>
             <ArrowRight className="w-4 h-4" />
@@ -708,31 +906,48 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 {currentIndex + 1} / {sessionQuestionIds.length}
               </span>
 
-              <button
-                disabled={currentIndex === sessionQuestionIds.length - 1}
-                onClick={() => {
-                  questionStartMsRef.current = getNow();
-                  setCurrentIndex((idx) => Math.min(sessionQuestionIds.length - 1, idx + 1));
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[12px] font-semibold transition-colors ${
-                  currentIndex === sessionQuestionIds.length - 1
-                    ? 'text-(--foreground-muted) cursor-not-allowed'
-                    : 'bg-(--brand-cta) hover:bg-(--brand-hover) text-white shadow-xs cursor-pointer active:scale-95'
-                }`}
-              >
-                <span>Next Question</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              {currentIndex < sessionQuestionIds.length - 1 ? (
+                <button
+                  onClick={() => {
+                    questionStartMsRef.current = getNow();
+                    setCurrentIndex((idx) => Math.min(sessionQuestionIds.length - 1, idx + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[12px] font-semibold transition-colors bg-(--brand-cta) hover:bg-(--brand-hover) text-white shadow-xs cursor-pointer active:scale-95"
+                >
+                  <span>Next Question</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  onClick={finishSession}
+                  className="flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[12px] font-semibold transition-colors bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>Finish Practice</span>
+                </button>
+              )}
             </div>
 
-            <button
-              onClick={() => setIsSessionActive(false)}
-              className="flex items-center gap-1 text-[12px] font-medium text-(--foreground-secondary) hover:text-(--foreground) px-2.5 sm:px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>End Practice</span>
-            </button>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={handleEndPractice}
+                className="flex items-center gap-1 text-[12px] font-medium text-(--foreground-secondary) hover:text-(--foreground) px-2.5 sm:px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
+                title="End practice session and view report"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>End Practice</span>
+              </button>
+
+              <button
+                onClick={finishSession}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer active:scale-95"
+                title="Finish practice session and see report"
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                <span>Finish Practice</span>
+              </button>
+            </div>
           </div>
 
           {/* Desktop Right Matrix Navigator — hidden by default, expands on button */}

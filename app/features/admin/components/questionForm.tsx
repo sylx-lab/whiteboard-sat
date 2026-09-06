@@ -518,7 +518,6 @@ export const QuestionFormFields: React.FC<{
                   <div className="flex-1 min-w-0 space-y-2">
                     <VisualMathEditor
                       ariaLabel={`Choice ${id} text`}
-                      compact
                       rows={1}
                       value={form.choices[id]}
                       onChange={(v) => update({ choices: { ...form.choices, [id]: v } })}

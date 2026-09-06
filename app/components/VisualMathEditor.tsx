@@ -267,7 +267,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         Block
       </button>
 
-      {(!compact || isFullModal) && (
+      {(!compact || isFullModal) ? (
         <>
           <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
           {SYMBOL_GROUPS.map((group) => (
@@ -277,18 +277,39 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
               aria-expanded={openGroup === group.id}
               onClick={() => setOpenGroup(openGroup === group.id ? null : group.id)}
               title={`${group.label} symbols`}
-              className={`${toolButton} ${openGroup === group.id
+              className={`${toolButton} ${
+                openGroup === group.id
                   ? 'bg-(--surface) text-(--brand-text) border border-(--brand)'
                   : 'text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)'
-                }`}
+              }`}
             >
               {group.label}
               <ChevronDown
-                className={`w-3 h-3 transition-transform ${openGroup === group.id ? 'rotate-180' : ''
-                  }`}
+                className={`w-3 h-3 transition-transform ${
+                  openGroup === group.id ? 'rotate-180' : ''
+                }`}
               />
             </button>
           ))}
+        </>
+      ) : (
+        <>
+          <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => setOpenGroup(openGroup ? null : (SYMBOL_GROUPS[0]?.id ?? 'structures'))}
+            aria-expanded={Boolean(openGroup)}
+            title="Math symbols palette"
+            className={`${toolButton} ${
+              openGroup
+                ? 'bg-(--surface) text-(--brand-text) border border-(--brand)'
+                : 'text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)'
+            }`}
+          >
+            <Sigma className="w-3.5 h-3.5" />
+            <span>Symbols</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${openGroup ? 'rotate-180' : ''}`} />
+          </button>
         </>
       )}
 
@@ -332,7 +353,23 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         {/* Symbol palette — every face is the actual rendered symbol. */}
         {openGroup && (
           <div className="px-2 py-2 border-b border-(--border) bg-(--surface) animate-in fade-in duration-100">
-            <div className="flex flex-wrap gap-1">
+            <div className="flex items-center gap-1 mb-2 pb-1.5 border-b border-(--border)/60 overflow-x-auto">
+              {SYMBOL_GROUPS.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setOpenGroup(g.id)}
+                  className={`text-[11px] px-2 py-0.5 rounded-md font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                    openGroup === g.id
+                      ? 'bg-(--brand) text-white font-semibold'
+                      : 'bg-(--surface-soft) text-(--foreground-secondary) hover:text-(--foreground)'
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto">
               {SYMBOL_GROUPS.find((g) => g.id === openGroup)?.symbols.map((sym) => (
                 <button
                   key={sym.insert + sym.title}
@@ -375,7 +412,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         />
 
         {/* Live render of this field, right where it is being typed. */}
-        {showRender && (hasMath || value.includes('•') || value.includes('**')) && (
+        {showRender && value.trim().length > 0 && (
           <div className="px-3 py-2.5 border-t border-(--border) bg-(--surface-soft) text-[13px] text-(--foreground) leading-relaxed">
             <MathRenderer content={value} />
           </div>
@@ -408,7 +445,23 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
             {renderToolbar(true)}
 
             {openGroup && (
-              <div className="px-3 py-2 border-b border-(--border) bg-(--surface) max-h-36 overflow-y-auto">
+              <div className="px-3 py-2 border-b border-(--border) bg-(--surface) max-h-48 overflow-y-auto">
+                <div className="flex items-center gap-1 mb-2 pb-1.5 border-b border-(--border)/60 overflow-x-auto">
+                  {SYMBOL_GROUPS.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setOpenGroup(g.id)}
+                      className={`text-[11px] px-2 py-0.5 rounded-md font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                        openGroup === g.id
+                          ? 'bg-(--brand) text-white font-semibold'
+                          : 'bg-(--surface-soft) text-(--foreground-secondary) hover:text-(--foreground)'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex flex-wrap gap-1">
                   {SYMBOL_GROUPS.find((g) => g.id === openGroup)?.symbols.map((sym) => (
                     <button

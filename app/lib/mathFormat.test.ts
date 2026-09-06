@@ -56,3 +56,54 @@ test('preserves plain English text without caret or math', () => {
   assert.ok(!r.includes('class="katex"'));
   assert.equal(r, 'The correct answer is Option A because it satisfies the equation.');
 });
+
+test('renders markdown bold and italic formatting', () => {
+  const rBoldItalic = formatMathString('***bold italic***');
+  assert.equal(rBoldItalic, '<strong><em>bold italic</em></strong>');
+
+  const rQuotes = formatMathString('***"The author’s tone can best be described as cautiously optimistic,"***');
+  assert.equal(rQuotes, '<strong><em>"The author’s tone can best be described as cautiously optimistic,"</em></strong>');
+
+  const rBold = formatMathString('**important concept**');
+  assert.equal(rBold, '<strong>important concept</strong>');
+
+  const rItalic = formatMathString('*slightly different*');
+  assert.equal(rItalic, '<em>slightly different</em>');
+
+  const rUnderscores = formatMathString('___accented___ and __bolded__ and _emphasized_');
+  assert.ok(rUnderscores.includes('<strong><em>accented</em></strong>'));
+  assert.ok(rUnderscores.includes('<strong>bolded</strong>'));
+  assert.ok(rUnderscores.includes('<em>emphasized</em>'));
+});
+
+test('renders standard LaTeX bracket delimiters \\[...\\] and \\(...\\)', () => {
+  const rDisplay = formatMathString('\\[x^2 + y^2 = 1\\]');
+  assert.ok(rDisplay.includes('class="katex"'));
+
+  const rInline = formatMathString('\\(f(x) = 2x\\)');
+  assert.ok(rInline.includes('class="katex"'));
+});
+
+test('renders unicode math symbols like ±, ≥, ≤, ²', () => {
+  const rPlusMinus = formatMathString('x = ±5');
+  assert.ok(rPlusMinus.includes('class="katex"'));
+
+  const rInequality = formatMathString('x ≥ 10');
+  assert.ok(rInequality.includes('class="katex"'));
+
+  const rSuper = formatMathString('x² + y³ = 10');
+  assert.ok(rSuper.includes('class="katex"'));
+});
+
+test('renders Phi(x) function notation and broad macros without dollars', () => {
+  const rPhi = formatMathString('\\Phi(x) = 0.5');
+  assert.ok(rPhi.includes('class="katex"'));
+});
+
+test('combines markdown bold/italic and math without collision', () => {
+  const mixed = formatMathString('**Note:** The value of $x^2$ is always *non-negative*.');
+  assert.ok(mixed.includes('<strong>Note:</strong>'));
+  assert.ok(mixed.includes('<em>non-negative</em>'));
+  assert.ok(mixed.includes('class="katex"'));
+});
+
