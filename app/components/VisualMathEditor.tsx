@@ -374,6 +374,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                 <button
                   key={sym.insert + sym.title}
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => applyInsertion(sym.insert)}
                   title={sym.title}
                   aria-label={sym.title}
@@ -467,6 +468,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                     <button
                       key={sym.insert + sym.title}
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => applyInsertion(sym.insert)}
                       title={sym.title}
                       aria-label={sym.title}

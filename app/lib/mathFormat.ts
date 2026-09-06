@@ -78,7 +78,15 @@ export function formatMathString(rawText: string): string {
     return saveToken(html);
   });
 
-  // 8. Process standalone unicode math symbols outside $ (±, ≥, ≤, ≠, ×, ÷)
+  // 8. Process unicode square root symbol √ outside $ (e.g. √16, √x, √(x+1), √2)
+  processed = processed.replace(/√\s*(\([^\)]+\)|[a-zA-Z0-9]+)/g, (_, inner) => {
+    return saveToken(renderKatexSafe(`\\sqrt{${inner}}`, false));
+  });
+  processed = processed.replace(/√/g, () => {
+    return saveToken(renderKatexSafe('\\sqrt{}', false));
+  });
+
+  // 9. Process standalone unicode math symbols outside $ (±, ≥, ≤, ≠, ×, ÷)
   const unicodeMathRegex = /([±≥≤≠×÷])/g;
   const unicodeToLatex: Record<string, string> = {
     '±': '\\pm',
@@ -96,7 +104,7 @@ export function formatMathString(rawText: string): string {
     return char;
   });
 
-  // 9. Process Markdown bold & italic formatting on prose
+  // 10. Process Markdown bold & italic formatting on prose
   // ***bold italic*** or ___bold italic___
   processed = processed.replace(/\*\*\*(?!\s)([\s\S]*?\S)\*\*\*/g, '<strong><em>$1</em></strong>');
   processed = processed.replace(/___(?!\s)([\s\S]*?\S)___/g, '<strong><em>$1</em></strong>');
@@ -109,13 +117,14 @@ export function formatMathString(rawText: string): string {
   processed = processed.replace(/\*(?!\s)([^*\n]*?\S)\*/g, '<em>$1</em>');
   processed = processed.replace(/(?:^|(?<=[\s("'\[{]))_([^_ \n]|[^_\n]*?\S)_(?=[\s)"'\]},.;:!?]|$)/g, '<em>$1</em>');
 
-  // 10. Restore KaTeX tokens
+  // 11. Convert newlines to breaks cleanly on prose BEFORE restoring KaTeX tokens
+  // (KaTeX SVGs such as \sqrt contain internal newlines which must NOT be converted to <br/>)
+  processed = processed.replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
+
+  // 12. Restore KaTeX tokens
   tokens.forEach((html, i) => {
     processed = processed.replace(`@@@KATEX_TOKEN_${i}@@@`, () => html);
   });
-
-  // 11. Convert newlines to breaks cleanly
-  processed = processed.replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
 
   return processed;
 }

@@ -72,3 +72,14 @@ test('clamps out-of-range selections instead of producing undefined', () => {
   const r = buildInsertion({ text: 'ab', selectionStart: 99, selectionEnd: 99, latex: '\\pi' });
   assert.equal(r.text, 'ab$\\pi$');
 });
+
+test('handles nth root slot and degree positioning', () => {
+  const rEmpty = buildInsertion({ text: '', selectionStart: 0, selectionEnd: 0, latex: '\\sqrt[{}]{}' });
+  assert.equal(rEmpty.text, '$\\sqrt[{}]{}$');
+  assert.equal(rEmpty.caret, 8);
+
+  const rSelected = buildInsertion({ text: 'x', selectionStart: 0, selectionEnd: 1, latex: '\\sqrt[{}]{}' });
+  assert.equal(rSelected.text, '$\\sqrt[{}]{x}$');
+  assert.equal(rSelected.caret, 8);
+});
+

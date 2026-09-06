@@ -31,7 +31,7 @@ export const SYMBOL_GROUPS: SymbolGroup[] = [
       { insert: '{}^{}', display: 'x^{a}', title: 'Superscript / power' },
       { insert: '{}_{}', display: 'x_{a}', title: 'Subscript' },
       { insert: '\\sqrt{}', display: '\\sqrt{x}', title: 'Square root' },
-      { insert: '\\sqrt[]{}', display: '\\sqrt[n]{x}', title: 'nth root' },
+      { insert: '\\sqrt[{}]{}', display: '\\sqrt[n]{x}', title: 'nth root' },
       { insert: '\\left|{}\\right|', display: '|x|', title: 'Absolute value' },
       { insert: '\\overline{}', display: '\\overline{AB}', title: 'Overline / segment' },
       { insert: '\\left(\\right)', display: '(\;)', title: 'Parentheses' },

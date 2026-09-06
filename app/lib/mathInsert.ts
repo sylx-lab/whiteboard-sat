@@ -63,7 +63,11 @@ export function buildInsertion(args: {
   let snippet = latex;
   let keepSelection = 0;
   if (selected && snippet.includes('{}')) {
-    snippet = snippet.replace('{}', `{${selected}}`);
+    if (snippet.startsWith('\\sqrt[{}]')) {
+      snippet = snippet.replace(/\{\}$/, `{${selected}}`);
+    } else {
+      snippet = snippet.replace('{}', `{${selected}}`);
+    }
     keepSelection = selected.length;
   }
 
@@ -71,6 +75,16 @@ export function buildInsertion(args: {
   const nextText = text.slice(0, start) + body + text.slice(end);
 
   if (keepSelection) {
+    if (snippet.startsWith('\\sqrt[{}]')) {
+      const degreeSlot = body.indexOf('[{}]');
+      if (degreeSlot >= 0) {
+        return {
+          text: nextText,
+          caret: start + degreeSlot + 2,
+          selectionLength: 0,
+        };
+      }
+    }
     // Highlight the text we just wrapped so it can be replaced or extended.
     const offset = body.indexOf(`{${selected}}`);
     return {

@@ -107,3 +107,30 @@ test('combines markdown bold/italic and math without collision', () => {
   assert.ok(mixed.includes('class="katex"'));
 });
 
+test('renders square root and nth root with intact SVG paths without <br/> corruption', () => {
+  const rSqrt = formatMathString('$\\sqrt{16}$\nNext paragraph\n\nThird paragraph');
+  assert.ok(rSqrt.includes('class="katex"'));
+  assert.ok(rSqrt.includes('<br/>'));
+  assert.ok(!rSqrt.includes('M95,702<br/>'));
+
+  const rRawSqrt = formatMathString('\\sqrt{2x + 1}');
+  assert.ok(rRawSqrt.includes('class="katex"'));
+  assert.ok(!rRawSqrt.includes('M95,702<br/>'));
+
+  const rNthRoot = formatMathString('\\sqrt[3]{8}');
+  assert.ok(rNthRoot.includes('class="katex"'));
+  assert.ok(!rNthRoot.includes('M95,702<br/>'));
+});
+
+test('renders unicode square root symbol √ outside math', () => {
+  const rUni1 = formatMathString('√16 = 4');
+  assert.ok(rUni1.includes('class="katex"'));
+
+  const rUni2 = formatMathString('The hypotenuse is 5√2');
+  assert.ok(rUni2.includes('class="katex"'));
+
+  const rUni3 = formatMathString('√(x + 1)');
+  assert.ok(rUni3.includes('class="katex"'));
+});
+
+
