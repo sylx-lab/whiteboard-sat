@@ -104,7 +104,7 @@ export function formatMathString(rawText: string): string {
     return char;
   });
 
-  // 10. Process Markdown bold & italic formatting on prose
+  // 10. Process Markdown bold, italic & underline formatting on prose
   // ***bold italic*** or ___bold italic___
   processed = processed.replace(/\*\*\*(?!\s)([\s\S]*?\S)\*\*\*/g, '<strong><em>$1</em></strong>');
   processed = processed.replace(/___(?!\s)([\s\S]*?\S)___/g, '<strong><em>$1</em></strong>');
@@ -116,6 +116,10 @@ export function formatMathString(rawText: string): string {
   // *italic* or _italic_
   processed = processed.replace(/\*(?!\s)([^*\n]*?\S)\*/g, '<em>$1</em>');
   processed = processed.replace(/(?:^|(?<=[\s("'\[{]))_([^_ \n]|[^_\n]*?\S)_(?=[\s)"'\]},.;:!?]|$)/g, '<em>$1</em>');
+
+  // \underline{...} or ++...++ on prose
+  processed = processed.replace(/\\underline\{([^{}]+)\}/g, '<u>$1</u>');
+  processed = processed.replace(/\+\+(?!\s)([\s\S]*?\S)\+\+/g, '<u>$1</u>');
 
   // 11. Convert newlines to breaks cleanly on prose BEFORE restoring KaTeX tokens
   // (KaTeX SVGs such as \sqrt contain internal newlines which must NOT be converted to <br/>)

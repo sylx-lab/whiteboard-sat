@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import katex from 'katex';
-import { Bold, Italic, Sigma, ChevronDown, Eye, List, Maximize2, Minimize2, X } from 'lucide-react';
+import { Bold, Italic, Underline, Sigma, ChevronDown, Eye, List, Maximize2, Minimize2, X } from 'lucide-react';
 import { buildInsertion, isInsideMath } from '../lib/mathInsert';
 import { MathRenderer } from './MathRenderer';
 import { SYMBOL_GROUPS } from '../lib/mathSymbols';
@@ -84,11 +84,55 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const selected = value.slice(start, end);
+
+    // 1. If the selected text itself starts with prefix and ends with suffix, unwrap it
+    if (
+      prefix &&
+      suffix &&
+      selected.length >= prefix.length + suffix.length &&
+      selected.startsWith(prefix) &&
+      selected.endsWith(suffix)
+    ) {
+      const unwrapped = selected.slice(prefix.length, selected.length - suffix.length);
+      const nextText = value.slice(0, start) + unwrapped + value.slice(end);
+      onChange(nextText);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start, start + unwrapped.length);
+      }, 0);
+      return;
+    }
+
+    // 2. If the selection is immediately surrounded by prefix and suffix, unwrap it
+    const beforePrefix = value.slice(Math.max(0, start - prefix.length), start);
+    const afterSuffix = value.slice(end, end + suffix.length);
+    if (prefix && suffix && beforePrefix === prefix && afterSuffix === suffix) {
+      const nextText = value.slice(0, start - prefix.length) + selected + value.slice(end + suffix.length);
+      onChange(nextText);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start - prefix.length, end - prefix.length);
+      }, 0);
+      return;
+    }
+
+    // 3. Otherwise wrap selection
     onChange(value.slice(0, start) + prefix + selected + suffix + value.slice(end));
     setTimeout(() => {
       el.focus();
       el.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
     }, 0);
+  };
+
+  const applyUnderline = () => {
+    const el = activeRef.current;
+    const start = el?.selectionStart ?? caretPos;
+    const inMath = isInsideMath(value, start);
+    if (inMath) {
+      wrapSelection('\\underline{', '}');
+    } else {
+      wrapSelection('<u>', '</u>');
+    }
   };
 
   const insertBullet = (style: 'dot' | 'alpha' = 'dot') => {
@@ -195,6 +239,28 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
     }, 0);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.metaKey || e.ctrlKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'b') {
+        e.preventDefault();
+        wrapSelection('**', '**');
+        return;
+      }
+      if (key === 'i') {
+        e.preventDefault();
+        wrapSelection('*', '*');
+        return;
+      }
+      if (key === 'u') {
+        e.preventDefault();
+        applyUnderline();
+        return;
+      }
+    }
+    handleListEnter(e);
+  };
+
   const caretInMath = isInsideMath(value, caretPos);
   const hasMath = value.includes('$');
 
@@ -207,7 +273,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         type="button"
         onClick={() => wrapSelection('**', '**')}
         aria-label="Wrap selection in bold"
-        title="Bold"
+        title="Bold (Ctrl+B)"
         className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
       >
         <Bold className="w-3.5 h-3.5" />
@@ -216,10 +282,19 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
         type="button"
         onClick={() => wrapSelection('*', '*')}
         aria-label="Wrap selection in italic"
-        title="Italic"
+        title="Italic (Ctrl+I)"
         className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
       >
         <Italic className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={applyUnderline}
+        aria-label="Wrap selection in underline"
+        title="Underline (Ctrl+U)"
+        className={`${toolButton} text-(--foreground-secondary) hover:bg-(--brand-soft) hover:text-(--foreground)`}
+      >
+        <Underline className="w-3.5 h-3.5" />
       </button>
 
       <span className="w-px h-4 bg-(--border) mx-1" aria-hidden="true" />
@@ -406,7 +481,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
             onChange(e.target.value);
           }}
           onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
-          onKeyDown={handleListEnter}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           aria-label={ariaLabel || label}
           className="w-full px-3 py-2.5 bg-transparent text-(--foreground) text-[12px] font-mono focus:outline-none resize-y block"
@@ -498,7 +573,7 @@ export const VisualMathEditor: React.FC<VisualMathEditorProps> = ({
                     onChange(e.target.value);
                   }}
                   onSelect={(e) => setCaretPos((e.target as HTMLTextAreaElement).selectionStart)}
-                  onKeyDown={handleListEnter}
+                  onKeyDown={handleKeyDown}
                   placeholder={placeholder}
                   className="w-full flex-1 p-3 bg-(--surface-soft) border border-(--border) rounded-xl text-[13.5px] font-mono text-(--foreground) focus:outline-none focus:border-(--brand) resize-none leading-relaxed"
                 />

@@ -133,4 +133,22 @@ test('renders unicode square root symbol √ outside math', () => {
   assert.ok(rUni3.includes('class="katex"'));
 });
 
+test('renders underline formatting via <u>, \\underline{}, and ++', () => {
+  const rHtml = formatMathString('Which choice best describes the function of the <u>underlined sentence</u>?');
+  assert.ok(rHtml.includes('<u>underlined sentence</u>'));
+
+  const rMacro = formatMathString('The function of the \\underline{first sentence} in the text');
+  assert.ok(rMacro.includes('<u>first sentence</u>'));
+
+  const rPlus = formatMathString('The phrase ++vital ecosystem++ serves to illustrate');
+  assert.ok(rPlus.includes('<u>vital ecosystem</u>'));
+
+  const rMixed = formatMathString('**Important:** <u>$x^2 + y^2 = 1$</u> is a *circle*.');
+  assert.ok(rMixed.includes('<strong>Important:</strong>'));
+  assert.ok(rMixed.includes('<u>'));
+  assert.ok(rMixed.includes('class="katex"'));
+  assert.ok(rMixed.includes('<em>circle</em>'));
+});
+
+
 
