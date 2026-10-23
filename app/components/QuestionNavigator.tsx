@@ -9,6 +9,8 @@ interface QuestionNavigatorProps {
   interactions: Record<string, QuestionInteractionState>;
   questionIds: string[];
   questions?: Question[];
+  /** questionId -> was the latest saved attempt correct. Paints questions solved in earlier sessions. */
+  history?: Record<string, boolean>;
   onSelectIndex: (index: number) => void;
   title?: string;
 }
@@ -19,6 +21,7 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   interactions,
   questionIds,
   questions = [],
+  history = {},
   onSelectIndex,
   title = 'Practice Matrix',
 }) => {
@@ -59,6 +62,10 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
           } else if (isCorrect) {
             btnClass = 'bg-emerald-600 border-emerald-600 text-white font-bold shadow-xs';
           } else if (isIncorrect) {
+            btnClass = 'bg-rose-500 border-rose-500 text-white font-bold shadow-xs';
+          } else if (!isSubmitted && history[qId] === true) {
+            btnClass = 'bg-emerald-600 border-emerald-600 text-white font-bold shadow-xs';
+          } else if (!isSubmitted && history[qId] === false) {
             btnClass = 'bg-rose-500 border-rose-500 text-white font-bold shadow-xs';
           } else if (isAnswered) {
             btnClass = 'bg-teal-50 border-teal-200 text-[var(--brand-text)] font-semibold';

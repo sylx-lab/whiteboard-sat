@@ -26,6 +26,7 @@ import {
   Difficulty,
   QuestionInteractionState,
   UserProfile,
+  PracticeAttempt,
 } from '../../types';
 import { formatDomainName } from '../../lib/utils';
 import { isSprQuestion, isSprAnswerCorrect } from '../../lib/spr';
@@ -41,6 +42,7 @@ interface PracticeHubProps {
   questions: Question[];
   currentUser: UserProfile | null;
   hasAccessToQuestion: (q: Question) => boolean;
+  attempts?: PracticeAttempt[];
   onLogAttempt: (question: Question, answer: string, timeSpent: number) => void;
   onToggleBookmark?: (questionId: string) => void;
   onOpenPricing: () => void;
@@ -52,10 +54,37 @@ type SortOption = QuestionSortOption;
 
 const getNow = () => Date.now();
 
+const FilterStep: React.FC<{ n: number; title: string; hint?: string; children?: React.ReactNode }> = ({ n, title, hint, children }) => (
+  <fieldset className="min-w-0 space-y-2.5">
+    <legend className="flex items-center gap-2 text-[12.5px] font-bold text-(--foreground)">
+      <span className="w-5 h-5 rounded-full bg-(--brand-soft) text-(--brand-text) text-[11px] flex items-center justify-center font-mono">{n}</span>
+      {title}
+      {hint && <span className="font-normal text-[11.5px] text-(--foreground-secondary)">· {hint}</span>}
+    </legend>
+    <div className="flex flex-wrap gap-2">{children}</div>
+  </fieldset>
+);
+
+const Chip: React.FC<{ on: boolean; onClick: () => void; count?: number; children: React.ReactNode }> = ({ on, onClick, count, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={on}
+    className={`h-9 px-3 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95 ${
+      on ? 'bg-(--brand-cta) border-(--brand-cta) text-white' : 'bg-(--surface) border-(--border) text-(--foreground) hover:bg-(--brand-soft)'
+    }`}
+  >
+    {on && <Check className="w-3.5 h-3.5" />}
+    {children}
+    {count !== undefined && <span className={`font-mono text-[11px] ${on ? 'text-white/80' : 'text-(--foreground-secondary)'}`}>{count}</span>}
+  </button>
+);
+
 export const PracticeHub: React.FC<PracticeHubProps> = ({
   questions,
   currentUser,
   hasAccessToQuestion,
+  attempts = [],
   onLogAttempt,
   onToggleBookmark,
   onOpenPricing,
@@ -127,6 +156,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Latest saved result per question (attempts arrive newest first), so a question
+  // solved last week still shows green/red in the matrix.
+  const history = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const a of attempts) if (!(a.questionId in map)) map[a.questionId] = a.isCorrect;
+    return map;
+  }, [attempts]);
+
+  // Dropping a domain also drops its topics, or they would keep filtering unseen.
+  const toggleDomain = (d: Domain) => {
+    if (selectedDomains.includes(d)) {
+      const gone = topicsByDomain.get(d) ?? new Set<string>();
+      setSelectedTopics(selectedTopics.filter((t) => !gone.has(t)));
+    }
+    toggleIn(selectedDomains, d, setSelectedDomains);
+  };
 
   // Domain groupings
   const mathDomains: Domain[] = [
@@ -222,6 +268,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
     () => questions.filter((q) => (selectedSubject === 'all' || q.subject === selectedSubject) && hasAccessToQuestion(q)),
     [questions, selectedSubject, hasAccessToQuestion]
   );
+  const domainCounts = useMemo(() => {
+    const m = new Map<Domain, number>();
+    for (const q of accessibleForSubject) m.set(q.domain, (m.get(q.domain) ?? 0) + 1);
+    return m;
+  }, [accessibleForSubject]);
   const subjectTotal = accessibleForSubject.length;
   const subjectFree = accessibleForSubject.filter((q) => q.is_free).length;
   const subjectDomains = selectedSubject === 'all' ? 8 : 4;
@@ -641,6 +692,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               const q = questions.find((item) => item.id === id);
               const inter = sessionInteractions[id];
               const isSubmitted = inter?.isSubmitted;
+              if (!isSubmitted) return null;
               const isCorrect = isSubmitted && q
                 ? (isSprQuestion(q) ? isSprAnswerCorrect(q, inter.enteredAnswer) : inter.selectedAnswer === q.correct_answer)
                 : false;
@@ -694,6 +746,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               );
             })}
           </div>
+          {sessionStats.total > sessionStats.answered && (
+            <p className="text-[11.5px] text-(--foreground-secondary)">
+              {sessionStats.total - sessionStats.answered} of {sessionStats.total} questions in this set were not attempted.
+            </p>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -959,6 +1016,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 interactions={sessionInteractions}
                 questionIds={sessionQuestionIds}
                 questions={questions}
+                history={history}
                 onSelectIndex={(idx) => {
                   questionStartMsRef.current = getNow();
                   setCurrentIndex(idx);
@@ -998,6 +1056,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 interactions={sessionInteractions}
                 questionIds={sessionQuestionIds}
                 questions={questions}
+                history={history}
                 onSelectIndex={(idx) => {
                   questionStartMsRef.current = getNow();
                   setCurrentIndex(idx);
@@ -1156,216 +1215,11 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       </div>
 
       {/* ============================================================ */}
-      {/* 3. FILTER TOOLBAR & SEARCH */}
       {/* ============================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-        {/* Left Filter Dropdowns — checkboxes (sketch pages 2-4) */}
-        <div className="lg:col-span-8 flex flex-wrap items-center gap-2">
-          {/* Domain — multi checkbox */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setDomainDropdownOpen(!domainDropdownOpen);
-                setDifficultyDropdownOpen(false);
-                setSourceDropdownOpen(false);
-                setAccessDropdownOpen(false);
-              }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedDomains.length > 0
-                  ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
-                  : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
-              }`}
-            >
-              <span className="truncate max-w-32.5">
-                {selectedDomains.length === 0
-                  ? 'Domain'
-                  : selectedDomains.length === 1
-                    ? formatDomainName(selectedDomains[0])
-                    : `${selectedDomains.length} Domains`}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
-            </button>
-
-            {domainDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-80 max-w-[calc(100vw-2rem)] bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
-                <div className="flex items-center justify-between px-1 pb-2">
-                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Domains</span>
-                  {selectedDomains.length > 0 && (
-                    <button onClick={() => setSelectedDomains([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>
-                  )}
-                </div>
-                {(() => {
-                  const domains = selectedSubject === 'all' ? [...mathDomains, ...rwDomains] : selectedSubject === 'math' ? mathDomains : rwDomains;
-                  const groupLabel = selectedSubject === 'all' ? 'All' : selectedSubject === 'math' ? 'Math' : 'Reading & Writing';
-                  return (
-                    <>
-                      <div className="pb-1.5 px-1 text-[10px] font-bold text-(--foreground-secondary) uppercase tracking-wider">{groupLabel}</div>
-                      <div className="grid grid-cols-1 gap-0.5 max-h-64 overflow-y-auto">
-                        {domains.map((dom) => {
-                          const checked = selectedDomains.includes(dom);
-                          return (
-                            <label key={dom} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-teal-50 text-(--brand-text)' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
-                              <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDomains, dom, setSelectedDomains)} className="w-3.5 h-3.5 rounded border-(--border) text-(--brand-cta) accent-[var(--brand-cta)]" />
-                              <span className={`flex-1 truncate ${checked ? 'font-semibold' : ''}`}>{formatDomainName(dom)}</span>
-                              {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-
-          {/* Difficulty — multi checkbox (sketch: easy/medium) */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setDifficultyDropdownOpen(!difficultyDropdownOpen);
-                setDomainDropdownOpen(false);
-                setSourceDropdownOpen(false);
-                setAccessDropdownOpen(false);
-              }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedDifficulties.length > 0
-                  ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
-                  : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
-              }`}
-            >
-              <span className="capitalize">
-                {selectedDifficulties.length === 0 ? 'Difficulty' : selectedDifficulties.length === 1 ? selectedDifficulties[0] : `${selectedDifficulties.length} Levels`}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
-            </button>
-
-            {difficultyDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-48 bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
-                <div className="flex items-center justify-between px-1 pb-2">
-                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Difficulty</span>
-                  {selectedDifficulties.length > 0 && <button onClick={() => setSelectedDifficulties([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
-                </div>
-                {(['easy', 'medium', 'hard'] as const).map((diff) => {
-                  const checked = selectedDifficulties.includes(diff);
-                  return (
-                    <label key={diff} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer capitalize transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-semibold' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
-                      <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDifficulties, diff, setSelectedDifficulties)} className="w-3.5 h-3.5 rounded border-(--border) accent-[var(--brand-cta)]" />
-                      <span className="flex-1">{diff}</span>
-                      {checked && <Check className="w-3.5 h-3.5 text-(--brand-text)" />}
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Source — multi checkbox (sketch: College Panda, Suite 1b, Previous year) */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setSourceDropdownOpen(!sourceDropdownOpen);
-                setDomainDropdownOpen(false);
-                setDifficultyDropdownOpen(false);
-                setAccessDropdownOpen(false);
-              }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedSources.length > 0
-                  ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
-                  : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
-              }`}
-            >
-              <span className="truncate max-w-32.5">{selectedSources.length === 0 ? 'Source' : selectedSources.length === 1 ? selectedSources[0] : `${selectedSources.length} Sources`}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
-            </button>
-            {sourceDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-64 max-w-[calc(100vw-2rem)] bg-(--surface) rounded-xl shadow-lg border border-(--border) p-2 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100">
-                <div className="flex items-center justify-between px-1 pb-2">
-                  <span className="text-[11px] font-bold tracking-wider text-(--foreground-secondary) uppercase">Source</span>
-                  {selectedSources.length > 0 && <button onClick={() => setSelectedSources([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
-                </div>
-                <div className="max-h-64 overflow-y-auto space-y-0.5">
-                  {availableSources.length === 0 ? (
-                    <p className="px-2.5 py-2 text-[12px] text-(--foreground-secondary)">No sources for this subject</p>
-                  ) : (
-                    availableSources.map((src) => {
-                      const checked = selectedSources.includes(src);
-                      return (
-                        <label key={src} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-semibold' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
-                          <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedSources, src, setSelectedSources)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)]" />
-                          <span className="flex-1 truncate">{src}</span>
-                          {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Access Dropdown (single, unchanged) */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setAccessDropdownOpen(!accessDropdownOpen);
-                setDomainDropdownOpen(false);
-                setDifficultyDropdownOpen(false);
-                setSourceDropdownOpen(false);
-              }}
-              className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-2 transition-colors cursor-pointer active:scale-95 ${
-                selectedAccess !== 'all'
-                  ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
-                  : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
-              }`}
-            >
-              <span>
-                {selectedAccess === 'all' ? 'Access' : selectedAccess === 'free' ? 'Free Only' : 'Premium Only'}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-(--foreground-secondary) shrink-0" />
-            </button>
-
-            {accessDropdownOpen && (
-              <div
-                className="absolute left-0 mt-1.5 w-44 bg-(--surface) rounded-xl shadow-lg border border-(--border) p-1.5 z-50 text-[12px] animate-in fade-in zoom-in-95 duration-100"
-              >
-                {(['all', 'free', 'premium'] as const).map((acc) => (
-                  <button
-                    key={acc}
-                    onClick={() => {
-                      setSelectedAccess(acc);
-                      setAccessDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
-                      selectedAccess === acc
-                        ? 'bg-teal-50 text-(--brand-text) font-semibold'
-                        : 'text-(--foreground) hover:bg-(--brand-soft)'
-                    }`}
-                  >
-                    <span>{acc === 'all' ? 'All Access' : acc === 'free' ? 'Free Only' : 'Premium Only'}</span>
-                    {selectedAccess === acc && <Check className="w-3.5 h-3.5 text-(--brand-text)" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* More Filters Drawer Button */}
-          <button
-            onClick={() => setMoreFiltersOpen(true)}
-            className={`h-10 px-3.5 rounded-[10px] border text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
-              selectedTopics.length > 0
-                ? 'bg-teal-50 border-(--brand) text-(--brand-text) font-semibold'
-                : 'bg-(--surface) border-(--border) hover:bg-(--brand-soft) text-(--foreground)'
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-(--foreground-secondary)" />
-            <span>More Filters{selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}</span>
-          </button>
-        </div>
-
-        {/* Right Search Input with ⌘K */}
-        <div className="lg:col-span-4 relative">
+      {/* 3. SET BUILDER — domain → topic → source & difficulty (sketch)  */}
+      {/* ============================================================ */}
+      <div className="rounded-2xl bg-(--surface) border border-(--border) p-4 sm:p-5 space-y-5">
+        <div className="relative">
           <Search className="w-4 h-4 text-(--foreground-secondary) absolute left-3 top-3 pointer-events-none" />
           <input
             ref={searchInputRef}
@@ -1373,20 +1227,69 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search questions, topics or ID..."
-            className="w-full h-10 pl-9 pr-14 border border-(--border) rounded-[10px] text-[12px] focus:outline-none focus:border-(--brand) bg-(--surface) transition-colors shadow-none text-(--foreground)"
+            className="w-full h-10 pl-9 pr-10 border border-(--border) rounded-[10px] text-[12px] focus:outline-none focus:border-(--brand) bg-(--surface) text-(--foreground)"
           />
-          {searchQuery ? (
+          {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
               className="absolute right-3 top-2.5 text-(--foreground-muted) hover:text-(--foreground) p-0.5 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          ) : (
-            <div className="hidden sm:block absolute right-2.5 top-2.5 pointer-events-none px-1.5 py-0.5 rounded bg-(--surface-soft) text-[10px] font-mono text-(--foreground-secondary) border border-(--border)">
-              ⌘K
-            </div>
           )}
+        </div>
+
+        <FilterStep n={1} title="Domain" hint="Pick one or more — leave empty for all">
+          {(selectedSubject === 'all' ? [...mathDomains, ...rwDomains] : selectedSubject === 'math' ? mathDomains : rwDomains).map((d) => (
+            <Chip key={d} on={selectedDomains.includes(d)} onClick={() => toggleDomain(d)} count={domainCounts.get(d) ?? 0}>
+              {formatDomainName(d)}
+            </Chip>
+          ))}
+        </FilterStep>
+
+        <FilterStep n={2} title="Topic" hint={selectedDomains.length ? 'Narrow within your domains' : 'Choose a domain first'}>
+          {selectedDomains.flatMap((d) => Array.from(topicsByDomain.get(d) ?? [])).map((t) => (
+            <Chip key={t} on={selectedTopics.includes(t)} onClick={() => toggleIn(selectedTopics, t, setSelectedTopics)}>
+              {t}
+            </Chip>
+          ))}
+        </FilterStep>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          <FilterStep n={3} title="Source" hint="Where the questions come from">
+            {availableSources.map((s) => (
+              <Chip key={s} on={selectedSources.includes(s)} onClick={() => toggleIn(selectedSources, s, setSelectedSources)}>
+                {s}
+              </Chip>
+            ))}
+          </FilterStep>
+          <FilterStep n={4} title="Difficulty">
+            {(['easy', 'medium', 'hard'] as const).map((d) => (
+              <Chip key={d} on={selectedDifficulties.includes(d)} onClick={() => toggleIn(selectedDifficulties, d, setSelectedDifficulties)}>
+                <span className="capitalize">{d}</span>
+              </Chip>
+            ))}
+          </FilterStep>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-(--border)">
+          <div className="text-[13px] text-(--foreground)">
+            <span className="font-bold font-mono tabular-nums">{filteredQuestions.length}</span> question{filteredQuestions.length === 1 ? '' : 's'} in this set
+            {activeFiltersCount > 0 && (
+              <button onClick={resetAllFilters} className="ml-3 text-[12px] font-medium text-(--brand-text) hover:underline cursor-pointer">
+                Reset
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => handleStartSession()}
+            disabled={filteredQuestions.length === 0}
+            className="px-6 py-2.5 bg-(--brand-cta) hover:bg-(--brand-hover) disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-[13px] rounded-xl flex items-center gap-2 cursor-pointer active:scale-98"
+          >
+            <span>Start practice</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -1567,161 +1470,6 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       )}
 
       {/* ============================================================ */}
-      {/* 6. ADVANCED FILTER SIDE DRAWER */}
-      {/* ============================================================ */}
-      {moreFiltersOpen && (
-        <div className="fixed inset-0 z-50 bg-black/35 backdrop-blur-xs flex justify-end animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-(--surface) h-full p-5 sm:p-6 space-y-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200 pb-safe">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-(--border)">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-(--brand-text)" />
-                  <h3 className="font-bold text-(--foreground) text-base">Advanced Filters</h3>
-                </div>
-                <button
-                  onClick={() => setMoreFiltersOpen(false)}
-                  className="p-1.5 rounded-lg text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--surface-soft) cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Topics grouped by domain — mirrors sketch page 3 */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                    Topics by Domain
-                  </label>
-                  {selectedTopics.length > 0 && (
-                    <button onClick={() => setSelectedTopics([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>
-                  )}
-                </div>
-                <div className="space-y-4 max-h-[32vh] overflow-y-auto pr-1">
-                  {Array.from(topicsByDomain.entries()).map(([domain, topics]) => {
-                    const all = Array.from(topics).sort();
-                    return (
-                      <div key={domain} className="space-y-1.5">
-                        <div className="text-[11px] font-bold text-(--foreground) bg-(--surface-soft) px-2.5 py-1 rounded-lg border border-(--border)/60 flex items-center justify-between">
-                          <span>{formatDomainName(domain)}</span>
-                          <span className="text-[10px] font-mono text-(--foreground-secondary)">{all.length}</span>
-                        </div>
-                        <div className="space-y-0.5 pl-1">
-                          {all.map((top) => {
-                            const checked = selectedTopics.includes(top);
-                            return (
-                              <label key={top} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer text-[12px] transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-medium' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
-                                <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedTopics, top, setSelectedTopics)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)] shrink-0" />
-                                <span className="flex-1 leading-tight">{top}</span>
-                                {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {topicsByDomain.size === 0 && <p className="text-[12px] text-(--foreground-secondary) px-2">No topics for this subject</p>}
-                </div>
-              </div>
-
-              {/* Sources — sketch page 4: College Panda / Suite 1b / Previous year */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">Source</label>
-                  {selectedSources.length > 0 && <button onClick={() => setSelectedSources([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
-                </div>
-                <div className="space-y-0.5 max-h-32 overflow-y-auto pr-1">
-                  {availableSources.map((src) => {
-                    const checked = selectedSources.includes(src);
-                    return (
-                      <label key={src} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer text-[12px] transition-colors ${checked ? 'bg-teal-50 text-(--brand-text) font-medium' : 'hover:bg-(--brand-soft) text-(--foreground)'}`}>
-                        <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedSources, src, setSelectedSources)} className="w-3.5 h-3.5 rounded accent-[var(--brand-cta)]" />
-                        <span className="flex-1 truncate">{src}</span>
-                        {checked && <Check className="w-3.5 h-3.5 text-(--brand-text) shrink-0" />}
-                      </label>
-                    );
-                  })}
-                  {availableSources.length === 0 && <p className="text-[12px] text-(--foreground-secondary) px-2">No sources</p>}
-                </div>
-              </div>
-
-              {/* Difficulty — multi checkbox */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">Difficulty</label>
-                  {selectedDifficulties.length > 0 && <button onClick={() => setSelectedDifficulties([])} className="text-[11px] font-semibold text-(--brand-text) hover:underline">Clear</button>}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['easy', 'medium', 'hard'] as const).map((diff) => {
-                    const checked = selectedDifficulties.includes(diff);
-                    return (
-                      <label key={diff} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-medium border capitalize cursor-pointer transition-colors ${checked ? 'bg-(--brand-cta) text-white border-(--brand-cta) font-bold' : 'bg-(--brand-soft) text-(--foreground) border-(--border) hover:bg-(--surface-soft)'}`}>
-                        <input type="checkbox" checked={checked} onChange={() => toggleIn(selectedDifficulties, diff, setSelectedDifficulties)} className="w-3.5 h-3.5 rounded accent-white hidden" />
-                        {diff}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Access Quick Filter */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-(--foreground-secondary) uppercase tracking-wider">
-                  Access Model
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() =>
-                      setSelectedAccess(selectedAccess === 'free' ? 'all' : 'free')
-                    }
-                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer active:scale-95 ${
-                      selectedAccess === 'free'
-                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                        : 'bg-(--brand-soft) text-(--foreground) border-(--border) hover:bg-(--surface-soft)'
-                    }`}
-                  >
-                    Free Only
-                  </button>
-                  <button
-                    onClick={() =>
-                      setSelectedAccess(selectedAccess === 'premium' ? 'all' : 'premium')
-                    }
-                    className={`py-2 rounded-lg text-[12px] font-medium border transition-colors cursor-pointer active:scale-95 ${
-                      selectedAccess === 'premium'
-                        ? 'bg-(--brand-cta) text-white border-(--brand-cta) font-bold'
-                        : 'bg-(--brand-soft) text-(--foreground) border-(--border) hover:bg-(--surface-soft)'
-                    }`}
-                  >
-                    Premium Only
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="pt-4 border-t border-(--border) flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setSelectedTopics([]);
-                  setSelectedSources([]);
-                  setSelectedDifficulties([]);
-                  setSelectedDomains([]);
-                  setSelectedAccess('all');
-                }}
-                className="flex-1 py-2.5 bg-(--surface-soft) hover:bg-(--border) text-(--foreground) text-[13px] font-medium rounded-lg transition-colors cursor-pointer active:scale-95"
-              >
-                Clear Filters
-              </button>
-              <button
-                onClick={() => setMoreFiltersOpen(false)}
-                className="flex-1 py-2.5 bg-(--brand-cta) hover:bg-(--brand-hover) text-white text-[13px] font-semibold rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

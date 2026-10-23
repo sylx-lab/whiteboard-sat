@@ -25,6 +25,7 @@ export default function PracticePage() {
         questions={store.questions}
         currentUser={store.currentUser}
         hasAccessToQuestion={store.hasAccessToQuestion}
+        attempts={store.practiceAttempts}
         onLogAttempt={store.logPracticeAttempt}
         onToggleBookmark={store.toggleBookmark}
         onOpenPricing={() => router.push('/pricing')}

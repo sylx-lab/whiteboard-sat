@@ -175,7 +175,13 @@ function useAppStoreInternal() {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data: { user: MeUser | null }) => {
-        if (cancelled || !data?.user) return;
+        if (cancelled) return;
+        // No cookie (expired, cleared, other browser): the cached user is a ghost, so drop it
+        // rather than show a signed-in navbar whose every request is a 401.
+        if (!data?.user) {
+          setCurrentUser(null);
+          return;
+        }
         setIsSignedIn(true);
         setCurrentUser(data.user);
         // Lesson progress is embedded in the user document, not its own key.
