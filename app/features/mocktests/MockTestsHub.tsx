@@ -28,6 +28,8 @@ import { QuestionNavigator } from '../../components/QuestionNavigator';
 import { DesmosModal } from '../../components/DesmosModal';
 import { FormulaReferenceModal } from '../../components/FormulaReferenceModal';
 
+const BREAK_SECONDS = 10 * 60;
+
 interface MockTestsHubProps {
   mockTests: MockTest[];
   mockAttempts: MockTestAttempt[];
@@ -65,6 +67,15 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   // Modals
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
   const [isFormulasOpen, setIsFormulasOpen] = useState(false);
+
+  // The official Digital SAT gives a 10 minute break between Reading & Writing and Math.
+  // `breakLeft` is seconds remaining, or null when not on break. Skippable.
+  const [breakLeft, setBreakLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (breakLeft === null) return;
+    const t = setTimeout(() => setBreakLeft((v) => (v === null || v <= 1 ? null : v - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [breakLeft]);
 
   // Which test is being fetched, so its button can say so instead of looking dead.
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -258,6 +269,9 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       };
       setActiveAttempt(updated);
       onSaveAttempt(updated);
+      // Crossing from one section to the other earns a break (module 2 -> next section only).
+      const prevMod = activeTest.modules[activeAttempt.currentModuleIndex];
+      if (prevMod && prevMod.section !== nextMod.section) setBreakLeft(BREAK_SECONDS);
     } else {
       // Finalize full test. The scored attempt comes back from the server;
       // the local copy has no scoreSummary, which is what used to leave the
@@ -282,7 +296,8 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   });
 
   useEffect(() => {
-    if (!activeAttempt || activeAttempt.status !== 'in_progress') return;
+    // The module clock does not run during the break.
+    if (!activeAttempt || activeAttempt.status !== 'in_progress' || breakLeft !== null) return;
     const interval = setInterval(() => {
       setActiveAttempt((prev) => {
         if (!prev) return null;
@@ -293,7 +308,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeAttempt?.id, activeAttempt?.status]);
+  }, [activeAttempt?.id, activeAttempt?.status, breakLeft === null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save checkpoint when tab hidden
   const onSaveAttemptRef = React.useRef(onSaveAttempt);
@@ -316,6 +331,30 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   const runnerModule =
     isRunning && activeTest ? activeTest.modules[activeAttempt!.currentModuleIndex] : undefined;
   const runnerQuestion = runnerModule?.questions[activeAttempt!.currentQuestionIndex];
+
+  // --- BREAK BETWEEN SECTIONS ---
+  if (breakLeft !== null && activeAttempt && activeTest && runnerModule) {
+    return (
+      <div className="fixed inset-0 z-50 bg-(--surface) flex flex-col items-center justify-center gap-6 px-6 text-center pt-safe pb-safe">
+        <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--brand-text)">Break</span>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-(--foreground)">
+          Take a break before {runnerModule.title}
+        </h1>
+        <div className="font-mono tabular-nums text-5xl sm:text-6xl font-bold text-(--foreground)">
+          {Math.floor(breakLeft / 60)}:{(breakLeft % 60).toString().padStart(2, '0')}
+        </div>
+        <p className="text-[13px] text-(--foreground-secondary) max-w-sm">
+          Your next module starts when the break ends. Stretch, drink some water, and rest your eyes.
+        </p>
+        <button
+          onClick={() => setBreakLeft(null)}
+          className="h-10 px-6 bg-(--brand-cta) hover:bg-(--brand-hover) text-white font-medium text-[13px] rounded-[10px] cursor-pointer"
+        >
+          Skip break &amp; start now
+        </button>
+      </div>
+    );
+  }
 
   // --- 1. FULL SCREEN DIGITAL SAT TEST RUNNER ---
   if (activeAttempt && activeTest && runnerModule && runnerQuestion) {
@@ -646,6 +685,12 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
           </p>
         </div>
       </div>
+
+      {mockTests.length === 0 && (
+        <div className="py-16 text-center text-[13px] text-(--foreground-secondary)">
+          No mock tests are available yet. Check back soon.
+        </div>
+      )}
 
       {/* Tests Grid — 2 columns on iPad portrait, 3 on desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
