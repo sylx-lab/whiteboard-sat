@@ -11,7 +11,9 @@ export default function PracticePage() {
   const router = useRouter();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  if (store.isLoading) {
+  // Render from the cached first page right away; otherwise wait only for the questions
+  // and the user's history, not for payments, plans or the roster.
+  if (!store.isPracticeReady && store.questions.length === 0) {
     return (
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse">
         <div className="h-8 w-48 bg-[var(--surface-soft)] rounded mb-6" />

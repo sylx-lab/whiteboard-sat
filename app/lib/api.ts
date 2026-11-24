@@ -90,13 +90,27 @@ export function crud<T extends { id: string }, D extends { _id: string }>(
     }
 
     const params = new URL(request.url).searchParams;
+    const base = (o.query?.(params, user) ?? {}) as Filter<StringIdDoc>;
+    const lighten = params.get('summary') && o.summarize ? o.summarize : (row: T) => row;
+
+    // ?limit=N[&cursor=<last id>] pages newest-first by _id (indexed, and stable while
+    // rows are added). Without `limit` the whole list comes back, as before.
+    const limit = Math.min(Number(params.get('limit')) || 0, 500);
+    const cursor = params.get('cursor');
+    const paged = limit > 0 && !o.sort;
+    const filter = paged && cursor ? ({ $and: [base, { _id: { $lt: cursor } }] } as Filter<StringIdDoc>) : base;
     const docs = await col
-      .find((o.query?.(params, user) ?? {}) as Filter<StringIdDoc>)
+      .find(filter)
       // ids carry their creation timestamp, so this is newest-first without an index.
       .sort(o.sort ?? { _id: -1 })
+      .limit(paged ? limit + 1 : 0) // one extra row tells us whether another page exists
       .toArray();
-    const lighten = params.get('summary') && o.summarize ? o.summarize : (row: T) => row;
-    return Response.json({ items: docs.map((d) => lighten(view(o.toApp(d as unknown as D)))) });
+    const more = paged && docs.length > limit;
+    if (more) docs.pop();
+    return Response.json({
+      items: docs.map((d) => lighten(view(o.toApp(d as unknown as D)))),
+      ...(paged && { nextCursor: more ? docs[docs.length - 1]._id : null }),
+    });
   };
 
   const POST: Handler = async (request) => {

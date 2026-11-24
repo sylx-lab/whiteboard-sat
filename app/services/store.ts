@@ -38,6 +38,9 @@ const BLANK_ACCESS: UserProfile['access'] = {
   fullPremium: false,
 };
 
+/** Questions per request on load; the first page paints, the rest streams in. */
+const QUESTION_PAGE = 100;
+
 /** How often a running mock test is checkpointed to the server. See saveMockTestAttempt. */
 const ATTEMPT_CHECKPOINT_MS = 15_000;
 
@@ -81,7 +84,9 @@ function saveToStorage<T>(key: string, data: T) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {
-    console.error(`Error saving key ${key}:`, err);
+    // Over quota: drop the stale copy rather than leave an old one that disagrees with state.
+    try { localStorage.removeItem(key); } catch { }
+    console.warn(`Could not cache ${key}:`, err);
   }
 }
 
@@ -104,6 +109,8 @@ function useAppStoreInternal() {
 
   // Mock Tests
   const [mockTests, setMockTests] = useState<MockTest[]>([]);
+  /** Questions (and, signed in, the attempt history) have landed — enough for the practice page to render. */
+  const [isPracticeReady, setIsPracticeReady] = useState(false);
 
   // Attempts
   const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>([]);
@@ -156,7 +163,7 @@ function useAppStoreInternal() {
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.THEME, theme); }, [theme]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.CURRENT_USER, currentUser); }, [currentUser]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.ALL_USERS, allUsers); }, [allUsers]);
-  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.QUESTIONS, questions); }, [questions]);
+  useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.QUESTIONS, questions.slice(0, QUESTION_PAGE)); }, [questions]); // cache is only for first paint; the full bank overflows the ~5MB quota
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.COURSES, courses); }, [courses]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.RESOURCES, resources); }, [resources]);
   useEffect(() => { if (hasHydratedRef.current) saveToStorage(STORAGE_KEYS.MOCK_TESTS, mockTests); }, [mockTests]);
@@ -187,7 +194,7 @@ function useAppStoreInternal() {
         // Lesson progress is embedded in the user document, not its own key.
         if (data.user.courseProgress) setCourseProgress(data.user.courseProgress);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -215,33 +222,56 @@ function useAppStoreInternal() {
 
     const load = async () => {
       try {
-        // One round trip wave: the signed-in fetches no longer wait on the content fetches.
+        // Every request starts at once and applies its own state the moment it lands, so a
+        // slow one (roster, payments) never holds back the ones a page is waiting on.
         const staff = isSignedIn && canSeeRoster(currentUser);
-        const [q, c, r, m, pSets, pPlans, roster, history, pays, fb] = await Promise.all([
-          api.get<{ items: Question[] }>('/questions').catch(() => ({ items: [] as Question[] })),
-          api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })),
-          api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })),
-          api.get<{ items: MockTest[] }>('/mock-tests?summary=1').catch(() => ({ items: [] as MockTest[] })),
-          fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
-          fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
-          staff ? api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] })) : null,
-          isSignedIn ? api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })) : null,
-          isSignedIn ? api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })) : null,
-          isSignedIn ? api.get<{ items: QuestionFeedback[] }>('/feedback').catch(() => ({ items: [] as QuestionFeedback[] })) : null,
+        const live = <T,>(p: Promise<T>, apply: (v: T) => void) =>
+          p.then((v) => { if (!cancelled) apply(v); });
+
+        const questionsDone = live(
+          api.get<{ items: Question[]; nextCursor?: string | null }>(`/questions?limit=${QUESTION_PAGE}`).catch(() => ({ items: [] as Question[], nextCursor: null })),
+          (q) => {
+            setQuestions(q?.items ?? []);
+            // First page is on screen; the rest streams in behind it.
+            void (async () => {
+              let cursor = q?.nextCursor;
+              while (cursor && !cancelled) {
+                const page = await api
+                  .get<{ items: Question[]; nextCursor?: string | null }>(`/questions?limit=${QUESTION_PAGE}&cursor=${encodeURIComponent(cursor)}`)
+                  .catch(() => null);
+                if (!page || cancelled) return;
+                setQuestions((prev) => {
+                  const have = new Set(prev.map((x) => x.id));
+                  return [...prev, ...page.items.filter((x) => !have.has(x.id))];
+                });
+                cursor = page.nextCursor;
+              }
+            })();
+          },
+        );
+        const attemptsDone = isSignedIn
+          ? live(
+            api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
+            (h) => { setPracticeAttempts(h?.practice ?? []); setMockAttempts(h?.mock ?? []); },
+          )
+          : Promise.resolve();
+
+        // What the practice page needs: questions, plus the user's history when signed in.
+        const practiceReady = Promise.all([questionsDone, attemptsDone]).then(() => {
+          if (!cancelled) setIsPracticeReady(true);
+        });
+
+        await Promise.all([
+          practiceReady,
+          live(api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })), (c) => setCourses(c?.items ?? [])),
+          live(api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })), (r) => setResources(r?.items ?? [])),
+          live(api.get<{ items: MockTest[] }>('/mock-tests?summary=1').catch(() => ({ items: [] as MockTest[] })), (m) => setMockTests(m?.items ?? [])),
+          live(fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })), (v) => { if (v?.settings) setPaymentSettings(v.settings); }),
+          live(fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })), (v) => { if (v?.items?.length) setPlans(v.items); }),
+          staff && live(api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] })), (v) => setAllUsers(v?.items ?? [])),
+          isSignedIn && live(api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })), (v) => setPayments(v?.items ?? [])),
+          isSignedIn && live(api.get<{ items: QuestionFeedback[] }>('/feedback').catch(() => ({ items: [] as QuestionFeedback[] })), (v) => setQuestionFeedback(v?.items ?? [])),
         ]);
-        if (cancelled) return;
-        setQuestions(q?.items ?? []);
-        setCourses(c?.items ?? []);
-        setResources(r?.items ?? []);
-        setMockTests(m?.items ?? []);
-        if (pSets?.settings) setPaymentSettings(pSets.settings);
-        if (pPlans?.items?.length) setPlans(pPlans.items);
-        if (roster) setAllUsers(roster.items ?? []);
-        if (!isSignedIn) return;
-        setPracticeAttempts(history?.practice ?? []);
-        setMockAttempts(history?.mock ?? []);
-        setPayments(pays?.items ?? []);
-        setQuestionFeedback(fb?.items ?? []);
       } catch (err) {
         console.error('Could not load from the API', err);
       } finally {
@@ -329,16 +359,16 @@ function useAppStoreInternal() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
-    }).catch(() => {});
+    }).catch(() => { });
     toast.success('If an account exists with this email, a reset link has been sent.');
   };
 
   const resendVerificationEmail = async (): Promise<void> => {
-    await fetch('/api/auth/resend-verification', { method: 'POST' }).catch(() => {});
+    await fetch('/api/auth/resend-verification', { method: 'POST' }).catch(() => { });
   };
 
   const logoutUser = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => { });
     setIsSignedIn(false);
     setCurrentUser(null);
     // None of this is the next visitor's to see. Content goes too: an admin's
@@ -779,6 +809,7 @@ function useAppStoreInternal() {
     courses,
     resources,
     mockTests,
+    isPracticeReady,
     plans,
     paymentSettings,
     practiceAttempts,
