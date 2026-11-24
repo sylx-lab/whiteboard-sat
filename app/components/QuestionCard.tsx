@@ -573,7 +573,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {question.subject === 'math' && onOpenDesmos && (
             <button
               onClick={onOpenDesmos}
-              className="flex h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
+              className="flex h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Desmos Graphing Calculator"
             >
               <Calculator className="w-3.5 h-3.5 text-(--brand-text)" />
@@ -584,7 +584,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {question.subject === 'math' && onOpenFormulas && (
             <button
               onClick={onOpenFormulas}
-              className="flex h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
+              className="flex h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 xl:px-3 items-center gap-1 sm:gap-1.5 text-(--foreground) hover:text-(--brand-text) bg-(--surface) hover:bg-(--brand-soft) border border-(--border) rounded-lg transition-colors font-medium text-[11px] sm:text-[12px] cursor-pointer"
               title="Open Formula Reference Sheet"
             >
               <BookOpen className="w-3.5 h-3.5 text-(--brand-text)" />
@@ -596,7 +596,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {!isSpr && (
             <button
               onClick={onToggleCrossOutMode}
-              className={`h-8 sm:h-9 px-2 sm:px-2.5 xl:px-3 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors font-semibold text-[11px] sm:text-[12px] cursor-pointer active:scale-95 ${isCrossOutModeActive
+              className={`h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 xl:px-3 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors font-semibold text-[11px] sm:text-[12px] cursor-pointer active:scale-95 ${isCrossOutModeActive
                 ? 'bg-(--brand-cta) text-white border-(--brand-cta) shadow-xs'
                 : 'bg-(--surface) text-(--foreground) hover:bg-(--brand-soft) border-(--border)'
                 }`}
@@ -612,7 +612,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           <button
             onClick={onToggleMarkForReview}
-            className={`h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors cursor-pointer active:scale-95 ${isMarkedForReview
+            className={`h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors cursor-pointer active:scale-95 ${isMarkedForReview
               ? 'bg-amber-50 text-amber-700 border-amber-300'
               : 'bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) border-(--border)'
               }`}
@@ -624,7 +624,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           <button
             onClick={onToggleBookmark}
-            className={`h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors cursor-pointer active:scale-95 ${isBookmarked
+            className={`h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border transition-colors cursor-pointer active:scale-95 ${isBookmarked
               ? 'bg-teal-50 text-(--brand-text) border-teal-200'
               : 'bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) border-(--border)'
               }`}
@@ -637,7 +637,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {onReportIssue && (
             <button
               onClick={onReportIssue}
-              className="h-8 sm:h-9 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border border-(--border) bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
+              className="h-8 sm:h-9 pointer-coarse:h-10 pointer-coarse:min-w-10 px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 rounded-lg border border-(--border) bg-(--surface) text-(--foreground-secondary) hover:text-(--foreground) hover:bg-(--brand-soft) transition-colors cursor-pointer active:scale-95"
               title="Report an issue with this question"
             >
               <MessageSquareWarning className="w-3.5 h-3.5" />

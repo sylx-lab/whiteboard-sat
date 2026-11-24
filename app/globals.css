@@ -311,3 +311,25 @@ button:hover svg,
 .animate-float-3 {
   animation: floatSlow 7s ease-in-out infinite 2s;
 }
+
+/*
+ * Touch devices (iPad, tablets). Not a breakpoint: an iPad in landscape is wider than lg but
+ * still has a finger, so these key off the pointer, not the width.
+ */
+a, button, input, select, textarea, label, summary, [role='button'] {
+  /* no 300ms tap delay, and no double-tap-to-zoom on controls */
+  touch-action: manipulation;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (pointer: coarse) {
+  /* iOS Safari zooms the page when a focused field is under 16px, and does not zoom back. */
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
