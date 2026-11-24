@@ -167,7 +167,7 @@ export async function ensureIndexes() {
       { key: { code: 1 }, unique: true },
       // the bank's drill-down + the editor's datalists
       { key: { domain: 1, topic: 1, status: 1 } },
-      { key: { status: 1, is_free: 1 } },
+      { key: { status: 1, is_free: 1, subject: 1 } }, // student list: published + free/premium-by-subject
       { key: { question_text: 'text', stimulus: 'text', topic: 'text' } },
     ]),
     (await c.courses()).createIndex({ slug: 1 }, { unique: true }),

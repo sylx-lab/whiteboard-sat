@@ -215,13 +215,19 @@ function useAppStoreInternal() {
 
     const load = async () => {
       try {
-        const [q, c, r, m, pSets, pPlans] = await Promise.all([
+        // One round trip wave: the signed-in fetches no longer wait on the content fetches.
+        const staff = isSignedIn && canSeeRoster(currentUser);
+        const [q, c, r, m, pSets, pPlans, roster, history, pays, fb] = await Promise.all([
           api.get<{ items: Question[] }>('/questions').catch(() => ({ items: [] as Question[] })),
           api.get<{ items: Course[] }>('/courses').catch(() => ({ items: [] as Course[] })),
           api.get<{ items: ResourceItem[] }>('/resources').catch(() => ({ items: [] as ResourceItem[] })),
-          api.get<{ items: MockTest[] }>('/mock-tests').catch(() => ({ items: [] as MockTest[] })),
+          api.get<{ items: MockTest[] }>('/mock-tests?summary=1').catch(() => ({ items: [] as MockTest[] })),
           fetch('/api/settings/payment').then((res) => res.json()).catch(() => ({ settings: DEFAULT_PAYMENT_SETTINGS })),
           fetch('/api/plans').then((res) => res.json()).catch(() => ({ items: INITIAL_PLANS })),
+          staff ? api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] })) : null,
+          isSignedIn ? api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })) : null,
+          isSignedIn ? api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })) : null,
+          isSignedIn ? api.get<{ items: QuestionFeedback[] }>('/feedback').catch(() => ({ items: [] as QuestionFeedback[] })) : null,
         ]);
         if (cancelled) return;
         setQuestions(q?.items ?? []);
@@ -230,22 +236,8 @@ function useAppStoreInternal() {
         setMockTests(m?.items ?? []);
         if (pSets?.settings) setPaymentSettings(pSets.settings);
         if (pPlans?.items?.length) setPlans(pPlans.items);
-
-        // The roster is part of the same load, inline rather than through
-        // refreshUsers() so every setState in this effect sits behind an await.
-        if (isSignedIn && canSeeRoster(currentUser)) {
-          const roster = await api.get<{ items: UserProfile[] }>('/users').catch(() => ({ items: [] as UserProfile[] }));
-          if (cancelled) return;
-          setAllUsers(roster?.items ?? []);
-        }
-
+        if (roster) setAllUsers(roster.items ?? []);
         if (!isSignedIn) return;
-        const [history, pays, fb] = await Promise.all([
-          api.get<{ practice: PracticeAttempt[]; mock: MockTestAttempt[] }>('/attempts').catch(() => ({ practice: [], mock: [] })),
-          api.get<{ items: PaymentSubmission[] }>('/payments').catch(() => ({ items: [] as PaymentSubmission[] })),
-          api.get<{ items: QuestionFeedback[] }>('/feedback').catch(() => ({ items: [] as QuestionFeedback[] })),
-        ]);
-        if (cancelled) return;
         setPracticeAttempts(history?.practice ?? []);
         setMockAttempts(history?.mock ?? []);
         setPayments(pays?.items ?? []);
@@ -685,6 +677,13 @@ function useAppStoreInternal() {
   const updateMockTest = (id: string, updates: Partial<MockTest>) =>
     patchIn<MockTest>('/mock-tests', id, setMockTests, updates);
 
+  /** The list holds summaries; this swaps in the whole test (questions included) before it is sat or edited. */
+  const loadMockTest = async (id: string): Promise<MockTest> => {
+    const { item } = await api.get<{ item: MockTest }>(`/mock-tests/${encodeURIComponent(id)}`);
+    setMockTests((prev) => prev.map((t) => (t.id === id ? item : t)));
+    return item;
+  };
+
   const deleteMockTest = (id: string) => deleteIn<MockTest>('/mock-tests', id, setMockTests);
 
 
@@ -846,6 +845,7 @@ function useAppStoreInternal() {
     addMockTest,
     updateMockTest,
     deleteMockTest,
+    loadMockTest,
     // Plan and Settings CRUD
     updatePaymentSettings,
     updatePlan,

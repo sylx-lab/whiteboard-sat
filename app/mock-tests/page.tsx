@@ -19,6 +19,7 @@ export default function MockTestsPage() {
       currentUser={store.currentUser}
       hasAccessToMockTest={store.hasAccessToMockTest}
       onSaveAttempt={store.saveMockTestAttempt}
+      onLoadTest={store.loadMockTest}
       onFinalizeTest={store.finalizeMockTestAttempt}
       onOpenPricing={() => router.push('/pricing')}
       courses={store.courses}

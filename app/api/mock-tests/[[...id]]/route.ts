@@ -39,6 +39,13 @@ const routes = crud<MockTest, MockTestDoc>({
   },
   // The hub lists locked tests with a "Premium" badge and a real question
   // count, so the shape stays and the questions empty out.
+  // The list is metadata: a module's question copies are the bulk of the payload
+  // and are only needed to sit or edit a test, which fetch it by id.
+  summarize: (test) => ({
+    ...test,
+    isSummary: true,
+    modules: test.modules.map((m) => ({ ...m, questionCount: m.questions.length, questions: [] })),
+  }),
   visibleTo: (test, user) => (canSeeMockTest(user, test) ? test : redactMockTest(test)),
 });
 

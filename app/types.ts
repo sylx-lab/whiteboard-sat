@@ -105,6 +105,8 @@ export interface MockTestModule {
   moduleNumber: 1 | 2;
   timeLimitMinutes: number;
   questions: Question[];
+  /** Set on list responses, where `questions` is left empty; the full test comes from /mock-tests/<id>. */
+  questionCount?: number;
 }
 
 export interface MockTest {
@@ -120,6 +122,8 @@ export interface MockTest {
   totalQuestions: number;
   totalTimeMinutes: number;
   modules: MockTestModule[];
+  /** True for a list-view copy whose modules carry no questions yet. */
+  isSummary?: boolean;
 }
 
 export interface MockTestAttempt {

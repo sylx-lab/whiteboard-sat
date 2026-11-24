@@ -52,13 +52,16 @@ export function standardSatModules(testId: string): MockTestModule[] {
  * Totals are derived from the modules rather than typed by hand, so the summary a
  * student sees can never contradict the test they actually sit.
  */
+/** A summary module carries a count instead of its questions. */
+const countOf = (m?: MockTestModule) => m?.questionCount ?? m?.questions?.length ?? 0;
+
 export function deriveTotals(modules?: MockTestModule[]): {
   totalQuestions: number;
   totalTimeMinutes: number;
 } {
   const list = Array.isArray(modules) ? modules : [];
   return {
-    totalQuestions: list.reduce((sum, m) => sum + (m?.questions?.length || 0), 0),
+    totalQuestions: list.reduce((sum, m) => sum + countOf(m), 0),
     totalTimeMinutes: list.reduce((sum, m) => sum + (Number(m?.timeLimitMinutes) || 0), 0),
   };
 }
@@ -87,7 +90,7 @@ export function mockTestIssues(modules?: MockTestModule[]): MockTestIssue[] {
     return issues;
   }
 
-  const totalQuestions = list.reduce((sum, m) => sum + (m?.questions?.length || 0), 0);
+  const totalQuestions = list.reduce((sum, m) => sum + countOf(m), 0);
   if (totalQuestions === 0) {
     issues.push({
       severity: 'blocking',
@@ -96,7 +99,7 @@ export function mockTestIssues(modules?: MockTestModule[]): MockTestIssue[] {
     return issues;
   }
 
-  const empty = list.filter((m) => !m?.questions || m.questions.length === 0);
+  const empty = list.filter((m) => countOf(m) === 0);
   if (empty.length) {
     issues.push({
       severity: 'warning',
@@ -106,7 +109,7 @@ export function mockTestIssues(modules?: MockTestModule[]): MockTestIssue[] {
     });
   }
 
-  const untimed = list.filter((m) => (m?.questions?.length || 0) > 0 && (!m?.timeLimitMinutes || m.timeLimitMinutes < 1));
+  const untimed = list.filter((m) => countOf(m) > 0 && (!m?.timeLimitMinutes || m.timeLimitMinutes < 1));
   if (untimed.length) {
     issues.push({
       severity: 'blocking',

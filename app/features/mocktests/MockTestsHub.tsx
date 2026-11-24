@@ -34,6 +34,8 @@ interface MockTestsHubProps {
   currentUser: UserProfile | null;
   hasAccessToMockTest: (test: MockTest) => boolean;
   onSaveAttempt: (attempt: MockTestAttempt) => void;
+  /** Fetches a test with its questions; the list only carries summaries. */
+  onLoadTest: (id: string) => Promise<MockTest>;
   onFinalizeTest: (attemptId: string) => Promise<MockTestAttempt | undefined>;
   onOpenPricing: () => void;
   courses?: Course[];
@@ -47,6 +49,7 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   currentUser,
   hasAccessToMockTest,
   onSaveAttempt,
+  onLoadTest,
   onFinalizeTest,
   onOpenPricing,
   courses = [],
@@ -63,11 +66,27 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   const [isDesmosOpen, setIsDesmosOpen] = useState(false);
   const [isFormulasOpen, setIsFormulasOpen] = useState(false);
 
+  // Which test is being fetched, so its button can say so instead of looking dead.
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const prefetched = React.useRef(new Set<string>());
+  // Hover/focus warms the full test, so the click that follows usually has nothing left to wait for.
+  const prefetch = (t: MockTest) => {
+    if (!t.isSummary || prefetched.current.has(t.id)) return;
+    prefetched.current.add(t.id);
+    onLoadTest(t.id).catch(() => prefetched.current.delete(t.id));
+  };
+  const withLoading = async (id: string, fn: () => Promise<void>) => {
+    setLoadingId(id);
+    try { await fn(); } finally { setLoadingId(null); }
+  };
+
   // Start new mock test attempt
-  const handleStartTest = (test: MockTest) => {
+  const handleStartTest = async (summary: MockTest) => {
     // Starting a test reads modules[0].timeLimitMinutes, so an unconfigured test would
     // throw. The Start button is disabled for these; this is the belt-and-braces check.
-    if (!isPlayable(test)) return;
+    if (!isPlayable(summary)) return;
+    const test = summary.isSummary ? await onLoadTest(summary.id).catch(() => null) : summary;
+    if (!test) return;
 
     const existing = mockAttempts.find(
       (a) => a.testId === test.id && a.userId === (currentUser?.id || 'guest') && a.status === 'in_progress'
@@ -118,8 +137,9 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
   };
 
   // Resume active test
-  const handleResumeTest = (attempt: MockTestAttempt) => {
-    const test = mockTests.find((t) => t.id === attempt.testId);
+  const handleResumeTest = async (attempt: MockTestAttempt) => {
+    const summary = mockTests.find((t) => t.id === attempt.testId);
+    const test = summary?.isSummary ? await onLoadTest(summary.id).catch(() => null) : summary;
     if (test) {
       setActiveAttempt(attempt);
       setActiveTest(test);
@@ -716,7 +736,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                 {hasAccess ? (
                   status === 'in_progress' ? (
                     <button
-                      onClick={() => handleResumeTest(attempt!)}
+                      onClick={() => withLoading(test.id, () => handleResumeTest(attempt!))}
+                      onMouseEnter={() => prefetch(test)}
+                      onFocus={() => prefetch(test)}
+                      disabled={loadingId === test.id}
                       className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -724,8 +747,10 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleStartTest(test)}
-                      disabled={!playable}
+                      onClick={() => withLoading(test.id, () => handleStartTest(test))}
+                      onMouseEnter={() => prefetch(test)}
+                      onFocus={() => prefetch(test)}
+                      disabled={!playable || loadingId === test.id}
                       title={playable ? undefined : 'This test is still being prepared'}
                       className="w-full py-2.5 bg-(--brand-cta) hover:bg-(--brand-hover) disabled:bg-(--border) disabled:text-(--foreground-secondary) disabled:cursor-not-allowed disabled:hover:bg-(--border) text-white font-medium text-[12px] rounded-[10px] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer group/btn active:scale-[0.98] disabled:active:scale-100"
                     >
@@ -733,6 +758,8 @@ export const MockTestsHub: React.FC<MockTestsHubProps> = ({
                       <span>
                         {!playable
                           ? 'Coming soon'
+                          : loadingId === test.id
+                          ? 'Loading…'
                           : status === 'completed'
                           ? 'Retake Mock Test'
                           : 'Start Mock Test'}

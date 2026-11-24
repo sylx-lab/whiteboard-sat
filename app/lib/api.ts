@@ -61,6 +61,8 @@ interface CrudOptions<T extends { id: string }, D extends { _id: string }> {
   /** What a viewer without `permission` may see. Identity when omitted. */
   visibleTo?: (row: T, user: UserProfile | null) => T;
   query?: (params: URLSearchParams, user: UserProfile | null) => Filter<D>;
+  /** Lighter list rows when the request has `?summary=1`. Single-record GETs stay whole. */
+  summarize?: (row: T) => T;
   sort?: Sort;
 }
 
@@ -93,7 +95,8 @@ export function crud<T extends { id: string }, D extends { _id: string }>(
       // ids carry their creation timestamp, so this is newest-first without an index.
       .sort(o.sort ?? { _id: -1 })
       .toArray();
-    return Response.json({ items: docs.map((d) => view(o.toApp(d as unknown as D))) });
+    const lighten = params.get('summary') && o.summarize ? o.summarize : (row: T) => row;
+    return Response.json({ items: docs.map((d) => lighten(view(o.toApp(d as unknown as D)))) });
   };
 
   const POST: Handler = async (request) => {
