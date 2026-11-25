@@ -49,7 +49,9 @@ export function formatMathString(rawText: string): string {
   });
 
   // 4. Replace single-dollar inline math $...$
-  processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, math) => {
+  // Pandoc rule so currency ("$5 and $10") isn't read as math: no space inside the
+  // delimiters, and the closing $ must not be followed by a digit. \$ stays literal.
+  processed = processed.replace(/(?<!\\)\$(?!\s)([^$\n]*?[^\s$\\])\$(?!\d)/g, (_, math) => {
     const html = renderKatexSafe(math, false);
     return saveToken(html);
   });
